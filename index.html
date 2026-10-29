@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Тренировки</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f0f0f">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Тренировки">
 <style>
   *{box-sizing:border-box}
   body{font-family:-apple-system,system-ui,sans-serif;margin:0 auto;padding:12px;background:#0f0f0f;color:#e8e8e8;font-size:15px;max-width:600px}
@@ -1155,6 +1161,7 @@ function renderStats(){
       </div>`;
     });
   }
+  html+=renderInstallSection();
   html+=renderDataSection();
   document.getElementById('app').innerHTML=html;
 }
@@ -1302,6 +1309,19 @@ function resetAll(){
   localStorage.removeItem('lastBackupDate');
   location.reload();
 }
+function renderInstallSection(){
+  if(!deferredPrompt)return '';
+  return `<h2>Приложение</h2>
+  <div class="ex">
+    <div class="ex-last">Установи на главный экран — открывается как обычное приложение, работает офлайн</div>
+    <button class="mini-btn" style="margin-top:8px;background:#2a4a5a;border-color:#3a6a7a" onclick="installPWA()">📲 Установить</button>
+  </div>`;
+}
+function installPWA(){
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(()=>{deferredPrompt=null;render();});
+}
 function renderDataSection(){
   const last=localStorage.getItem('lastBackupDate');
   let lastLine;
@@ -1385,6 +1405,19 @@ function getExerciseBadges(exId,log,dateStr){
   const steady=EX[exId]&&!EX[exId].app?checkSteadyAllSets(exId,log,dateStr):null;
   const steadyHtml=steady?`<span class="pr-badge pr-max" title="Все подходы одинаковые и максимальные повторы за всё время">🎯 ${steady.count}×${steady.r}</span>`:'';
   return pr+steadyHtml;
+}
+/* ---------- PWA ---------- */
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  if(view==='stats')render();
+});
+window.addEventListener('appinstalled',()=>{deferredPrompt=null;});
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(err=>console.warn('SW:',err));
+  });
 }
 
 syncCustomEx();
