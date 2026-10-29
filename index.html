@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Тренировки</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,system-ui,sans-serif;margin:0 auto;padding:12px;background:#0f0f0f;color:#e8e8e8;font-size:15px;max-width:600px}
+  h2{font-size:13px;color:#777;text-transform:uppercase;margin:20px 0 8px;letter-spacing:.5px}
+  .header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+  .header button{background:#222;color:#e8e8e8;border:1px solid #333;padding:8px 12px;border-radius:6px;font-size:15px;cursor:pointer}
+  .header span{font-weight:600}
+  .tabs{display:flex;gap:6px;margin-bottom:12px}
+  .tabs button{flex:1;background:#1a1a1a;color:#888;border:1px solid #262626;padding:8px;border-radius:6px;font-size:13px;cursor:pointer}
+  .tabs button.active{background:#2a2a2a;color:#e8e8e8;border-color:#444}
+  .info{background:#18241a;padding:8px 12px;border-radius:6px;color:#9f9;font-size:13px;margin-bottom:10px}
+  .meta-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px;color:#888}
+  .mini-btn{background:#222;color:#e8e8e8;border:1px solid #333;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer}
+  .mini-btn:hover{background:#2a2a2a}
+  .skip-banner{background:#2a1a1a;border:1px solid #4a2020;color:#e8a8a8;padding:10px 12px;border-radius:6px;margin-bottom:10px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+  .skip-row{margin-bottom:10px;display:flex;justify-content:flex-end}
+  .skip-reasons{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .skip-reasons button{background:#222;color:#e8e8e8;border:1px solid #333;padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer}
+  .skip-reasons button:hover{background:#2a2a2a}
+  .ex{background:#1a1a1a;border:1px solid #262626;border-radius:8px;padding:10px 12px;margin-bottom:8px}
+  .ex.done{opacity:.55}
+  .ex.done strong{text-decoration:line-through}
+  .ex-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .ex-head input[type=checkbox]{width:18px;height:18px;cursor:pointer}
+  .ex-head strong{font-size:14px;word-break:break-word}
+  .ex-head .meta{color:#666;font-size:12px;margin-left:auto;white-space:nowrap}
+  .ex-last{font-size:11px;color:#888;margin-bottom:8px;word-break:break-word}
+  .hist-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+  .hist-row .ex-last{margin-bottom:0;flex:1;text-align:right}
+  .set-row{display:flex;gap:6px;align-items:center;margin-bottom:5px}
+  .set-num{width:20px;font-size:12px;color:#666;text-align:center}
+  .set-row input{flex:1;background:#111;border:1px solid #333;color:#e8e8e8;padding:6px 9px;border-radius:6px;font-size:14px;min-width:0}
+  .ex-app{display:flex;align-items:center;gap:8px;padding:2px 0}
+  .ex-app span{font-size:13px;color:#9f9}
+  .form-input{width:100%;background:#111;border:1px solid #333;color:#e8e8e8;padding:8px 10px;border-radius:6px;font-size:14px;margin-bottom:8px;font-family:inherit;resize:vertical}
+  .form-row{display:flex;gap:14px;margin-bottom:8px;flex-wrap:wrap}
+  .form-row label{font-size:13px;color:#ccc;cursor:pointer;display:flex;align-items:center;gap:5px}
+  .day-chk{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:#ccc;margin:0 6px 6px 0;cursor:pointer}
+  .add-btn{width:100%;background:#2a5a2a;color:#e8e8e8;border:1px solid #3a7a3a;padding:10px;border-radius:6px;font-size:14px;cursor:pointer;margin-top:4px}
+  .del-btn{background:transparent;border:none;color:#a55;font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0}
+  /* Calendar */
+  .cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .cal-nav button{background:#222;color:#e8e8e8;border:1px solid #333;padding:6px 12px;border-radius:6px;font-size:16px;cursor:pointer}
+  .cal-nav span{font-weight:600;font-size:15px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:10px}
+  .cal-dow{text-align:center;font-size:11px;color:#666;padding:4px 0}
+  .cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:13px;background:#1a1a1a;color:#666;position:relative;border:1px solid transparent;font-weight:500}
+  .cal-day.clickable{cursor:pointer}
+  .cal-day.state-before{background:#0d0d0d;color:#2a2a2a}
+  .cal-day.state-future{background:#141414;color:#444}
+  .cal-day.state-empty{background:#1a1a1a;color:#555}
+  .cal-day.state-offplan{background:#1a3a1a;color:#8c8}
+  .cal-day.state-skip{background:#333;color:#888;font-size:11px}
+  .cal-day.state-done{background:#1e4d1e;color:#9f9}
+  .cal-day.state-part{background:#4a2020;color:#e8a8a8}
+  .cal-day.state-full-miss{background:#8a1a1a;color:#fff}
+  .cal-day.state-today-none{background:#1a1a1a;color:#ccc}
+  .cal-day.state-today-part{background:#4a2020;color:#e8a8a8}
+  .cal-day.today{border-color:#e8c44d;box-shadow:0 0 0 1px #e8c44d inset}
+  .cal-day.selected{outline:2px solid #6ab0ff;outline-offset:-2px}
+  .cal-day.empty-cell{background:transparent}
+  .cal-day{flex-direction:column;gap:1px;padding:2px;line-height:1}
+  .cal-day-num{font-size:13px;line-height:1;font-weight:500}
+  .cal-day-prs{display:flex;gap:2px;font-size:9px;line-height:1;justify-content:center}
+  .cal-pr-weight{color:#f0c860}
+  .cal-pr-reps{color:#7cc0e8}
+  .cal-pr-steady{color:#f0a860}
+  .cal-tonnage-pr{position:absolute;top:1px;left:2px;font-size:9px;line-height:1;color:#a8e87c;pointer-events:none}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:#888;margin-bottom:12px}
+  .legend span{display:inline-flex;align-items:center;gap:4px}
+  .lg-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .day-card{background:#141414;border:1px solid #262626;border-radius:8px;padding:12px}
+  .day-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:600}
+  /* PR & progress */
+  .progress-line{font-size:12px;color:#aaa;margin-bottom:4px}
+  .progress-line .up{color:#9f9;font-weight:600}
+  .progress-line .down{color:#c66}
+  .pr-row{margin-bottom:8px}
+  .pr-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;margin-right:6px;vertical-align:middle}
+  .pr-weight{background:#4a3a1a;color:#f0c860;border:1px solid #6a5a2a}
+  .pr-reps{background:#1a3a4a;color:#7cc0e8;border:1px solid #2a5a6a}
+  .pr-max{background:#3a2a1a;color:#f0a860;border:1px solid #5a4a2a}
+  .pr-tonnage{background:#2a4a1a;color:#a8e87c;border:1px solid #4a6a2a}
+  .day-tonnage{font-size:12px;color:#aaa;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  /* Stats */
+.stats-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.stat-card{background:#1a1a1a;border:1px solid #262626;border-radius:8px;padding:10px}
+.stat-val{font-size:20px;font-weight:600;color:#e8e8e8}
+.stat-lbl{font-size:11px;color:#777;margin-top:2px}
+.bars{display:flex;align-items:flex-end;gap:4px;height:160px;padding:8px 0;overflow-x:auto}
+.bar-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;min-width:30px;flex:1;height:100%}
+.bar{width:100%;max-width:36px;border-radius:3px 3px 0 0;min-height:2px;transition:height .2s}
+.bar-val{font-size:9px;color:#888;min-height:11px}
+.bar-label{font-size:9px;color:#666;white-space:nowrap}
+.ex-link{cursor:pointer}
+.ex-link:hover{border-color:#444}
+.ex-link:hover strong{color:#fff}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const EX={
+  seated_press:{name:'Жим гантелей сидя вверх',sets:4,reps:'12-15'},
+  front_raise:{name:'Подъём гантелей перед собой на вытянутых руках',sets:4,reps:'12-15'},
+  leg_raise:{name:'Подъём прямых ног в висе на турнике',sets:4,reps:'12-15'},
+  t_fly:{name:'Развод гантелей буквой Т стоя',sets:4,reps:'12-15'},
+  overhead_ext:{name:'Опускание рук за голову лёжа',sets:4,reps:'12-15'},
+  chest_fly:{name:'Сведение рук лёжа',sets:4,reps:'12-15'},
+  front_hammer:{name:'Удар гантелями перед собой',sets:4,reps:'12-15'},
+  back_bend:{name:'Наклон вперёд с руками за спиной снизу',sets:4,reps:'12-15'},
+  shrugs:{name:'Подъём плеч к ушам',sets:4,reps:'12-15'},
+  upright_row:{name:'Подъём веса к подмышкам',sets:4,reps:'12-15'},
+  bent_row:{name:'Тяга веса в наклоне',sets:4,reps:'12-15'},
+  neck_back:{name:'Подъёмы головы лёжа вверх',sets:4,reps:'12-15'},
+  neck_left:{name:'Подъёмы головы на левом боку',sets:4,reps:'12-15'},
+  neck_right:{name:'Подъёмы головы на правом боку',sets:4,reps:'12-15'},
+  neck_front:{name:'Подъёмы головы на животе',sets:4,reps:'12-15'},
+  jump_weighted:{name:'Выпрыгивания с гантелями (вес внизу)',sets:5,reps:'12-15'},
+  calf_raise:{name:'Прыжки на носках с весом',sets:4,reps:'12-15'},
+  curl:{name:'Подъём гантелей на бицепс',sets:4,reps:'12-15'},
+  hammer:{name:'Подъём гантелей молотком',sets:4,reps:'12-15'},
+  pushups:{name:'Отжимания',app:true},
+  pullups:{name:'Подтягивания',app:true},
+  front_lever:{name:'Выход в горизонт',sets:4,reps:'12-15'},
+  abs:{name:'Пресс',app:true},
+  stretch:{name:'Растяжка',app:true},
+  growth:{name:'Тренировка для роста',app:true},
+};
+const SCHEDULE={
+  A:['seated_press','front_raise','leg_raise','t_fly','overhead_ext','chest_fly','front_hammer'],
+  B:['back_bend','shrugs','upright_row','bent_row','leg_raise'],
+  NECK:['neck_back','neck_left','neck_right','neck_front'],
+  JUMPS:['jump_weighted','calf_raise'],
+  BICEPS:['curl','hammer'],
+};
+const DAYS=['вс','пн','вт','ср','чт','пт','сб'];
+const WEEK_ORDER=[1,2,3,4,5,6,0];
+const MONTH_NAMES=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+const store={
+  get logs(){return JSON.parse(localStorage.getItem('logs')||'{}')},
+  set logs(v){localStorage.setItem('logs',JSON.stringify(v))},
+};
+const customStore={
+  get list(){return JSON.parse(localStorage.getItem('customEx')||'[]')},
+  set list(v){localStorage.setItem('customEx',JSON.stringify(v))},
+};
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function fmt(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function todayDate(){const d=new Date();d.setHours(0,0,0,0);return d}
+
+function customStartDate(c){
+  if(c.schedule && c.schedule.startDate) return c.schedule.startDate;
+  try{
+    const ts=parseInt(String(c.id).slice(1),36);
+    if(!isNaN(ts))return fmt(new Date(ts));
+  }catch(e){}
+  return '1970-01-01';
+}
+function syncCustomEx(){
+  customStore.list.forEach(c=>{
+    EX[c.id]={name:c.name,app:!!c.app,sets:c.sets||4,reps:c.reps||'12-15'};
+  });
+}
+function isCycleDay(date,startStr){
+  const start=new Date(startStr+'T00:00:00');
+  const diff=Math.floor((date-start)/86400000);
+  return diff>=0 && diff%2===0;
+}
+function isCustomActive(c,date){
+  if(c.deleted)return false;
+  const sch=c.schedule;
+  if(!sch)return false;
+  const startStr=customStartDate(c);
+  const start=new Date(startStr+'T00:00:00');
+  const d=new Date(date);d.setHours(0,0,0,0);
+  if(d<start)return false;
+  if(sch.type==='days')return sch.days.includes(date.getDay());
+  if(sch.type==='interval'){
+    const diff=Math.floor((d-start)/86400000);
+    return diff>=0 && diff%sch.interval===0;
+  }
+  return false;
+}
+function getPlan(date){
+  const dow=date.getDay(),main=[],info=[];
+  if(dow===1)info.push('Волейбол','Армрестлинг');
+  if(dow===2)info.push('Армрестлинг');
+  if(dow===3)info.push('Волейбол');
+  if(dow===4)info.push('Армрестлинг');
+  if(dow===5)info.push('Волейбол');
+  if(dow===2||dow===6)SCHEDULE.A.forEach(x=>main.push(x));
+  if(dow===4||dow===0)SCHEDULE.B.forEach(x=>main.push(x));
+  if(dow===1||dow===4)SCHEDULE.NECK.forEach(x=>main.push(x));
+  if(dow===3||dow===6)SCHEDULE.JUMPS.forEach(x=>main.push(x));
+  if(dow===6||dow===0)SCHEDULE.BICEPS.forEach(x=>main.push(x));
+  if(isCycleDay(date,'2026-10-17'))main.push('pushups');
+  if(isCycleDay(date,'2026-10-18')){main.push('pullups');main.push('front_lever')}
+  customStore.list.forEach(c=>{if(isCustomActive(c,date))main.push(c.id)});
+  const after=['abs'];
+  if([1,3,5].includes(dow))after.push('stretch');
+  after.push('growth');
+  return {info,main,after};
+}
+
+/* ---------- stats & PRs ---------- */
+function getExerciseStats(log){
+  let maxW=0,maxR=0,totalVol=0,totalSets=0;
+  (log?.sets||[]).forEach(s=>{
+    if(!s)return;
+    const w=parseFloat(s.w)||0;
+    const r=parseFloat(s.r)||0;
+    if(w>maxW)maxW=w;
+    if(r>maxR)maxR=r;
+    if(r>0){totalSets++;if(w>0)totalVol+=w*r;}
+  });
+  return {maxW,maxR,totalVol,totalSets};
+}
+function getLastEntryBefore(exId,dateStr){
+  const logs=store.logs;
+  const dates=Object.keys(logs).filter(d=>d<dateStr).sort().reverse();
+  for(const d of dates){
+    const e=logs[d]&&logs[d][exId];
+    if(e&&e.done)return {date:d,...e};
+  }
+  return null;
+}
+function getExerciseHistoryBefore(exId,dateStr){
+  const logs=store.logs;
+  let maxW=0;
+  const repsByWeight={};
+  Object.keys(logs).filter(d=>d<dateStr).forEach(d=>{
+    const e=logs[d]&&logs[d][exId];
+    if(!e||!e.done)return;
+    (e.sets||[]).forEach(s=>{
+      if(!s)return;
+      const w=parseFloat(s.w)||0;
+      const r=parseFloat(s.r)||0;
+      if(w>maxW)maxW=w;
+      if(r>0){
+        if(repsByWeight[w]===undefined||r>repsByWeight[w])repsByWeight[w]=r;
+      }
+    });
+  });
+  return {maxW,repsByWeight};
+}
+function checkPRs(exId,log,dateStr){
+  const sets=log?.sets||[];
+  const hasData=sets.some(s=>s&&parseFloat(s.r)>0);
+  if(!hasData)return {weightPR:null,repsPR:null};
+  const prev=getExerciseHistoryBefore(exId,dateStr);
+  let weightPR=null,repsPR=null;
+  sets.forEach(s=>{
+    if(!s)return;
+    const w=parseFloat(s.w)||0;
+    const r=parseFloat(s.r)||0;
+    if(r<=0)return;
+    if(w>prev.maxW){
+      if(!weightPR||w>weightPR.w||(w===weightPR.w&&r>weightPR.r))weightPR={w,r};
+    }
+    const prevReps=prev.repsByWeight[w];
+    if(prevReps===undefined||r>prevReps){
+      if(!repsPR||r>repsPR.r||(r===repsPR.r&&w>repsPR.w))repsPR={w,r};
+    }
+  });
+  return {weightPR,repsPR};
+}
+function getDaySteadyCount(dateStr){
+  const dayLog=store.logs[dateStr]||{};
+  let count=0;
+  Object.entries(dayLog).forEach(([id,e])=>{
+    if(id.startsWith('_')||!e||!e.done)return;
+    if(!EX[id]||EX[id].app)return;
+    if(checkSteadyAllSets(id,e,dateStr))count++;
+  });
+  return count;
+}
+function getDayPRCounts(dateStr){
+  const dayLog=store.logs[dateStr]||{};
+  let weight=0,reps=0;
+  Object.entries(dayLog).forEach(([id,e])=>{
+    if(id.startsWith('_')||!e||!e.done)return;
+    if(!EX[id]||EX[id].app)return;
+    const {weightPR,repsPR}=checkPRs(id,e,dateStr);
+    if(weightPR)weight++;
+    if(repsPR)reps++;
+  });
+  return {weight,reps};
+}
+function getPRBadgesHtml(exId,log,dateStr){
+  if(!log)return '';
+  const {weightPR,repsPR}=checkPRs(exId,log,dateStr);
+  let html='';
+  if(weightPR)html+=`<span class="pr-badge pr-weight" title="Новый максимальный вес">🔩 ${weightPR.w}кг</span>`;
+  if(repsPR)html+=`<span class="pr-badge pr-reps" title="Новый вес или больше повторений">💪 ${repsPR.w>0?repsPR.w+'кг×':''}${repsPR.r}</span>`;
+  return html;
+}
+function getTargetReps(exId,dateStr){
+  const logs=store.logs;
+  const dates=Object.keys(logs).filter(d=>d<dateStr).sort().reverse();
+  for(const d of dates){
+    const e=logs[d]?.[exId];
+    if(!e||!e.done)continue;
+    let maxW=0,repsAtMaxW=0;
+    (e.sets||[]).forEach(s=>{
+      if(!s)return;
+      const w=parseFloat(s.w)||0;
+      const r=parseFloat(s.r)||0;
+      if(r<=0)return;
+      if(w>maxW){maxW=w;repsAtMaxW=r;}
+      else if(w===maxW&&r>repsAtMaxW)repsAtMaxW=r;
+    });
+    if(repsAtMaxW>0)return Math.min(repsAtMaxW+1,15);
+  }
+  return 15;
+}
+function checkSteadyAllSets(exId,log,dateStr){
+  const ex=EX[exId];
+  if(!ex||ex.app)return null;
+  const filled=(log?.sets||[]).filter(s=>s&&parseFloat(s.r)>0);
+  if(filled.length<ex.sets||filled.length<2)return null;
+  const w0=parseFloat(filled[0].w)||0;
+  const r0=parseFloat(filled[0].r)||0;
+  const allSame=filled.every(s=>
+    (parseFloat(s.w)||0)===w0&&(parseFloat(s.r)||0)===r0
+  );
+  if(!allSame)return null;
+  const logs=store.logs;
+  // 1. w0 должен быть максимальным весом за всё время
+  let maxWBefore=0;
+  Object.keys(logs).filter(d=>d<dateStr).forEach(d=>{
+    const e=logs[d]&&logs[d][exId];
+    if(!e||!e.done)return;
+    (e.sets||[]).forEach(s=>{
+      if(!s)return;
+      const w=parseFloat(s.w)||0;
+      if(w>maxWBefore)maxWBefore=w;
+    });
+  });
+  if(w0<maxWBefore)return null;
+  // 2. Не должно быть прошлой сессии (с тем же весом и всеми подходами),
+  //    где минимум повторов уже был >= r0
+  let maxSteadyBefore=0;
+  Object.keys(logs).filter(d=>d<dateStr).forEach(d=>{
+    const e=logs[d]&&logs[d][exId];
+    if(!e||!e.done)return;
+    const wSets=(e.sets||[]).filter(s=>s&&(parseFloat(s.w)||0)===w0&&parseFloat(s.r)>0);
+    if(wSets.length<ex.sets)return;
+    const minR=Math.min(...wSets.map(s=>parseFloat(s.r)||0));
+    if(minR>maxSteadyBefore)maxSteadyBefore=minR;
+  });
+  if(r0<=maxSteadyBefore)return null;
+  return {count:filled.length,w:w0,r:r0};
+}
+function computeProgressHtml(exId,log,dateStr){
+  if(!log||!log.sets)return '';
+  const last=getLastEntryBefore(exId,dateStr);
+  if(!last)return '';
+  if(!log.sets.some(s=>s&&parseFloat(s.r)>0))return '';
+  const t=getExerciseStats(log),p=getExerciseStats(last);
+  const dW=Math.round((t.maxW-p.maxW)*100)/100;
+  const dR=Math.round(t.maxR-p.maxR);
+  const parts=[];
+  if(dW>0)parts.push(`<span class="up">+${dW}кг</span>`);
+  else if(dW<0)parts.push(`<span class="down">${dW}кг</span>`);
+  if(dR>0)parts.push(`<span class="up">+${dR} повт</span>`);
+  else if(dR<0)parts.push(`<span class="down">${dR} повт</span>`);
+  if(!parts.length)return '';
+  return `<div class="progress-line">${parts.join(' · ')}</div>`;
+}
+function renderDayMetaHtml(dayLog,isToday){
+  const ton=dayTonnage(dayLog);
+  let html='';
+  if(!isToday)html+=`<button class="mini-btn" onclick="goToday()">Сегодня</button>`;
+  if(ton.sets>0)html+=`<span>${ton.tonnage} кг · ${ton.sets} подх.</span>`;
+  return html;
+}
+function updateExerciseUI(exId){
+  const el=document.querySelector(`.ex[data-ex-id="${exId}"]`);
+  if(!el)return;
+  const dateStr=fmt(currentDate);
+  const log=store.logs[dateStr]?.[exId];
+  const progressEl=el.querySelector('[data-progress]');
+  const prEl=el.querySelector('[data-pr]');
+  const steadyEl=el.querySelector('[data-steady]');
+  if(progressEl)progressEl.innerHTML=computeProgressHtml(exId,log,dateStr);
+  if(prEl){
+    const prHtml=getPRBadgesHtml(exId,log,dateStr);
+    prEl.innerHTML=prHtml?`<div class="pr-row">${prHtml}</div>`:'';
+  }
+  if(steadyEl){
+    const steady=checkSteadyAllSets(exId,log,dateStr);
+    steadyEl.innerHTML=steady?`<div class="pr-row"><span class="pr-badge pr-max" title="Все подходы одинаковые — пора увеличить вес или повторы">🎯 ${steady.count}×${steady.r}</span></div>`:'';
+  }
+}
+function updateDayMeta(){
+  const el=document.getElementById('day-meta');
+  if(!el)return;
+  const dateStr=fmt(currentDate);
+  const dayLog=store.logs[dateStr]||{};
+  const isToday=dateStr===fmt(todayDate());
+  const html=renderDayMetaHtml(dayLog,isToday);
+  el.innerHTML=html;
+  el.style.display=html?'flex':'none';
+}
+function getLastEntry(exId){
+  const logs=store.logs;
+  const dates=Object.keys(logs).sort().reverse();
+  for(const d of dates){
+    const e=logs[d]&&logs[d][exId];
+    if(e&&e.done)return {date:d,...e};
+  }
+  return null;
+}
+function formatSets(log){
+  if(!log) return 'нет данных';
+  if(!log.sets || !log.sets.length) return 'нет данных';
+  const parts=log.sets.filter(s=>s&&(s.w||s.r));
+  if(!parts.length) return 'нет данных';
+  const groups=[];
+  parts.forEach(s=>{
+    const w=String(s.w||'?').trim();
+    const r=String(s.r||'?').trim();
+    const last=groups[groups.length-1];
+    if(last&&last.w===w){last.reps.push(r)}
+    else{groups.push({w,reps:[r]})}
+  });
+  return groups.map(g=>`${g.w}кг(${g.reps.join('+')})`).join('+');
+}
+function checkTonnagePR(dateStr){
+  const logs=store.logs;
+  const t=dayTonnage(logs[dateStr]||{}).tonnage;
+  if(t<=0)return null;
+  let maxBefore=0;
+  Object.keys(logs).filter(d=>d<dateStr).forEach(d=>{
+    const dt=dayTonnage(logs[d]||{}).tonnage;
+    if(dt>maxBefore)maxBefore=dt;
+  });
+  if(maxBefore>0 && t<=maxBefore)return null;
+  return {tonnage:t,prev:maxBefore};
+}
+function renderDayTonnageHtml(dateStr,dayLog){
+  const {tonnage,sets}=dayTonnage(dayLog);
+  if(tonnage===0&&sets===0)return '';
+  const pr=checkTonnagePR(dateStr);
+  let html='<div class="day-tonnage">';
+  html+=`💯 ${tonnage>0?tonnage+' кг · ':''}${sets} подх.`;
+  if(pr){
+    const title=pr.prev>0?`Рекорд по дневному тоннажу (предыдущий: ${pr.prev} кг)`:'Первый рекорд тоннажа';
+    html+=` <span class="pr-badge pr-tonnage" title="${title}">🏆 рекорд</span>`;
+  }
+  html+='</div>';
+  return html;
+}
+function dayTonnage(dayLog){
+  let tonnage=0,sets=0;
+  Object.entries(dayLog).forEach(([id,e])=>{
+    if(id.startsWith('_')||!e||!e.done)return;
+    (e.sets||[]).forEach(s=>{
+      if(!s)return;
+      const w=parseFloat(s.w)||0,r=parseFloat(s.r)||0;
+      if(r>0){sets++;if(w>0)tonnage+=w*r;}
+    });
+  });
+  return {tonnage:Math.round(tonnage),sets};
+}
+
+let currentDate=todayDate();
+let view='today';
+let selectedDate=todayDate();
+let calendarMonth=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
+let statsExerciseId=null;
+let searchQuery='';
+
+/* ---------- Training view ---------- */
+function renderExercise(exId,log){
+  const ex=EX[exId];
+  if(!ex)return '';
+  const dateStr=fmt(currentDate);
+  const done=log?.done?'done':'',checked=log?.done?'checked':'';
+  const last=getLastEntryBefore(exId,dateStr);
+  const head=`<div class="ex-head">
+      <input type="checkbox" ${checked} onchange="toggleDone('${exId}',this.checked)">
+      <strong>${escapeHtml(ex.name)}</strong>
+      <span class="meta">${ex.app?'по приложению':ex.sets+'×'+getTargetReps(exId,dateStr)}</span>
+    </div>`;
+  if(ex.app){
+    return `<div class="ex ${done}">
+      ${head}
+      <div class="ex-app"><span>${log?.done?'✓ Подтверждено':'Отметь галочку, если сделал'}</span></div>
+      <div class="ex-last">Последний раз: ${last?last.date:'нет данных'}</div>
+    </div>`;
+  }
+  const sets=ex.sets,logSets=log?.sets||[];
+  let rows='';
+  for(let i=0;i<sets;i++){
+    const s=logSets[i]||{};
+    rows+=`<div class="set-row">
+      <span class="set-num">${i+1}</span>
+      <input type="text" inputmode="decimal" placeholder="вес (кг)" value="${s.w||''}" oninput="onSetInput('${exId}',${i},'w',this)">
+      <input type="text" inputmode="numeric" placeholder="повторения" value="${s.r||''}" oninput="onSetInput('${exId}',${i},'r',this)">
+    </div>`;
+  }
+  const progressHtml=computeProgressHtml(exId,log,dateStr);
+  const prHtml=getPRBadgesHtml(exId,log,dateStr);
+  const steady=checkSteadyAllSets(exId,log,dateStr);
+  return `<div class="ex ${done}" data-ex-id="${exId}">
+    ${head}
+    <div class="ex-last">Прошлый раз: ${formatSets(last)}</div>
+    <div data-progress>${progressHtml}</div>
+    <div data-pr>${prHtml?`<div class="pr-row">${prHtml}</div>`:''}</div>
+    <div data-steady>${steady?`<div class="pr-row"><span class="pr-badge pr-max" title="Все подходы одинаковые — пора увеличить вес или повторы">🎯 ${steady.count}×${steady.r}</span></div>`:''}</div>
+    ${rows}
+  </div>`;
+}
+function renderTabs(){
+  return `<div class="tabs">
+    <button class="${view==='today'?'active':''}" onclick="setView('today')">Тренировка</button>
+    <button class="${view==='history'?'active':''}" onclick="setView('history')">История</button>
+    <button class="${view==='custom'?'active':''}" onclick="setView('custom')">Свои</button>
+    <button class="${view==='search'?'active':''}" onclick="setView('search')">Поиск</button>
+    <button class="${view==='stats'||view==='stats-ex'?'active':''}" onclick="setView('stats')">Стата</button>
+  </div>`;
+}
+function renderToday(){
+  const dow=currentDate.getDay();
+  const plan=getPlan(currentDate);
+  const dayLog=store.logs[fmt(currentDate)]||{};
+  const skipped=!!dayLog._skip;
+  const isToday=fmt(currentDate)===fmt(todayDate());
+  const ton=dayTonnage(dayLog);
+  let html=renderTabs();
+  html+=`<div class="header">
+    <button onclick="shiftDay(-1)">←</button>
+    <span>${DAYS[dow]}, ${fmt(currentDate)}</span>
+    <button onclick="shiftDay(1)">→</button>
+  </div>`;
+  if(plan.info.length)html+=`<div class="info">${plan.info.join(' · ')}</div>`;
+  const dayMetaHtml=renderDayMetaHtml(dayLog,isToday);
+html+=`<div id="day-meta" class="meta-row" style="display:${dayMetaHtml?'flex':'none'}">${dayMetaHtml}</div>`;
+  if(skipped){
+    html+=`<div class="skip-banner">
+      <span>🚫 Пропуск: ${escapeHtml(dayLog._skip.reason||'без причины')}</span>
+      <button class="mini-btn" onclick="unskipDay()">Отменить</button>
+    </div>`;
+  }else{
+    html+=`<div class="skip-row"><button class="mini-btn" onclick="showSkipUI()">Пропустить день</button></div>`;
+    html+=`<div id="skipForm" style="display:none" class="ex">
+      <strong style="font-size:13px">Причина:</strong>
+      <div class="skip-reasons">
+        <button onclick="quickSkip('болезнь')">болезнь</button>
+        <button onclick="quickSkip('нет времени')">нет времени</button>
+        <button onclick="quickSkip('отдых')">отдых</button>
+        <button onclick="quickSkip('травма')">травма</button>
+        <button onclick="customSkip()">другое…</button>
+      </div>
+    </div>`;
+  }
+  if(!skipped){
+    if(plan.main.length){html+=`<h2>Основные</h2>`;plan.main.forEach(id=>html+=renderExercise(id,dayLog[id]))}
+    html+=`<h2>Потом</h2>`;
+    plan.after.forEach(id=>html+=renderExercise(id,dayLog[id]));
+  }
+  html+=`<h2>Заметка</h2>
+  <textarea class="form-input" rows="2" placeholder="Как прошло, самочувствие…" oninput="setDayNote(this.value)">${escapeHtml(dayLog._note||'')}</textarea>`;
+  document.getElementById('app').innerHTML=html;
+}
+
+/* ---------- History view ---------- */
+function getHistoryStartDate(){
+  const logs=store.logs;
+  const dates=Object.keys(logs).filter(d=>{
+    const day=logs[d];
+    if(!day||!Object.keys(day).length)return false;
+    if(day._skip)return true;
+    return Object.entries(day).some(([k,v])=>!k.startsWith('_')&&v&&v.done);
+  }).sort();
+  return dates[0]||null;
+}
+function getDayStatus(dateStr){
+  const date=new Date(dateStr+'T00:00:00');
+  const today=todayDate();
+  const todayStr=fmt(today);
+  const isFuture=date>today;
+  const isToday=dateStr===todayStr;
+  if(isFuture)return {state:'future',isToday:false,isFuture:true,date};
+  const start=getHistoryStartDate();
+  if(!isToday && (!start || dateStr < start)){
+    return {state:'before',isToday:false,isFuture:false,date};
+  }
+  const dayLog=store.logs[dateStr]||{};
+  if(dayLog._skip)return {state:'skip',reason:dayLog._skip.reason||'',isToday,isFuture:false,dayLog,date};
+  const plan=getPlan(date);
+  const expected=[...plan.main,...plan.after].filter(id=>EX[id]);
+  const doneSet=new Set();
+  Object.entries(dayLog).forEach(([id,e])=>{
+    if(id.startsWith('_'))return;
+    if(e&&e.done&&EX[id])doneSet.add(id);
+  });
+  const doneInPlan=expected.filter(id=>doneSet.has(id));
+  const missed=expected.filter(id=>!doneSet.has(id));
+  const offPlan=[...doneSet].filter(id=>!expected.includes(id));
+  let state;
+  if(expected.length===0){state=offPlan.length>0?'offplan':'empty';}
+  else if(doneInPlan.length===expected.length){state='done';}
+  else if(doneInPlan.length>0){state='part';}
+  else{state=isToday?'today-none':'full-miss';}
+  if(isToday&&state==='part')state='today-part';
+  return {state,isToday,isFuture:false,dayLog,date,plan,expected,doneInPlan,missed,offPlan};
+}
+function renderDayCard(dateStr){
+  const status=getDayStatus(dateStr);
+  const d=new Date(dateStr+'T00:00:00');
+  const header=`<div class="day-card-header">
+    <span>${DAYS[d.getDay()]}, ${dateStr}</span>
+    ${status.state==='future'||status.state==='before'
+      ?''
+      :`<button class="mini-btn" onclick="editDay('${dateStr}')">✎ Редактировать</button>`}
+  </div>`;
+  if(status.state==='before')
+    return `<div class="day-card">${header}<div class="ex" style="color:#666">До начала ведения истории</div></div>`;
+  if(status.state==='future'){
+    const plan=getPlan(d);
+    const expected=[...plan.main,...plan.after].filter(id=>EX[id]);
+    return `<div class="day-card">${header}
+      <div class="ex" style="color:#888">Будущий день · запланировано ${expected.length} упр.</div>
+    </div>`;
+  }
+  const dayLog=status.dayLog||{};
+  let body='';
+  if(status.state==='skip'){
+    body+=`<div class="skip-banner">
+      <span>🚫 Пропуск: ${escapeHtml(status.reason||'без причины')}</span>
+      <button class="mini-btn" onclick="unskipHistoryDay('${dateStr}')">Отменить</button>
+    </div>`;
+    return `<div class="day-card">${header}${body}</div>`;
+  }
+  body+=renderDayTonnageHtml(dateStr,dayLog);
+  if(dayLog._note){
+    body+=`<div class="ex" style="color:#aaa;font-size:13px;white-space:pre-wrap">📝 ${escapeHtml(dayLog._note)}</div>`;
+  }
+  const plan=status.plan||getPlan(d);
+  if(plan.info&&plan.info.length){
+    body+=`<div class="info">${plan.info.join(' · ')}</div>`;
+  }
+  const expected=status.expected||[];
+  const missed=status.missed||[];
+  const doneInPlan=status.doneInPlan||[];
+  const offPlan=status.offPlan||[];
+  if(expected.length===0&&offPlan.length===0&&!dayLog._note){
+    body+=`<div class="ex" style="color:#666">Нет запланированных упражнений и активности</div>`;
+  }
+  if(doneInPlan.length){
+    body+=`<h2>Сделано (${doneInPlan.length}/${expected.length})</h2>`;
+    doneInPlan.forEach(id=>{
+      const ex=EX[id];
+      const val=ex.app?'✓':formatSets(dayLog[id]);
+      const badges=getExerciseBadges(id,dayLog[id],dateStr);
+      body+=`<div class="ex">
+        <div class="hist-row">
+          <strong style="color:#9f9;cursor:pointer" onclick="openExerciseStats('${id}')">✓ ${escapeHtml(ex.name)}</strong>
+          <span class="ex-last" style="margin-left:auto">${val}</span>
+          <button class="del-btn" title="Удалить запись" onclick="deleteHistoryEntry('${id}','${dateStr}')">✕</button>
+        </div>
+        ${badges?`<div class="pr-row" style="margin-top:4px;margin-bottom:0">${badges}</div>`:''}
+      </div>`;
+    });
+  }
+  if(missed.length){
+    const isT=status.isToday;
+    body+=`<h2>${isT?'Не сделано (пока)':'Пропущено'} (${missed.length})</h2>`;
+    missed.forEach(id=>{
+      const ex=EX[id];
+      body+=`<div class="ex" style="color:${isT?'#888':'#c66'}"><strong>${isT?'○':'✗'} ${escapeHtml(ex.name)}</strong></div>`;
+    });
+  }
+  if(offPlan.length){
+    body+=`<h2>Вне плана (${offPlan.length})</h2>`;
+    offPlan.forEach(id=>{
+      const ex=EX[id];
+      const val=ex.app?'✓':formatSets(dayLog[id]);
+      const badges=getExerciseBadges(id,dayLog[id],dateStr);
+      body+=`<div class="ex">
+        <div class="hist-row">
+          <strong>+ ${escapeHtml(ex.name)}</strong>
+          <span class="ex-last" style="margin-left:auto">${val}</span>
+          <button class="del-btn" title="Удалить запись" onclick="deleteHistoryEntry('${id}','${dateStr}')">✕</button>
+        </div>
+        ${badges?`<div class="pr-row" style="margin-top:4px;margin-bottom:0">${badges}</div>`:''}
+      </div>`;
+    });
+  }
+  return `<div class="day-card">${header}${body}</div>`;
+}
+function renderHistory(){
+  const y=calendarMonth.getFullYear();
+  const m=calendarMonth.getMonth();
+  let html=renderTabs();
+  html+=`<div class="header">
+    <span>История</span>
+    <button class="mini-btn" onclick="goHistoryToday()">Сегодня</button>
+    <span><i class="lg-dot" style="background:#4a3a1a"></i>🔩 рекорд веса</span>
+    <span><i class="lg-dot" style="background:#1a3a4a"></i>💪 рекорд повторов</span>
+  </div>`;
+  html+=`<div class="cal-nav">
+    <button onclick="shiftMonth(-1)">‹</button>
+    <span>${MONTH_NAMES[m]} ${y}</span>
+    <button onclick="shiftMonth(1)">›</button>
+  </div>`;
+  html+=`<div class="cal-grid">`;
+  ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(d=>{html+=`<div class="cal-dow">${d}</div>`});
+  const first=new Date(y,m,1);
+  const offset=(first.getDay()+6)%7;
+  for(let i=0;i<offset;i++)html+=`<div class="cal-day empty-cell"></div>`;
+  const dim=new Date(y,m+1,0).getDate();
+  const selStr=fmt(selectedDate);
+for(let day=1;day<=dim;day++){
+  const dateStr=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const status=getDayStatus(dateStr);
+  const classes=['cal-day','state-'+status.state];
+  if(status.isToday)classes.push('today');
+  if(dateStr===selStr)classes.push('selected');
+  const clickable=status.isToday||(status.state!=='future'&&status.state!=='before');
+  if(clickable)classes.push('clickable');
+  const onclick=clickable?`onclick="selectDate('${dateStr}')"`:'';
+  const isSkip=status.state==='skip';
+  const num=isSkip?'🚫':day;
+
+  // 🏆 тоннаж — левый верхний угол
+  let tonHtml='';
+  if(!isSkip && status.state!=='future' && status.state!=='before'){
+    const tonPR=checkTonnagePR(dateStr);
+    if(tonPR){
+      const title=tonPR.prev>0?`Рекорд тоннажа: ${tonPR.tonnage} кг (прошлый: ${tonPR.prev} кг)`:`Первый рекорд тоннажа: ${tonPR.tonnage} кг`;
+      tonHtml=`<span class="cal-tonnage-pr" title="${title}">🏆</span>`;
+    }
+  }
+
+  // 🔩 / 💪 — снизу
+  let prsHtml='';
+  if(!isSkip && (status.state==='done'||status.state==='part'||status.state==='offplan'||status.state==='today-part'||status.state==='today-none'||status.state==='full-miss')){
+    const prs=getDayPRCounts(dateStr);
+    const steadyCount=getDaySteadyCount(dateStr);
+    if(prs.weight||prs.reps||steadyCount){
+      prsHtml='<div class="cal-day-prs">';
+      if(prs.weight)prsHtml+=`<span class="cal-pr-weight" title="Рекорды по весу">🔩${prs.weight>1?prs.weight:''}</span>`;
+      if(prs.reps)prsHtml+=`<span class="cal-pr-reps" title="Рекорды по повторениям">💪${prs.reps>1?prs.reps:''}</span>`;
+      if(steadyCount)prsHtml+=`<span class="cal-pr-steady" title="Достигнут максимум на максимальном весе">🎯${steadyCount>1?steadyCount:''}</span>`;
+      prsHtml+='</div>';
+    }
+  }
+  html+=`<div class="${classes.join(' ')}" ${onclick}>${tonHtml}<span class="cal-day-num">${num}</span>${prsHtml}</div>`;
+}
+  html+=`</div>`;
+  html+=`<div class="legend">
+    <span><i class="lg-dot" style="background:#1e4d1e"></i>сделано</span>
+    <span><i class="lg-dot" style="background:#4a2020"></i>частично</span>
+    <span><i class="lg-dot" style="background:#8a1a1a"></i>пропуск</span>
+    <span><i class="lg-dot" style="background:#333"></i>отдых</span>
+    <span><i class="lg-dot" style="background:#1a1a1a;border:1px solid #333"></i>пусто</span>
+    <span><i class="lg-dot" style="background:transparent;border:1px solid #e8c44d"></i>сегодня</span>
+  </div>`;
+  html+=renderDayCard(selStr);
+  document.getElementById('app').innerHTML=html;
+}
+function selectDate(dateStr){
+  selectedDate=new Date(dateStr+'T00:00:00');
+  render();
+}
+function shiftMonth(delta){
+  calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+delta,1);
+  render();
+}
+function goHistoryToday(){
+  selectedDate=todayDate();
+  calendarMonth=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
+  render();
+}
+function editDay(dateStr){
+  currentDate=new Date(dateStr+'T00:00:00');
+  currentDate.setHours(0,0,0,0);
+  view='today';
+  render();
+}
+function unskipHistoryDay(dateStr){
+  if(!confirm('Отменить пропуск этого дня?'))return;
+  const logs=store.logs;
+  if(logs[dateStr]&&logs[dateStr]._skip){
+    delete logs[dateStr]._skip;
+    if(!Object.keys(logs[dateStr]).length)delete logs[dateStr];
+    store.logs=logs;
+  }
+  render();
+}
+
+/* ---------- Search view ---------- */
+function renderSearch(){
+  let html=renderTabs();
+  html+=`<div class="header"><span>Поиск упражнения</span></div>`;
+  html+=`<input type="text" id="searchInput" class="form-input" placeholder="Начните вводить название…" value="${escapeHtml(searchQuery)}" oninput="setSearchQuery(this.value)">`;
+  html+=`<div id="searchResults"></div>`;
+  document.getElementById('app').innerHTML=html;
+  renderSearchResults();
+}
+function renderSearchResults(){
+  const el=document.getElementById('searchResults');
+  if(!el)return;
+  const q=searchQuery.toLowerCase().trim();
+  if(!q){
+    el.innerHTML=`<div class="ex" style="color:#777">Введите название упражнения — покажу историю и рекорды</div>`;
+    return;
+  }
+  const matches=Object.entries(EX).filter(([id,ex])=>ex.name.toLowerCase().includes(q));
+  if(!matches.length){
+    el.innerHTML=`<div class="ex" style="color:#777">Ничего не найдено</div>`;
+    return;
+  }
+  let html='';
+  matches.forEach(([id,ex])=>{
+    const logs=store.logs;
+    const entries=[];
+    Object.keys(logs).sort().reverse().forEach(d=>{
+      const e=logs[d]&&logs[d][id];
+      if(e&&e.done)entries.push({date:d,...e});
+    });
+    html+=`<div class="ex ex-link" onclick="openExerciseStats('${id}')"><strong>${escapeHtml(ex.name)}</strong>`;
+    if(!entries.length){
+      html+=`<div class="ex-last">нет записей</div>`;
+    }else{
+      html+=`<div class="ex-last" style="color:#aaa">Записей: ${entries.length} · последняя: ${entries[0].date}</div>`;
+      entries.slice(0,20).forEach(e=>{
+        const val=ex.app?'✓':formatSets(e);
+        const badges=getExerciseBadges(id,e,e.date);
+          html+=`<div class="hist-row">
+          <span class="ex-last">${e.date}: ${val}</span>
+          ${badges?`<span>${badges}</span>`:''}
+        </div>`;
+      });
+      if(entries.length>20)html+=`<div class="ex-last" style="color:#666">… и ещё ${entries.length-20}</div>`;
+    }
+    html+=`</div>`;
+  });
+  el.innerHTML=html;
+}
+function setSearchQuery(v){
+  searchQuery=v;
+  renderSearchResults();
+}
+
+/* ---------- Custom view ---------- */
+function renderCustom(){
+  const list=customStore.list.filter(c=>!c.deleted);
+  let html=renderTabs();
+  html+=`<div class="header"><span>Свои упражнения</span></div>`;
+  if(!list.length){
+    html+=`<div class="ex" style="color:#777">Пока нет. Добавьте ниже.</div>`;
+  }else{
+    list.forEach(c=>{
+      const sd=customStartDate(c);
+      const sched=c.schedule.type==='days'
+        ?WEEK_ORDER.filter(d=>c.schedule.days.includes(d)).map(d=>DAYS[d]).join(', ')+` (с ${sd})`
+        :`раз в ${c.schedule.interval} дн. (с ${sd})`;
+      const type=c.app?'по приложению':`${c.sets}×${c.reps}`;
+      html+=`<div class="ex">
+        <div class="ex-head">
+          <strong>${escapeHtml(c.name)}</strong>
+          <span class="meta">${type}</span>
+          <button class="del-btn" onclick="deleteCustom('${c.id}')">✕</button>
+        </div>
+        <div class="ex-last">${sched}</div>
+      </div>`;
+    });
+  }
+  html+=`<h2>Добавить</h2>
+  <div class="ex">
+    <input type="text" id="cName" placeholder="Название упражнения" class="form-input">
+    <div class="form-row">
+      <label><input type="radio" name="cType" value="sets" checked onchange="updateCustomForm()"> Подходы</label>
+      <label><input type="radio" name="cType" value="app" onchange="updateCustomForm()"> По приложению</label>
+    </div>
+    <div id="cSetsBlock">
+      <input type="number" id="cSets" placeholder="Количество подходов" min="1" value="4" class="form-input">
+      <input type="text" id="cReps" placeholder="Повторения (напр. 12-15)" value="12-15" class="form-input">
+    </div>
+    <div class="form-row">
+      <label><input type="radio" name="cSched" value="days" checked onchange="updateCustomForm()"> Определённые дни</label>
+      <label><input type="radio" name="cSched" value="interval" onchange="updateCustomForm()"> Раз в N дней</label>
+    </div>
+    <div id="cDaysBlock">${WEEK_ORDER.map(d=>`<label class="day-chk"><input type="checkbox" class="cDay" value="${d}"> ${DAYS[d]}</label>`).join('')}</div>
+    <div id="cIntervalBlock" style="display:none">
+      <input type="number" id="cInterval" placeholder="Раз в N дней" min="1" value="3" class="form-input">
+    </div>
+    <div style="font-size:13px;color:#ccc;margin:4px 0 4px">Начинать отсчёт с:</div>
+    <input type="date" id="cStart" value="${fmt(new Date())}" class="form-input">
+    <button onclick="addCustom()" class="add-btn">Добавить</button>
+  </div>`;
+  document.getElementById('app').innerHTML=html;
+  updateCustomForm();
+}
+function updateCustomForm(){
+  const type=document.querySelector('input[name="cType"]:checked')?.value;
+  document.getElementById('cSetsBlock').style.display=type==='app'?'none':'block';
+  const sched=document.querySelector('input[name="cSched"]:checked')?.value;
+  document.getElementById('cDaysBlock').style.display=sched==='days'?'block':'none';
+  document.getElementById('cIntervalBlock').style.display=sched==='interval'?'block':'none';
+}
+function addCustom(){
+  const name=document.getElementById('cName').value.trim();
+  if(!name){alert('Введите название');return}
+  const app=document.querySelector('input[name="cType"]:checked').value==='app';
+  const sets=parseInt(document.getElementById('cSets').value)||4;
+  const reps=document.getElementById('cReps').value.trim()||'12-15';
+  const schedType=document.querySelector('input[name="cSched"]:checked').value;
+  const startDate=document.getElementById('cStart').value||fmt(new Date());
+  let schedule;
+  if(schedType==='days'){
+    const days=[...document.querySelectorAll('.cDay:checked')].map(el=>parseInt(el.value));
+    if(!days.length){alert('Выберите хотя бы один день');return}
+    schedule={type:'days',days,startDate};
+  }else{
+    const interval=parseInt(document.getElementById('cInterval').value)||3;
+    schedule={type:'interval',interval,startDate};
+  }
+  const list=customStore.list;
+  list.push({id:'c'+Date.now().toString(36),name,app,sets,reps,schedule});
+  customStore.list=list;
+  syncCustomEx();
+  render();
+}
+function deleteCustom(id){
+  if(!confirm('Удалить упражнение?'))return;
+  customStore.list=customStore.list.map(c=>c.id===id?{...c,deleted:true}:c);
+  render();
+}
+
+/* ---------- Common ---------- */
+function deleteHistoryEntry(exId,date){
+  const name=EX[exId]?.name||exId;
+  if(!confirm(`Удалить запись «${name}» за ${date}?`))return;
+  const logs=store.logs;
+  if(logs[date]&&logs[date][exId]){
+    delete logs[date][exId];
+    const rest=Object.keys(logs[date]).filter(k=>!k.startsWith('_'));
+    if(!rest.length&&!logs[date]._skip&&!logs[date]._note)delete logs[date];
+    store.logs=logs;
+  }
+  render();
+}
+function showSkipUI(){
+  const el=document.getElementById('skipForm');
+  if(!el)return;
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+function quickSkip(reason){
+  const d=fmt(currentDate),logs=store.logs;
+  logs[d]=logs[d]||{};
+  logs[d]._skip={reason};
+  store.logs=logs;
+  render();
+}
+function customSkip(){
+  const reason=prompt('Причина пропуска:','');
+  if(reason===null)return;
+  quickSkip(reason.trim()||'без причины');
+}
+function unskipDay(){
+  const d=fmt(currentDate),logs=store.logs;
+  if(logs[d]&&logs[d]._skip){
+    delete logs[d]._skip;
+    const rest=Object.keys(logs[d]);
+    if(!rest.length)delete logs[d];
+    store.logs=logs;
+  }
+  render();
+}
+function goToday(){currentDate=todayDate();render()}
+function setDayNote(value){
+  const d=fmt(currentDate),logs=store.logs;
+  logs[d]=logs[d]||{};
+  if(value)logs[d]._note=value;
+  else delete logs[d]._note;
+  if(!Object.keys(logs[d]).length)delete logs[d];
+  store.logs=logs;
+}
+/* ---------- Stats ---------- */
+function weekStart(d){
+  const x=new Date(d);
+  x.setHours(0,0,0,0);
+  const dow=(x.getDay()+6)%7;
+  x.setDate(x.getDate()-dow);
+  return x;
+}
+function getWeeklyVolume(weeksBack=8){
+  const logs=store.logs;
+  const today=todayDate();
+  const curWeek=weekStart(today);
+  const weeks=[];
+  for(let i=weeksBack-1;i>=0;i--){
+    const start=new Date(curWeek);
+    start.setDate(start.getDate()-i*7);
+    weeks.push(start);
+  }
+  return weeks.map(start=>{
+    let tonnage=0,sets=0;
+    const startStr=fmt(start);
+    const end=new Date(start);end.setDate(end.getDate()+7);
+    const endStr=fmt(end);
+    Object.keys(logs).forEach(d=>{
+      if(d>=startStr && d<endStr){
+        const t=dayTonnage(logs[d]);
+        tonnage+=t.tonnage;
+        sets+=t.sets;
+      }
+    });
+    const label=String(start.getDate()).padStart(2,'0')+'.'+String(start.getMonth()+1).padStart(2,'0');
+    return {
+      label,
+      value:tonnage,
+      title:`Неделя с ${label}: ${tonnage} кг · ${sets} подх.`,
+    };
+  });
+}
+function getStreak(){
+  const today=todayDate();
+  const todayStr=fmt(today);
+  const start=getHistoryStartDate();
+  if(!start)return {current:0,record:0};
+  // текущий стрик
+  let current=0;
+  let d=new Date(today);
+  let dStr=fmt(d);
+  while(dStr>=start){
+    const st=getDayStatus(dStr);
+    if(st.state==='before')break;
+    if(st.state==='skip'||st.state==='full-miss')break;
+    if(st.state==='done'||st.state==='part'||st.state==='today-part')current++;
+    // empty / offplan / today-none не прерывают
+    d.setDate(d.getDate()-1);
+    dStr=fmt(d);
+  }
+  // рекорд
+  let record=0,cur=0;
+  let curD=new Date(start+'T00:00:00');
+  let curStr=fmt(curD);
+  while(curStr<=todayStr){
+    const st=getDayStatus(curStr);
+    if(st.state==='done'||st.state==='part'||st.state==='today-part'){
+      cur++;
+      if(cur>record)record=cur;
+    }else if(st.state==='skip'||st.state==='full-miss'){
+      cur=0;
+    }
+    curD.setDate(curD.getDate()+1);
+    curStr=fmt(curD);
+  }
+  return {current,record};
+}
+function getMonthlyCompletion(){
+  const today=todayDate();
+  const y=today.getFullYear(),m=today.getMonth();
+  const dim=today.getDate();
+  let total=0,done=0;
+  for(let day=1;day<=dim;day++){
+    const dStr=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const st=getDayStatus(dStr);
+    if(st.state==='before'||st.state==='skip')continue;
+    const plan=st.plan||getPlan(new Date(dStr+'T00:00:00'));
+    const expected=[...plan.main,...plan.after].filter(id=>EX[id]);
+    total+=expected.length;
+    if(st.doneInPlan)done+=st.doneInPlan.length;
+  }
+  return {total,done,pct:total>0?Math.round(done/total*100):0};
+}
+function countExercisePRs(exId){
+  const logs=store.logs;
+  let w=0,r=0,s=0;
+  if(!EX[exId]||EX[exId].app)return {w,r,s};
+  Object.keys(logs).sort().forEach(d=>{
+    const e=logs[d][exId];
+    if(!e||!e.done)return;
+    const pr=checkPRs(exId,e,d);
+    if(pr.weightPR)w++;
+    if(pr.repsPR)r++;
+    if(checkSteadyAllSets(exId,e,d))s++;
+  });
+  return {w,r,s};
+}
+function renderBars(items,opts={}){
+  if(!items.length)return `<div class="ex" style="color:#666">Нет данных</div>`;
+  const max=Math.max(...items.map(i=>i.value),1);
+  const color=opts.color||'linear-gradient(180deg,#4a8,#2a5)';
+  let html='<div class="bars">';
+  items.forEach(it=>{
+    const h=Math.max(2,(it.value/max)*120);
+    const label=it.label||'';
+    const value=it.value>0?(opts.fmt?opts.fmt(it.value):it.value):'';
+    const title=it.title||`${label}: ${it.value}`;
+    html+=`<div class="bar-col" title="${escapeHtml(title)}">
+      <div class="bar-val">${value}</div>
+      <div class="bar" style="height:${h}px;background:${color}"></div>
+      <div class="bar-label">${label}</div>
+    </div>`;
+  });
+  html+='</div>';
+  return html;
+}
+function renderStats(){
+  let html=renderTabs();
+  html+=`<div class="header"><span>Статистика</span></div>`;
+  const streak=getStreak();
+  const monthly=getMonthlyCompletion();
+  const weekly=getWeeklyVolume(8);
+  const totalTonnage=weekly.reduce((s,w)=>s+w.value,0);
+  html+=`<div class="stats-summary">
+    <div class="stat-card"><div class="stat-val">${streak.current}</div><div class="stat-lbl">дней подряд</div></div>
+    <div class="stat-card"><div class="stat-val">${streak.record}</div><div class="stat-lbl">рекорд стрика</div></div>
+    <div class="stat-card"><div class="stat-val">${monthly.pct}%</div><div class="stat-lbl">за месяц (${monthly.done}/${monthly.total})</div></div>
+    <div class="stat-card"><div class="stat-val">${totalTonnage} кг</div><div class="stat-lbl">тоннаж за 8 нед.</div></div>
+  </div>`;
+  html+=`<h2>Объём по неделям</h2>`;
+  html+=renderBars(weekly,{fmt:v=>v>999?Math.round(v/100)/10+'к':v});
+  html+=`<h2>Упражнения</h2>`;
+  const logs=store.logs;
+  const exStats=Object.entries(EX).map(([id,ex])=>{
+    let sessions=0,totalSets=0;
+    Object.keys(logs).forEach(d=>{
+      const e=logs[d][id];
+      if(e&&e.done){
+        sessions++;
+        totalSets+=(e.sets||[]).filter(s=>s&&parseFloat(s.r)>0).length;
+      }
+    });
+    return {id,ex,sessions,totalSets};
+  }).filter(x=>x.sessions>0).sort((a,b)=>b.sessions-a.sessions);
+  if(!exStats.length){
+    html+=`<div class="ex" style="color:#666">Пока нет тренировок</div>`;
+  }else{
+    exStats.forEach(s=>{
+      html+=`<div class="ex ex-link" onclick="openExerciseStats('${s.id}')">
+        <div class="hist-row">
+          <strong>${escapeHtml(s.ex.name)}</strong>
+          <span class="ex-last" style="margin-left:auto">${s.sessions} сессий · ${s.totalSets} подх.</span>
+          <span style="color:#666">›</span>
+        </div>
+      </div>`;
+    });
+  }
+  html+=renderDataSection();
+  document.getElementById('app').innerHTML=html;
+}
+function openExerciseStats(exId){
+  statsExerciseId=exId;
+  view='stats-ex';
+  render();
+}
+function renderExerciseStats(){
+  const exId=statsExerciseId;
+  const ex=EX[exId];
+  if(!ex){view='stats';render();return}
+  let html=renderTabs();
+  html+=`<div class="header">
+    <button onclick="setView('stats')">← Назад</button>
+    <span style="font-size:13px;text-align:right">${escapeHtml(ex.name)}</span>
+  </div>`;
+  const logs=store.logs;
+  const sessions=Object.keys(logs).sort().filter(d=>logs[d][exId]&&logs[d][exId].done).map(d=>({date:d,log:logs[d][exId]}));
+  if(!sessions.length){
+    html+=`<div class="ex" style="color:#666">Нет записей для этого упражнения</div>`;
+    document.getElementById('app').innerHTML=html;
+    return;
+  }
+  if(ex.app){
+    const prs=0;
+    html+=`<div class="ex"><strong>По приложению</strong><div class="ex-last">Сессий: ${sessions.length} · последняя: ${sessions[sessions.length-1].date}</div></div>`;
+    html+=`<h2>Все записи</h2>`;
+    sessions.slice().reverse().forEach(s=>{
+      html+=`<div class="ex"><div class="hist-row"><strong>${s.date}</strong><span class="ex-last" style="margin-left:auto">✓</span></div></div>`;
+    });
+    document.getElementById('app').innerHTML=html;
+    return;
+  }
+  let maxW=0,maxR=0,totalTonnage=0,totalSets=0;
+  sessions.forEach(s=>{
+    (s.log.sets||[]).forEach(set=>{
+      if(!set)return;
+      const w=parseFloat(set.w)||0,r=parseFloat(set.r)||0;
+      if(w>maxW)maxW=w;
+      if(r>maxR)maxR=r;
+      if(r>0){totalSets++;if(w>0)totalTonnage+=w*r;}
+    });
+  });
+  const prs=countExercisePRs(exId);
+  html+=`<div class="stats-summary">
+    <div class="stat-card"><div class="stat-val">${maxW} кг</div><div class="stat-lbl">макс. вес</div></div>
+    <div class="stat-card"><div class="stat-val">${maxR}</div><div class="stat-lbl">макс. повторов</div></div>
+    <div class="stat-card"><div class="stat-val">${sessions.length}</div><div class="stat-lbl">сессий</div></div>
+    <div class="stat-card"><div class="stat-val">${Math.round(totalTonnage)} кг</div><div class="stat-lbl">тоннаж за всё время</div></div>
+  </div>`;
+  html+=`<div class="ex"><div class="pr-row" style="margin-bottom:0">
+    <span class="pr-badge pr-weight">🔩 ${prs.w}</span>
+    <span class="pr-badge pr-reps">💪 ${prs.r}</span>
+    <span class="pr-badge pr-max">🎯 ${prs.s}</span>
+  </div></div>`;
+  const recent=sessions.slice(-20);
+  html+=`<h2>Макс. вес по сессиям</h2>`;
+  html+=renderBars(recent.map(s=>({
+    label:s.date.slice(5),
+    value:getExerciseStats(s.log).maxW,
+    title:`${s.date}: ${getExerciseStats(s.log).maxW} кг`,
+  })),{color:'linear-gradient(180deg,#ca6,#a84)'});
+  html+=`<h2>Тоннаж по сессиям</h2>`;
+  html+=renderBars(recent.map(s=>{
+    const st=getExerciseStats(s.log);
+    return {
+      label:s.date.slice(5),
+      value:st.totalVol,
+      title:`${s.date}: ${Math.round(st.totalVol)} кг`,
+    };
+  }),{fmt:v=>v>999?Math.round(v/100)/10+'к':v,color:'linear-gradient(180deg,#4a8,#2a5)'});
+  html+=`<h2>Все записи</h2>`;
+  sessions.slice().reverse().slice(0,30).forEach(s=>{
+    const val=formatSets(s.log);
+    const badges=getExerciseBadges(exId,s.log,s.date);
+    html+=`<div class="ex">
+      <div class="hist-row">
+        <strong>${s.date}</strong>
+        <span class="ex-last" style="margin-left:auto">${val}</span>
+      </div>
+      ${badges?`<div class="pr-row" style="margin-top:4px;margin-bottom:0">${badges}</div>`:''}
+    </div>`;
+  });
+  document.getElementById('app').innerHTML=html;
+}
+/* ---------- Data backup ---------- */
+function exportData(){
+  const data={
+    version:1,
+    exportedAt:new Date().toISOString(),
+    logs:store.logs,
+    customEx:customStore.list,
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const d=new Date();
+  const fname=`trainer-backup-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.json`;
+  a.href=url;
+  a.download=fname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  localStorage.setItem('lastBackupDate',fmt(todayDate()));
+  render();
+}
+function importData(){
+  const input=document.getElementById('import-file');
+  if(!input)return;
+  input.value='';
+  input.click();
+}
+function handleImportFile(ev){
+  const file=ev.target.files&&ev.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      if(!data||typeof data!=='object')throw new Error('файл не JSON-объект');
+      if(!data.logs||typeof data.logs!=='object')throw new Error('в файле нет поля logs');
+      const logsCount=Object.keys(data.logs).length;
+      const customCount=Array.isArray(data.customEx)?data.customEx.length:0;
+      if(!confirm(`Импорт заменит все текущие данные.\n\nВ файле:\n• ${logsCount} дн. логов\n• ${customCount} своих упражнений\n\nПродолжить?`))return;
+      store.logs=data.logs;
+      if(Array.isArray(data.customEx)){
+        customStore.list=data.customEx;
+        syncCustomEx();
+      }
+      alert('Данные загружены');
+      render();
+    }catch(err){
+      alert('Ошибка чтения файла: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+function resetAll(){
+  if(!confirm('Удалить ВСЕ данные (тренировки и свои упражнения)?'))return;
+  if(!confirm('Точно? Отменить будет невозможно.'))return;
+  localStorage.removeItem('logs');
+  localStorage.removeItem('customEx');
+  localStorage.removeItem('lastBackupDate');
+  location.reload();
+}
+function renderDataSection(){
+  const last=localStorage.getItem('lastBackupDate');
+  let lastLine;
+  let warn='';
+  if(last){
+    const days=Math.floor((todayDate()-new Date(last+'T00:00:00'))/86400000);
+    lastLine=`Последний бэкап: ${last} (${days===0?'сегодня':days+' дн. назад'})`;
+    if(days>=14)warn=`<div class="ex-last" style="color:#e8a860">⚠️ Пора сделать новый бэкап</div>`;
+  }else{
+    lastLine='Последний бэкап: никогда';
+    warn=`<div class="ex-last" style="color:#e8a860">⚠️ Бэкап ещё не делался</div>`;
+  }
+  return `<h2>Данные</h2>
+  <div class="ex">
+    <div class="ex-last">${lastLine}</div>
+    ${warn}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <button class="mini-btn" style="background:#2a5a2a;border-color:#3a7a3a" onclick="exportData()">💾 Скачать</button>
+      <button class="mini-btn" onclick="importData()">📂 Загрузить</button>
+      <button class="mini-btn" style="background:#5a2a2a;border-color:#7a3a3a" onclick="resetAll()">🗑 Сбросить</button>
+    </div>
+    <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImportFile(event)">
+  </div>`;
+}
+function render(){
+  if(view==='history')renderHistory();
+  else if(view==='custom')renderCustom();
+  else if(view==='search')renderSearch();
+  else if(view==='stats')renderStats();
+  else if(view==='stats-ex')renderExerciseStats();
+  else renderToday();
+}
+function setView(v){
+  view=v;
+  if(v==='stats')statsExerciseId=null;
+  render();
+}
+function shiftDay(d){currentDate.setDate(currentDate.getDate()+d);render()}
+function toggleDone(exId,checked){
+  if(checked && EX[exId].app){
+    if(!confirm(`Подтвердить: «${EX[exId].name}» сделано?`)){render();return}
+  }
+  const d=fmt(currentDate),logs=store.logs;
+  logs[d]=logs[d]||{};logs[d][exId]=logs[d][exId]||{};
+  logs[d][exId].done=checked;
+  if(!checked){
+    const sets=logs[d][exId].sets;
+    const hasSets=sets&&sets.some(x=>x&&(x.w||x.r));
+    if(!hasSets)delete logs[d][exId];
+  }
+  if(logs[d]){
+    const nonMeta=Object.keys(logs[d]).filter(k=>!k.startsWith('_'));
+    if(!nonMeta.length&&!logs[d]._skip&&!logs[d]._note)delete logs[d];
+  }
+  store.logs=logs;render();
+}
+function onSetInput(exId,idx,field,el){
+  let v=el.value;
+  if(field==='w'){
+    v=v.replace(',', '.').replace(/[^\d.]/g,'');
+    const parts=v.split('.');
+    if(parts.length>2)v=parts[0]+'.'+parts.slice(1).join('');
+  }else{
+    v=v.replace(/,/g, '.').split('.')[0].replace(/\D/g,'');
+  }
+  if(v!==el.value)el.value=v;
+  setSet(exId,idx,field,v);
+}
+function setSet(exId,idx,field,value){
+  const d=fmt(currentDate),logs=store.logs;
+  logs[d]=logs[d]||{};logs[d][exId]=logs[d][exId]||{};
+  const arr=logs[d][exId].sets||(logs[d][exId].sets=[]);
+  arr[idx]=arr[idx]||{};
+  arr[idx][field]=value;
+  store.logs=logs;
+  updateExerciseUI(exId);
+  updateDayMeta();
+}
+function getExerciseBadges(exId,log,dateStr){
+  const pr=getPRBadgesHtml(exId,log,dateStr);
+  const steady=EX[exId]&&!EX[exId].app?checkSteadyAllSets(exId,log,dateStr):null;
+  const steadyHtml=steady?`<span class="pr-badge pr-max" title="Все подходы одинаковые и максимальные повторы за всё время">🎯 ${steady.count}×${steady.r}</span>`:'';
+  return pr+steadyHtml;
+}
+
+syncCustomEx();
+render();
+</script>
+</body>
+</html>
