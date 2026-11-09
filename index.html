@@ -17,8 +17,9 @@
   .header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
   .header button{background:#222;color:#e8e8e8;border:1px solid #333;padding:8px 12px;border-radius:6px;font-size:15px;cursor:pointer}
   .header span{font-weight:600}
-  .tabs{display:flex;gap:6px;margin-bottom:12px}
-  .tabs button{flex:1;background:#1a1a1a;color:#888;border:1px solid #262626;padding:8px;border-radius:6px;font-size:13px;cursor:pointer}
+  .tabs{display:flex;gap:5px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:1 0 auto;min-width:58px;background:#1a1a1a;color:#888;border:1px solid #262626;padding:7px 5px;border-radius:6px;font-size:11.5px;cursor:pointer;white-space:nowrap}
   .tabs button.active{background:#2a2a2a;color:#e8e8e8;border-color:#444}
   .info{background:#18241a;padding:8px 12px;border-radius:6px;color:#9f9;font-size:13px;margin-bottom:10px}
   .meta-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px;color:#888}
@@ -107,45 +108,560 @@
 .ex-link{cursor:pointer}
 .ex-link:hover{border-color:#444}
 .ex-link:hover strong{color:#fff}
+  /* Onboarding */
+  .onb-hero{text-align:center;padding:22px 0 16px}
+  .onb-hero .ico{font-size:44px;line-height:1}
+  .onb-hero h1{font-size:20px;margin:10px 0 6px}
+  .onb-hero p{color:#888;font-size:13px;margin:0}
+  .onb-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,background .15s}
+  .onb-card:hover{background:#202020;border-color:#3d3d3d}
+  .onb-card .ico{font-size:22px;display:block;margin-bottom:6px}
+  .onb-card h3{margin:0 0 4px;font-size:15px}
+  .onb-card p{margin:0;font-size:12.5px;color:#888;line-height:1.45}
+  .onb-days{display:flex;gap:4px;margin-bottom:10px}
+  .onb-days button{flex:1;background:#1a1a1a;border:1px solid #262626;color:#888;border-radius:6px;padding:8px 0;font-size:11px;cursor:pointer}
+  .onb-days button.active{background:#2a2a2a;color:#e8e8e8;border-color:#555}
+  .onb-days button.has{color:#9f9}
+  .onb-ex{display:flex;align-items:center;gap:9px;padding:8px 10px;background:#1a1a1a;border:1px solid #262626;border-radius:6px;margin-bottom:5px;cursor:pointer;font-size:13.5px;line-height:1.25}
+  .onb-ex input{width:17px;height:17px;flex-shrink:0;cursor:pointer}
+  .onb-actions{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(15,15,15,0),#0f0f0f 35%);padding:14px 0 0;display:flex;gap:8px;margin-top:6px}
+  .onb-actions .primary{flex:2;background:#2a5a2a;color:#e8e8e8;border:1px solid #3a7a3a;padding:11px;border-radius:8px;font-size:14px;cursor:pointer}
+  .onb-actions .secondary{flex:1;background:#222;color:#e8e8e8;border:1px solid #333;padding:11px;border-radius:8px;font-size:14px;cursor:pointer}
+  /* Plan builder */
+  .plan-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#1a1a1a;border:1px solid #262626;border-radius:8px;margin-bottom:6px}
+  .plan-item .pname{font-size:13.5px;line-height:1.3;word-break:break-word}
+  .plan-item .psched{font-size:11.5px;color:#888;margin-top:3px}
+  .plan-item .pdel{background:transparent;border:none;color:#a55;font-size:17px;cursor:pointer;padding:0 4px;flex-shrink:0}
+
+  /* Cancelled / disabled */
+  .cal-day.state-cancelled{background:#2a2a1a;color:#cc9}
+  .cal-cancelled-mark{position:absolute;bottom:1px;right:2px;font-size:8px;color:#aa8;pointer-events:none;line-height:1}
+  .plan-item.disabled{opacity:.55}
+  .plan-item .pbadge{font-size:10px;color:#c66;margin-left:4px;text-transform:uppercase;letter-spacing:.3px;font-weight:600}
+  .ex-cancelled{opacity:.55;background:#1a1a10;border-color:#3a3a20}
+  .dis-info{background:#2a1a1a;border:1px solid #4a2020;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:12px;color:#e8a8a8;line-height:1.4}
+
+  /* Muscle loads */
+  .muscle-load-row{margin-left:22px;margin-top:4px;margin-bottom:8px}
+  .muscle-load-row .form-row{gap:6px;margin-bottom:6px}
+  .muscle-load-row .preset-btn{padding:4px 10px;border-radius:5px;font-size:12px;background:#222;color:#ccc;border:1px solid #333;cursor:pointer}
+  .muscle-load-row .preset-btn.preset-active{background:#3a5a3a;border-color:#4a7a4a;color:#9f9}
+  .muscle-load-row .slider-wrap{display:flex;align-items:center;gap:8px}
+  .muscle-load-row input[type=range]{flex:1;cursor:pointer;accent-color:#6ab06a}
+  .muscle-load-row .load-val{font-size:12px;color:#9f9;min-width:30px;text-align:right;font-weight:600}
+
+  /* Collapsible forearm section */
+  .forearm-header{font-size:12.5px;color:#aab;margin:12px 0 6px;padding:8px 10px;background:#161616;border:1px solid #2a2a2a;border-radius:6px;cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px;transition:background .15s,border-color .15s}
+  .forearm-header:hover{background:#1e1e1e;border-color:#3a3a3a}
+  .forearm-header .fa-arrow{display:inline-block;width:12px;color:#888;font-size:10px;text-align:center;line-height:1}
+  .forearm-header strong{color:#ccc;font-size:13px}
+  .forearm-header .fa-count{color:#666;font-size:11px;margin-left:auto}
+  .forearm-header.has-selected{background:#1a2a1a;border-color:#2a4a2a}
+  .forearm-header.has-selected strong{color:#9f9}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <script>
+const MUSCLES=[
+  {id:'legs',name:'Ноги и таз',groups:[
+    {id:'quads',name:'Квадрицепсы',sub:['Прямая','Латеральная','Медиальная','Промежуточная']},
+    {id:'hamstrings',name:'Бицепс бедра',sub:['Длинная головка','Короткая головка']},
+    {id:'glutes',name:'Ягодицы',sub:['Большая','Средняя','Малая']},
+    {id:'adductors',name:'Приводящие мышцы',sub:['Внутренняя поверхность бедра']},
+    {id:'abductors',name:'Отводящие мышцы',sub:['Средняя ягодичная','Малая ягодичная']},
+    {id:'calves',name:'Икры',sub:['Икроножная','Камбаловидная']},
+    {id:'foot',name:'Сгибатели/разгибатели стопы и пальцев',sub:[]},
+  ]},
+  {id:'arms',name:'Руки',groups:[
+    {id:'biceps',name:'Бицепс плеча',sub:['Длинная головка','Короткая головка']},
+    {id:'triceps',name:'Трицепс плеча',sub:['Длинная','Латеральная','Медиальная']},
+    {id:'brachialis',name:'Плечевая мышца (brachialis)',sub:[]},
+    {id:'coracobrachialis',name:'Клювовидно-плечевая мышца',sub:[]},
+    {id:'brachioradialis',name:'Плечелучевая мышца',sub:[]},
+    {id:'supinator',name:'Супинатор',sub:[]},
+    {id:'pronator_teres',name:'Круглый пронатор',sub:[]},
+    {id:'pronator_quadratus',name:'Квадратный пронатор',sub:[]},
+    {id:'fcr',name:'Лучевой сгибатель запястья',sub:[]},
+    {id:'fcu',name:'Локтевой сгибатель запястья',sub:[]},
+    {id:'palmaris_longus',name:'Длинная ладонная мышца',sub:[]},
+    {id:'fds',name:'Поверхностный сгибатель пальцев',sub:[]},
+    {id:'fdp',name:'Глубокий сгибатель пальцев',sub:[]},
+    {id:'fpl',name:'Длинный сгибатель большого пальца кисти',sub:[]},
+    {id:'ecrl',name:'Длинный лучевой разгибатель запястья',sub:[]},
+    {id:'ecrb',name:'Короткий лучевой разгибатель запястья',sub:[]},
+    {id:'ecu',name:'Локтевой разгибатель запястья',sub:[]},
+    {id:'finger_extensors',name:'Разгибатели пальцев',sub:[]},
+    {id:'ei',name:'Разгибатель указательного пальца',sub:[]},
+    {id:'edm',name:'Разгибатель мизинца',sub:[]},
+    {id:'apl',name:'Длинная мышца, отводящая большой палец кисти',sub:[]},
+    {id:'thumb_extensors',name:'Разгибатели большого пальца (короткий и длинный)',sub:[]},
+    {id:'anconeus',name:'Локтевая мышца (anconeus)',sub:[]},
+    {id:'fpb',name:'Короткий сгибатель большого пальца кисти',sub:[]},
+    {id:'apb',name:'Короткая мышца, отводящая большой палец кисти',sub:[]},
+    {id:'opponens_pollicis',name:'Противопоставляющая большой палец',sub:[]},
+    {id:'adductor_pollicis',name:'Приводящая большой палец',sub:[]},
+    {id:'palmaris_brevis',name:'Короткая ладонная мышца',sub:[]},
+    {id:'adm',name:'Мышца, отводящая мизинец',sub:[]},
+    {id:'fdm',name:'Короткий сгибатель мизинца',sub:[]},
+    {id:'opponens_digiti_minimi',name:'Противопоставляющая мизинец',sub:[]},
+    {id:'lumbricals',name:'Червеобразные мышцы',sub:[]},
+    {id:'interossei',name:'Межкостные мышцы (ладонные и тыльные)',sub:[]},
+    {id:'hand',name:'Мышцы кисти (прочее)',sub:[]},
+  ]},
+  {id:'chest',name:'Грудь',groups:[
+    {id:'pectoralis_major',name:'Большая грудная',sub:['Ключичная/верхняя','Грудинная/средняя','Брюшная/нижняя']},
+    {id:'pectoralis_minor',name:'Малая грудная',sub:[]},
+    {id:'serratus',name:'Передняя зубчатая',sub:[]},
+    {id:'intercostals',name:'Межреберные',sub:[]},
+  ]},
+  {id:'back',name:'Спина',groups:[
+    {id:'lats',name:'Широчайшая мышца спины',sub:[]},
+    {id:'traps',name:'Трапециевидная мышца',sub:['Верхняя','Средняя','Нижняя']},
+    {id:'rhomboids',name:'Ромбовидные мышцы',sub:['Большая','Малая']},
+    {id:'levator_scapulae',name:'Мышца, поднимающая лопатку',sub:[]},
+    {id:'erectors',name:'Разгибатели спины',sub:[]},
+    {id:'ql',name:'Квадратная мышца поясницы',sub:[]},
+    {id:'rear_delts',name:'Задние дельты',sub:[]},
+  ]},
+  {id:'shoulders',name:'Плечи',groups:[
+    {id:'delts',name:'Дельтовидные',sub:['Передняя','Средняя','Задняя']},
+    {id:'rotator_cuff',name:'Вращательная манжета',sub:['Надостная','Подостная','Малая круглая','Подлопаточная']},
+    {id:'teres',name:'Большая и малая круглые',sub:[]},
+  ]},
+  {id:'core',name:'Пресс и кор',groups:[
+    {id:'rectus_abdominis',name:'Прямая мышца живота',sub:['Верхняя','Нижняя']},
+    {id:'obliques',name:'Косые мышцы',sub:['Внешние','Внутренние']},
+    {id:'transverse',name:'Поперечная мышца живота',sub:[]},
+    {id:'iliopsoas',name:'Подвздошно-поясничная',sub:[]},
+    {id:'pelvic_floor',name:'Мышцы тазового дна',sub:[]},
+  ]},
+  {id:'neck',name:'Шея',groups:[
+    {id:'scm',name:'Грудино-ключично-сосцевидная',sub:[]},
+    {id:'scalenes',name:'Лестничные',sub:[]},
+    {id:'neck_extensors',name:'Подзатылочные / разгибатели шеи',sub:[]},
+  ]},
+];
+const MUSCLE_BY_ID={};
+MUSCLES.forEach(cat=>cat.groups.forEach(g=>{MUSCLE_BY_ID[g.id]=g}));
+MUSCLE_BY_ID['forearm']={id:'forearm',name:'Предплечья (устаревшее)',sub:[]};
+
+const MUSCLE_SECTION = {};
+MUSCLES.forEach(cat => {
+  cat.groups.forEach(g => { MUSCLE_SECTION[g.id] = { id: cat.id, name: cat.name }; });
+});
+
+const MUSCLE_COEF = {
+  quads:{recovery_rate:0.78,daily_subtraction:0.020},
+  hamstrings:{recovery_rate:0.77,daily_subtraction:0.020},
+  glutes:{recovery_rate:0.78,daily_subtraction:0.020},
+  adductors:{recovery_rate:0.75,daily_subtraction:0.025},
+  abductors:{recovery_rate:0.76,daily_subtraction:0.020},
+  calves:{recovery_rate:0.72,daily_subtraction:0.030},
+  foot:{recovery_rate:0.70,daily_subtraction:0.030},
+  biceps:{recovery_rate:0.72,daily_subtraction:0.030},
+  triceps:{recovery_rate:0.72,daily_subtraction:0.030},
+  brachialis:{recovery_rate:0.73,daily_subtraction:0.030},
+  coracobrachialis:{recovery_rate:0.75,daily_subtraction:0.020},
+  pectoralis_major:{recovery_rate:0.72,daily_subtraction:0.030},
+  pectoralis_minor:{recovery_rate:0.74,daily_subtraction:0.025},
+  serratus:{recovery_rate:0.76,daily_subtraction:0.020},
+  intercostals:{recovery_rate:0.78,daily_subtraction:0.020},
+  lats:{recovery_rate:0.77,daily_subtraction:0.020},
+  traps:{recovery_rate:0.75,daily_subtraction:0.025},
+  rhomboids:{recovery_rate:0.75,daily_subtraction:0.025},
+  levator_scapulae:{recovery_rate:0.74,daily_subtraction:0.025},
+  erectors:{recovery_rate:0.78,daily_subtraction:0.020},
+  ql:{recovery_rate:0.77,daily_subtraction:0.020},
+  rear_delts:{recovery_rate:0.72,daily_subtraction:0.030},
+  delts:{recovery_rate:0.72,daily_subtraction:0.030},
+  rotator_cuff:{recovery_rate:0.70,daily_subtraction:0.030},
+  teres:{recovery_rate:0.73,daily_subtraction:0.025},
+  rectus_abdominis:{recovery_rate:0.78,daily_subtraction:0.020},
+  obliques:{recovery_rate:0.77,daily_subtraction:0.020},
+  transverse:{recovery_rate:0.80,daily_subtraction:0.015},
+  iliopsoas:{recovery_rate:0.74,daily_subtraction:0.025},
+  pelvic_floor:{recovery_rate:0.82,daily_subtraction:0.010},
+  scm:{recovery_rate:0.74,daily_subtraction:0.025},
+  scalenes:{recovery_rate:0.72,daily_subtraction:0.030},
+  neck_extensors:{recovery_rate:0.70,daily_subtraction:0.030},
+  brachioradialis:{recovery_rate:0.68,daily_subtraction:0.030},
+  supinator:{recovery_rate:0.67,daily_subtraction:0.030},
+  pronator_teres:{recovery_rate:0.68,daily_subtraction:0.030},
+  pronator_quadratus:{recovery_rate:0.70,daily_subtraction:0.025},
+  fcr:{recovery_rate:0.68,daily_subtraction:0.030},
+  fcu:{recovery_rate:0.68,daily_subtraction:0.030},
+  palmaris_longus:{recovery_rate:0.70,daily_subtraction:0.025},
+  fds:{recovery_rate:0.66,daily_subtraction:0.035},
+  fdp:{recovery_rate:0.66,daily_subtraction:0.035},
+  fpl:{recovery_rate:0.66,daily_subtraction:0.035},
+  ecrl:{recovery_rate:0.68,daily_subtraction:0.030},
+  ecrb:{recovery_rate:0.68,daily_subtraction:0.030},
+  ecu:{recovery_rate:0.68,daily_subtraction:0.030},
+  finger_extensors:{recovery_rate:0.68,daily_subtraction:0.030},
+  ei:{recovery_rate:0.69,daily_subtraction:0.030},
+  edm:{recovery_rate:0.69,daily_subtraction:0.030},
+  apl:{recovery_rate:0.67,daily_subtraction:0.030},
+  thumb_extensors:{recovery_rate:0.67,daily_subtraction:0.030},
+  anconeus:{recovery_rate:0.72,daily_subtraction:0.025},
+  fpb:{recovery_rate:0.66,daily_subtraction:0.035},
+  apb:{recovery_rate:0.66,daily_subtraction:0.035},
+  opponens_pollicis:{recovery_rate:0.66,daily_subtraction:0.035},
+  adductor_pollicis:{recovery_rate:0.66,daily_subtraction:0.035},
+  palmaris_brevis:{recovery_rate:0.68,daily_subtraction:0.030},
+  adm:{recovery_rate:0.68,daily_subtraction:0.030},
+  fdm:{recovery_rate:0.68,daily_subtraction:0.030},
+  opponens_digiti_minimi:{recovery_rate:0.68,daily_subtraction:0.030},
+  lumbricals:{recovery_rate:0.70,daily_subtraction:0.025},
+  interossei:{recovery_rate:0.68,daily_subtraction:0.030},
+  hand:{recovery_rate:0.70,daily_subtraction:0.025},
+};
+
+const LOAD_FACTOR    = 0.25;
+const LOAD_THRESHOLD = 0.30;
+const LOAD_GREEN     = 0.40;
+const LOAD_YELLOW    = 0.65;
+const LOAD_ORANGE    = 0.85;
+
+const FOREARM_IDS=['brachioradialis','supinator','pronator_teres','pronator_quadratus','fcr','fcu','palmaris_longus','fds','fdp','fpl','ecrl','ecrb','ecu','finger_extensors','ei','edm','apl','thumb_extensors','anconeus','fpb','apb','opponens_pollicis','adductor_pollicis','palmaris_brevis','adm','fdm','opponens_digiti_minimi','lumbricals','interossei','hand'];
+
+function computePercents(loads){
+  const ids = Object.keys(loads||{});
+  if(!ids.length) return {};
+  const sum = ids.reduce((s,id)=>s+(parseFloat(loads[id])||0), 0);
+  if(sum<=0) return {};
+  const result = {};
+  ids.forEach(id=>{ result[id] = Math.round(100/sum*(parseFloat(loads[id])||0)); });
+  return result;
+}
+
 const EX={
-  seated_press:{name:'Жим гантелей сидя вверх',sets:4,reps:'12-15'},
-  front_raise:{name:'Подъём гантелей перед собой на вытянутых руках',sets:4,reps:'12-15'},
-  leg_raise:{name:'Подъём прямых ног в висе на турнике',sets:4,reps:'12-15'},
-  t_fly:{name:'Развод гантелей буквой Т стоя',sets:4,reps:'12-15'},
-  overhead_ext:{name:'Опускание рук за голову лёжа',sets:4,reps:'12-15'},
-  chest_fly:{name:'Сведение рук лёжа',sets:4,reps:'12-15'},
-  front_hammer:{name:'Удар гантелями перед собой',sets:4,reps:'12-15'},
-  back_bend:{name:'Наклон вперёд с руками за спиной снизу',sets:4,reps:'12-15'},
-  shrugs:{name:'Подъём плеч к ушам',sets:4,reps:'12-15'},
-  upright_row:{name:'Подъём веса к подмышкам',sets:4,reps:'12-15'},
-  bent_row:{name:'Тяга веса в наклоне',sets:4,reps:'12-15'},
-  neck_back:{name:'Подъёмы головы лёжа вверх',sets:4,reps:'12-15'},
-  neck_left:{name:'Подъёмы головы на левом боку',sets:4,reps:'12-15'},
-  neck_right:{name:'Подъёмы головы на правом боку',sets:4,reps:'12-15'},
-  neck_front:{name:'Подъёмы головы на животе',sets:4,reps:'12-15'},
-  jump_weighted:{name:'Выпрыгивания с гантелями (вес внизу)',sets:5,reps:'12-15'},
-  calf_raise:{name:'Прыжки на носках с весом',sets:4,reps:'12-15'},
-  curl:{name:'Подъём гантелей на бицепс',sets:4,reps:'12-15'},
-  hammer:{name:'Подъём гантелей молотком',sets:4,reps:'12-15'},
-  pushups:{name:'Отжимания',app:true},
-  pullups:{name:'Подтягивания',app:true},
-  front_lever:{name:'Выход в горизонт',sets:4,reps:'12-15'},
-  abs:{name:'Пресс',app:true},
-  stretch:{name:'Растяжка',app:true},
-  growth:{name:'Тренировка для роста',app:true},
+  barbell_squat:{name:'Приседания со штангой',sets:4,reps:'12-15',muscles:{quads:40,glutes:25,adductors:20,erectors:15}},
+  bulgarian_split:{name:'Болгарский сплит-присед',sets:4,reps:'12-15',muscles:{quads:50,glutes:35,adductors:15}},
+  romanian_deadlift:{name:'Румынская тяга',sets:4,reps:'12-15',muscles:{hamstrings:45,glutes:40,erectors:15}},
+  leg_curl_machine:{name:'Сгибание ног лежа в тренажере',sets:4,reps:'12-15',muscles:{hamstrings:100}},
+  leg_curl_band:{name:'Сгибание ноги с резинкой лежа',sets:4,reps:'12-15',muscles:{hamstrings:100}},
+  glute_bridge_weighted:{name:'Ягодичный мост со штангой/гантелью',sets:4,reps:'12-15',muscles:{glutes:65,hamstrings:35}},
+  glute_bridge_hold:{name:'Ягодичный мост с удержанием (тазовое дно)',sets:4,reps:'12-15',muscles:{glutes:70,pelvic_floor:30}},
+  leg_abduction_band:{name:'Отведение ноги в сторону с резинкой/в кроссовере',sets:4,reps:'12-15',muscles:{abductors:100}},
+  sumo_squat_db:{name:'Приседания сумо с гантелью',sets:4,reps:'12-15',muscles:{adductors:40,quads:30,glutes:30}},
+  leg_adduction_machine:{name:'Сведение ног в тренажере',sets:4,reps:'12-15',muscles:{adductors:100}},
+  leg_adduction_band:{name:'Сведение ног с резинкой',sets:4,reps:'12-15',muscles:{adductors:100}},
+  leg_abduction_machine:{name:'Разведение ног в тренажере',sets:4,reps:'12-15',muscles:{abductors:100}},
+  side_steps_band:{name:'Боковые шаги с резинкой',sets:4,reps:'12-15',muscles:{abductors:100}},
+  calf_raise_standing:{name:'Подъём на носки стоя',sets:4,reps:'12-15',muscles:{calves:100}},
+  calf_raise_seated:{name:'Подъём на носки сидя',sets:4,reps:'12-15',muscles:{calves:100}},
+  walk_toes_heels:{name:'Ходьба на носках/пятках',sets:4,reps:'12-15',muscles:{foot:50,calves:50}},
+  toe_curl_towel:{name:'Сгибание пальцев ног с полотенцем/резинкой',sets:4,reps:'12-15',muscles:{foot:100}},
+  biceps_barbell:{name:'Подъём штанги/гантелей на бицепс',sets:4,reps:'12-15',muscles:{biceps:60,brachialis:20,brachioradialis:20}},
+  hammer_curl:{name:'«Молот» с гантелями',sets:4,reps:'12-15',muscles:{brachialis:40,brachioradialis:30,biceps:30}},
+  overhead_triceps:{name:'Разгибание рук из-за головы',sets:4,reps:'12-15',muscles:{triceps:100}},
+  close_pushups:{name:'Отжимания узким хватом',sets:4,reps:'12-15',muscles:{triceps:50,pectoralis_major:30,delts:20}},
+  wrist_curl:{name:'Сгибание запястий со штангой/гантелями',sets:4,reps:'12-15',muscles:{fcr:35,fcu:25,palmaris_longus:20,fds:15,fdp:5}},
+  wrist_extension:{name:'Разгибание запястий',sets:4,reps:'12-15',muscles:{finger_extensors:40,ecrl:20,ecrb:20,ecu:20}},
+  hand_gripper:{name:'Сжимание эспандера',sets:4,reps:'12-15',muscles:{fcr:20,fcu:20,fds:15,fdp:15,hand:30}},
+  hang_bar:{name:'Вис на турнике',sets:4,reps:'30-60 сек',muscles:{fcr:25,fcu:25,fds:20,fdp:10,hand:20}},
+  plate_hold:{name:'Удержание блина',sets:4,reps:'30-60 сек',muscles:{fcr:25,fcu:25,fds:20,fdp:10,hand:20}},
+  incline_db_press:{name:'Жим гантелей на наклонной вверх',sets:4,reps:'12-15',muscles:{pectoralis_major:45,delts:30,triceps:25}},
+  incline_feet_pushups:{name:'Отжимания с ногами на возвышении',sets:4,reps:'12-15',muscles:{pectoralis_major:45,delts:30,triceps:25}},
+  bench_press:{name:'Жим штанги лежа',sets:4,reps:'12-15',muscles:{pectoralis_major:55,triceps:25,delts:20}},
+  pushups:{name:'Отжимания от пола',sets:4,reps:'12-15',muscles:{pectoralis_major:50,triceps:30,delts:20}},
+  decline_press:{name:'Жим на наклонной вниз',sets:4,reps:'12-15',muscles:{pectoralis_major:65,triceps:35}},
+  dips:{name:'Отжимания на брусьях',sets:4,reps:'12-15',muscles:{pectoralis_major:45,triceps:40,delts:15}},
+  hands_elevated_pushups:{name:'Отжимания с руками на возвышении',sets:4,reps:'12-15',muscles:{pectoralis_major:55,triceps:45}},
+  pushup_plus:{name:'Отжимания с протракцией лопаток',sets:4,reps:'12-15',muscles:{pectoralis_minor:50,serratus:50}},
+  pullover_db:{name:'Пуловер с гантелью лежа',sets:4,reps:'12-15',muscles:{pectoralis_minor:30,pectoralis_major:30,serratus:25,intercostals:15}},
+  plank_protraction:{name:'Планка с протракцией лопаток',sets:4,reps:'30-60 сек',muscles:{serratus:60,transverse:40}},
+  breath_resistance:{name:'Дыхание с сопротивлением на выдохе',sets:4,reps:'10-15',muscles:{intercostals:100}},
+  pullups:{name:'Подтягивания',sets:4,reps:'12-15',muscles:{lats:45,teres:15,biceps:25,rhomboids:15}},
+  lat_pulldown:{name:'Тяга верхнего блока',sets:4,reps:'12-15',muscles:{lats:45,teres:15,biceps:25,rhomboids:15}},
+  db_row:{name:'Тяга гантели в наклоне',sets:4,reps:'12-15',muscles:{lats:45,rhomboids:20,rear_delts:15,biceps:20}},
+  shrugs:{name:'Шраги со штангой/гантелями',sets:4,reps:'12-15',muscles:{traps:100}},
+  y_raises_prone:{name:'Y-подъёмы лежа на животе',sets:4,reps:'12-15',muscles:{traps:65,rear_delts:20,rhomboids:15}},
+  upright_row:{name:'Тяга к подбородку',sets:4,reps:'12-15',muscles:{traps:40,delts:30,rhomboids:15,rear_delts:15}},
+  rows_to_waist:{name:'Тяга к поясу',sets:4,reps:'12-15',muscles:{rhomboids:40,lats:35,rear_delts:25}},
+  band_pull_apart:{name:'Разведение рук с резинкой',sets:4,reps:'12-15',muscles:{rhomboids:30,rear_delts:40,traps:30}},
+  reverse_fly_machine:{name:'Reverse fly в тренажере',sets:4,reps:'12-15',muscles:{rhomboids:30,rear_delts:45,traps:25}},
+  hyperextension:{name:'Гиперэкстензия',sets:4,reps:'12-15',muscles:{erectors:50,glutes:30,hamstrings:20}},
+  deadlift:{name:'Становая тяга',sets:4,reps:'12-15',muscles:{erectors:40,glutes:35,hamstrings:25}},
+  bend_with_db:{name:'Наклон вперёд с гантелью',sets:4,reps:'12-15',muscles:{erectors:45,glutes:35,hamstrings:20}},
+  side_bend_db:{name:'Наклоны в сторону с гантелью',sets:4,reps:'12-15',muscles:{ql:60,obliques:40}},
+  farmers_walk:{name:'Фермерская прогулка',sets:4,reps:'30-60 сек',muscles:{ql:30,erectors:30,fcr:15,fcu:15,hand:10}},
+  overhead_press_db:{name:'Жим гантелей сидя/стоя',sets:4,reps:'12-15',muscles:{delts:80,triceps:20}},
+  front_raise:{name:'Подъём гантелей перед собой',sets:4,reps:'12-15',muscles:{delts:75,pectoralis_major:25}},
+  lateral_raise:{name:'Махи гантелями в стороны',sets:4,reps:'12-15',muscles:{delts:80,rotator_cuff:20}},
+  lateral_raise_band:{name:'Разведение резинкой в стороны',sets:4,reps:'12-15',muscles:{delts:60,traps:40}},
+  bent_reverse_fly:{name:'Разведение гантелей в наклоне',sets:4,reps:'12-15',muscles:{rear_delts:50,rhomboids:25,traps:25}},
+  reverse_pec_deck:{name:'Обратные разведения в тренажере/с резинкой',sets:4,reps:'12-15',muscles:{rear_delts:60,rhomboids:40}},
+  arm_abduction_band:{name:'Отведение руки с резинкой',sets:4,reps:'12-15',muscles:{rotator_cuff:60,delts:40}},
+  rotator_cuff_rot:{name:'Внутренняя/внешняя ротация с резинкой',sets:4,reps:'12-15',muscles:{rotator_cuff:100}},
+  crunches:{name:'Скручивания',sets:4,reps:'12-15',muscles:{rectus_abdominis:60,obliques:40}},
+  crunches_weighted:{name:'Скручивания с весом/на блоке',sets:4,reps:'12-15',muscles:{rectus_abdominis:60,obliques:40}},
+  leg_raise_hanging:{name:'Подъём ног в висе',sets:4,reps:'12-15',muscles:{rectus_abdominis:55,iliopsoas:45}},
+  leg_raise_lying:{name:'Подъём ног лежа',sets:4,reps:'12-15',muscles:{rectus_abdominis:55,iliopsoas:45}},
+  reverse_crunches:{name:'Обратные скручивания',sets:4,reps:'12-15',muscles:{rectus_abdominis:60,obliques:40}},
+  russian_twist:{name:'Русские скручивания',sets:4,reps:'12-15',muscles:{obliques:60,rectus_abdominis:40}},
+  side_plank:{name:'Боковая планка',sets:4,reps:'30-60 сек',muscles:{obliques:50,transverse:25,ql:25}},
+  plank:{name:'Планка',sets:4,reps:'30-60 сек',muscles:{transverse:40,rectus_abdominis:35,obliques:25}},
+  stomach_vacuum:{name:'Вакуум живота',sets:4,reps:'10-15',muscles:{transverse:100}},
+  knee_raise_hanging:{name:'Подъём коленей в висе',sets:4,reps:'12-15',muscles:{iliopsoas:55,rectus_abdominis:45}},
+  leg_raise_band:{name:'Подъём ноги с резинкой стоя/лежа',sets:4,reps:'12-15',muscles:{iliopsoas:70,quads:30}},
+  kegel:{name:'Упражнения Кегеля',sets:4,reps:'12-15',muscles:{pelvic_floor:100}},
+  neck_flexion:{name:'Сгибание шеи с сопротивлением',sets:4,reps:'12-15',muscles:{scm:60,scalenes:40}},
+  neck_side:{name:'Наклоны головы в сторону с сопротивлением',sets:4,reps:'12-15',muscles:{scm:60,scalenes:40}},
+  shoulder_shrug_band:{name:'Подъём ключиц/плеч с резинкой',sets:4,reps:'12-15',muscles:{scalenes:30,traps:70}},
+  neck_extension:{name:'Разгибание шеи с сопротивлением',sets:4,reps:'12-15',muscles:{neck_extensors:100}},
+  neck_extension_prone:{name:'Подъём головы лежа на животе',sets:4,reps:'12-15',muscles:{neck_extensors:100}},
+
+  // === Дополнение: мышцы, ранее без упражнений ===
+  supination_db:{name:'Супинация с гантелью',sets:3,reps:'12-15',muscles:{supinator:60,biceps:30,brachioradialis:10}},
+  pronation_db:{name:'Пронация с гантелью',sets:3,reps:'12-15',muscles:{pronator_teres:50,pronator_quadratus:50}},
+  scapular_elevation:{name:'Подъём лопаток с резинкой/штангой',sets:4,reps:'12-15',muscles:{levator_scapulae:60,traps:40}},
+  arm_adduction_band:{name:'Приведение руки через тело с резинкой',sets:4,reps:'12-15',muscles:{coracobrachialis:50,pectoralis_major:30,delts:20}},
+  thumb_ip_flexion:{name:'Сгибание большого пальца с резинкой',sets:3,reps:'12-15',muscles:{fpl:50,fpb:30,adductor_pollicis:20}},
+  finger_extension_single:{name:'Разгибание пальцев по одному с резинкой',sets:3,reps:'12-15',muscles:{ei:30,edm:30,finger_extensors:40}},
+  thumb_extension_band:{name:'Разгибание и отведение большого пальца с резинкой',sets:3,reps:'12-15',muscles:{apl:40,thumb_extensors:60}},
+  anconeus_extension:{name:'Разгибание предплечья с резинкой (локтевая мышца)',sets:3,reps:'12-15',muscles:{anconeus:50,triceps:50}},
+  thumb_pinch:{name:'Сжатие большого пальца (pinch grip)',sets:3,reps:'10-15',muscles:{fpb:30,apb:20,opponens_pollicis:20,adductor_pollicis:30}},
+  pinky_grip:{name:'Сжатие мизинца с сопротивлением',sets:3,reps:'12-15',muscles:{adm:30,fdm:30,opponens_digiti_minimi:40}},
+  finger_spread:{name:'Разведение пальцев с резинкой',sets:3,reps:'12-15',muscles:{lumbricals:40,interossei:60}},
+  palm_squeeze:{name:'Сжатие ладони с мячиком',sets:3,reps:'15-20',muscles:{palmaris_brevis:50,hand:50}},
 };
-const SCHEDULE={
-  A:['seated_press','front_raise','leg_raise','t_fly','overhead_ext','chest_fly','front_hammer'],
-  B:['back_bend','shrugs','upright_row','bent_row','leg_raise'],
-  NECK:['neck_back','neck_left','neck_right','neck_front'],
-  JUMPS:['jump_weighted','calf_raise'],
-  BICEPS:['curl','hammer'],
-};
+const BUILTIN_IDS=Object.keys(EX);
+
+function sortedExerciseEntries(){ return Object.entries(EX).sort((a,b)=>a[1].name.localeCompare(b[1].name,'ru')); }
+function muscleNames(ids){ return (ids||[]).map(id=>MUSCLE_BY_ID[id]?.name||id); }
+function muscleSummary(muscles){
+  if(!muscles) return '';
+  let entries;
+  if(Array.isArray(muscles)) entries = muscles.map(id=>[id,null]);
+  else entries = Object.entries(muscles);
+  return entries.map(([id,pct])=>{
+    const name = MUSCLE_BY_ID[id]?.name || id;
+    return pct!=null ? `${name} ${pct}%` : name;
+  }).join(', ');
+}
+
+function renderMusclePicker(loadsOrIds, prefix){
+  let loads = {};
+  if(Array.isArray(loadsOrIds)){ loadsOrIds.forEach(id=>{loads[id]=5}); }
+  else if(loadsOrIds && typeof loadsOrIds==='object'){ loads = loadsOrIds; }
+  const renderGroup = (g)=>{
+    const isChecked = g.id in loads;
+    const loadVal = isChecked ? loads[g.id] : 5;
+    const active = v=>loadVal===v?'preset-active':'';
+    return `
+      <div style="margin-bottom:10px">
+        <label class="day-chk" style="margin:0">
+          <input type="checkbox" class="${prefix}-chk" data-mid="${g.id}" ${isChecked?'checked':''}
+            onchange="muscleToggle('${prefix}','${g.id}',this.checked)">
+          ${g.name}
+        </label>
+        <div class="${prefix}-load" data-mid="${g.id}" style="display:${isChecked?'block':'none'};margin-left:22px;margin-top:6px">
+          <div class="muscle-load-row" style="margin:0">
+            <div class="form-row" style="margin-bottom:6px">
+              <button type="button" class="preset-btn ${active(7.5)}" data-val="7.5" onclick="musclePreset('${prefix}','${g.id}',7.5)">Высокая</button>
+              <button type="button" class="preset-btn ${active(5)}" data-val="5" onclick="musclePreset('${prefix}','${g.id}',5)">Средняя</button>
+              <button type="button" class="preset-btn ${active(2.5)}" data-val="2.5" onclick="musclePreset('${prefix}','${g.id}',2.5)">Низкая</button>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" min="1" max="10" step="0.5" value="${loadVal}"
+                class="${prefix}-slider" data-mid="${g.id}"
+                oninput="muscleSliderInput('${prefix}','${g.id}',this.value)">
+              <span class="${prefix}-val load-val" data-mid="${g.id}">${loadVal}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  };
+
+  let html='';
+  MUSCLES.forEach(cat=>{
+    html+=`<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin:12px 0 6px">${cat.name}</div>`;
+    if(cat.id === 'arms'){
+      cat.groups.filter(g => !FOREARM_IDS.includes(g.id)).forEach(g => {html += renderGroup(g)});
+      const forearmGroups = cat.groups.filter(g => FOREARM_IDS.includes(g.id));
+      if(forearmGroups.length){
+        const selectedCount = forearmGroups.filter(g => g.id in loads).length;
+        const expanded = selectedCount > 0;
+        const hasClass = selectedCount > 0 ? ' has-selected' : '';
+        const countLabel = selectedCount > 0 ? `выбрано ${selectedCount}` : `${forearmGroups.length} мышц`;
+        html += `<div class="forearm-header${hasClass}" onclick="toggleForearmSection('${prefix}')">
+          <span class="fa-arrow" id="${prefix}-forearm-arrow">${expanded ? '▾' : '▸'}</span>
+          <strong>Предплечье и кисть</strong>
+          <span class="fa-count">${countLabel}</span>
+        </div>
+        <div id="${prefix}-forearm-section" style="display:${expanded ? 'block' : 'none'}">
+          ${forearmGroups.map(renderGroup).join('')}
+        </div>`;
+      }
+    }else{
+      cat.groups.forEach(g => {html += renderGroup(g)});
+    }
+  });
+  return html;
+}
+
+function toggleForearmSection(prefix){
+  const el = document.getElementById(prefix+'-forearm-section');
+  const arrow = document.getElementById(prefix+'-forearm-arrow');
+  const header = el ? el.previousElementSibling : null;
+  if(!el) return;
+  const hidden = el.style.display === 'none';
+  el.style.display = hidden ? 'block' : 'none';
+  if(arrow) arrow.textContent = hidden ? '▾' : '▸';
+  if(header && !hidden){
+    const checked = el.querySelectorAll(`.${prefix}-chk:checked`).length;
+    const countEl = header.querySelector('.fa-count');
+    const total = el.querySelectorAll(`.${prefix}-chk`).length;
+    if(countEl) countEl.textContent = checked > 0 ? `выбрано ${checked}` : `${total} мышц`;
+    header.classList.toggle('has-selected', checked > 0);
+  }
+}
+
+function muscleToggle(prefix, mid, checked){
+  const el = document.querySelector(`.${prefix}-load[data-mid="${mid}"]`);
+  if(el) el.style.display = checked ? 'block' : 'none';
+}
+function musclePreset(prefix, mid, val){
+  const slider = document.querySelector(`.${prefix}-slider[data-mid="${mid}"]`);
+  const display = document.querySelector(`.${prefix}-val[data-mid="${mid}"]`);
+  const buttons = document.querySelectorAll(`.${prefix}-load[data-mid="${mid}"] .preset-btn`);
+  if(slider) slider.value = val;
+  if(display) display.textContent = val;
+  buttons.forEach(b=>{ b.classList.toggle('preset-active', parseFloat(b.dataset.val)===val); });
+}
+function muscleSliderInput(prefix, mid, val){
+  const v = parseFloat(val);
+  const display = document.querySelector(`.${prefix}-val[data-mid="${mid}"]`);
+  const buttons = document.querySelectorAll(`.${prefix}-load[data-mid="${mid}"] .preset-btn`);
+  if(display) display.textContent = val;
+  buttons.forEach(b=>{ b.classList.toggle('preset-active', parseFloat(b.dataset.val)===v); });
+}
+function getMuscleLoads(prefix){
+  const result = {};
+  document.querySelectorAll(`.${prefix}-chk:checked`).forEach(chk=>{
+    const mid = chk.dataset.mid;
+    const slider = document.querySelector(`.${prefix}-slider[data-mid="${mid}"]`);
+    const val = slider ? (parseFloat(slider.value)||5) : 5;
+    result[mid] = val;
+  });
+  return result;
+}
+
+function getMusclesFromEx(ex){
+  if(!ex || !ex.muscles) return [];
+  if(Array.isArray(ex.muscles)){
+    const n = Math.max(ex.muscles.length, 1);
+    return ex.muscles.map(id => ({ id, share: 1 / n }));
+  }
+  return Object.entries(ex.muscles).map(([id, pct]) => ({ id, share: (parseFloat(pct) || 0) / 100 }));
+}
+
+function getLoadColor(load){
+  if(load > LOAD_ORANGE) return '#e85a5a';
+  if(load > LOAD_YELLOW) return '#e8a860';
+  if(load > LOAD_GREEN)  return '#e8c44d';
+  return '#6ab06a';
+}
+function getLoadLabel(load){
+  if(load > LOAD_ORANGE) return 'нужен отдых';
+  if(load > LOAD_YELLOW) return 'высокая';
+  if(load > LOAD_GREEN)  return 'умеренная';
+  return 'восстановлена';
+}
+
+function computeAllMuscleLoads(){
+  const logs = store.logs;
+  const todayStr = fmt(todayDate());
+  const dates = Object.keys(logs).filter(d => {
+    const day = logs[d];
+    if(!day) return false;
+    return Object.entries(day).some(([k,v]) => !k.startsWith('_') && v && v.done && EX[k] && !EX[k].app);
+  }).sort();
+
+  const loads = {};
+  Object.keys(MUSCLE_COEF).forEach(m => { loads[m] = 0; });
+  if(!dates.length) return { loads, days: 0 };
+
+  const records = {};
+  const start = new Date(dates[0] + 'T00:00:00');
+  const cur = new Date(start);
+  let days = 0;
+
+  while(fmt(cur) <= todayStr){
+    const dStr = fmt(cur);
+    const dayLog = logs[dStr] || {};
+    const sessions = [];
+    const trained = new Set();
+
+    Object.entries(dayLog).forEach(([id, e]) => {
+      if(id.startsWith('_') || !e || !e.done || !EX[id]) return;
+      if(EX[id].app) return;
+      const muscles = getMusclesFromEx(EX[id]);
+      if(!muscles.length) return;
+      sessions.push({ id, log: e, muscles });
+      muscles.forEach(m => trained.add(m.id));
+    });
+
+    const BODYWEIGHT_NOMINAL = 0.001; // номинальный вес для упражнений с собственным весом
+    const TRANSITION_RESET   = 10;    // если скачок > 10x — сбрасываем базу (переход bodyweight ↔ weighted)
+
+    sessions.forEach(s => {
+      const rec = records[s.id] || { maxWeight: 0, maxTonnage: 0 };
+      let tonnage = 0, maxW = 0;
+      (s.log.sets || []).forEach(set => {
+        if(!set) return;
+        const r = parseFloat(set.r) || 0;
+        if(r <= 0) return;
+        const w = parseFloat(set.w) || 0;
+        const effW = w > 0 ? w : BODYWEIGHT_NOMINAL;
+        tonnage += effW * r;
+        if(effW > maxW) maxW = effW;
+      });
+      if(tonnage <= 0) return;
+
+      const rawWRatio = rec.maxWeight  > 0 ? maxW    / rec.maxWeight  : 1.0;
+      const rawTRatio = rec.maxTonnage > 0 ? tonnage / rec.maxTonnage : 1.0;
+
+      // Переход между собственным весом и отягощением — сбрасываем базу,
+      // иначе ratio улетает в тысячи. Считаем эту сессию новой точкой отсчёта.
+      if(rawWRatio > TRANSITION_RESET || rawTRatio > TRANSITION_RESET){
+        records[s.id] = { maxWeight: maxW, maxTonnage: tonnage };
+        return;
+      }
+
+      // Обычные отношения, wRatio мягко ограничен чтобы не рвать шкалу
+      const wRatio = Math.min(rawWRatio, 3.0);
+      const tRatio = rawTRatio;
+
+      if(tRatio >= LOAD_THRESHOLD){
+        s.muscles.forEach(({ id, share }) => {
+          const inc = wRatio * tRatio * share * LOAD_FACTOR;
+          // потолок за одну сессию — 40%, чтобы не улетать в «красное» с одного подхода
+          loads[id] = (loads[id] || 0) + Math.min(inc, 0.40);
+        });
+      }
+      if(maxW    > rec.maxWeight)  rec.maxWeight  = maxW;
+      if(tonnage > rec.maxTonnage) rec.maxTonnage = tonnage;
+      records[s.id] = rec;
+    });
+
+    if(dStr < todayStr){
+      Object.keys(loads).forEach(m => {
+        if(trained.has(m)) return;
+        const cfg = MUSCLE_COEF[m];
+        if(!cfg) return;
+        loads[m] = Math.max(0, loads[m] * cfg.recovery_rate - cfg.daily_subtraction);
+      });
+    }
+
+    cur.setDate(cur.getDate() + 1);
+    days++;
+  }
+  return { loads, days };
+}
+
 const DAYS=['вс','пн','вт','ср','чт','пт','сб'];
 const WEEK_ORDER=[1,2,3,4,5,6,0];
 const MONTH_NAMES=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
@@ -157,6 +673,10 @@ const store={
 const customStore={
   get list(){return JSON.parse(localStorage.getItem('customEx')||'[]')},
   set list(v){localStorage.setItem('customEx',JSON.stringify(v))},
+};
+const ownPlanStore={
+  get(){try{return JSON.parse(localStorage.getItem('ownPlan')||'null')}catch(e){return null}},
+  set(v){localStorage.setItem('ownPlan',JSON.stringify(v))},
 };
 
 function escapeHtml(s){
@@ -175,7 +695,16 @@ function customStartDate(c){
 }
 function syncCustomEx(){
   customStore.list.forEach(c=>{
-    EX[c.id]={name:c.name,app:!!c.app,sets:c.sets||4,reps:c.reps||'12-15'};
+    if(c.deleted) return;
+    let muscles = c.muscles;
+    if(Array.isArray(muscles)){
+      const pct = muscles.length ? Math.floor(100/muscles.length) : 0;
+      const obj = {};
+      muscles.forEach(id=>{obj[id]=pct});
+      muscles = obj;
+    }
+    if(!muscles || typeof muscles!=='object') muscles = {};
+    EX[c.id]={name:c.name,app:!!c.app,sets:c.sets||4,reps:c.reps||'12-15',muscles};
   });
 }
 function isCycleDay(date,startStr){
@@ -183,40 +712,79 @@ function isCycleDay(date,startStr){
   const diff=Math.floor((date-start)/86400000);
   return diff>=0 && diff%2===0;
 }
-function isCustomActive(c,date){
-  if(c.deleted)return false;
-  const sch=c.schedule;
-  if(!sch)return false;
-  const startStr=customStartDate(c);
+function isScheduleActive(schedule,date,fallbackStart){
+  if(!schedule)return false;
+  const startStr=schedule.startDate||fallbackStart;
+  if(!startStr)return false;
   const start=new Date(startStr+'T00:00:00');
   const d=new Date(date);d.setHours(0,0,0,0);
   if(d<start)return false;
-  if(sch.type==='days')return sch.days.includes(date.getDay());
-  if(sch.type==='interval'){
+  if(schedule.type==='everyday')return true;
+  if(schedule.type==='days')return !!(schedule.days&&schedule.days.includes(date.getDay()));
+  if(schedule.type==='even')return date.getDate()%2===0;
+  if(schedule.type==='odd')return date.getDate()%2===1;
+  if(schedule.type==='interval'){
     const diff=Math.floor((d-start)/86400000);
-    return diff>=0 && diff%sch.interval===0;
+    return diff>=0&&diff%schedule.interval===0;
   }
   return false;
 }
+function isCustomActive(c, date){
+  if(c.deleted) return false;
+  return isScheduleActive(c.schedule, date, customStartDate(c));
+}
+function scheduleSummary(schedule){
+  if(!schedule||schedule.type==='none')return 'не задано';
+  if(schedule.type==='everyday')return 'каждый день';
+  if(schedule.type==='even')return 'чётные дни';
+  if(schedule.type==='odd')return 'нечётные дни';
+  if(schedule.type==='days'){
+    const names=WEEK_ORDER.filter(d=>schedule.days.includes(d)).map(d=>DAYS[d]);
+    return names.length?names.join(', '):'не задано';
+  }
+  if(schedule.type==='interval')return 'раз в '+schedule.interval+' дн.';
+  return 'не задано';
+}
+
+function isDisabledOn(item, dateStr){
+  if(!item || !item.disabled) return null;
+  const periods = Array.isArray(item.disabled) ? item.disabled : [item.disabled];
+  for(const p of periods){
+    if(!p || !p.reason) continue;
+    const fromOk = !p.from || dateStr >= p.from;
+    const untilOk = !p.until || dateStr <= p.until;
+    if(fromOk && untilOk) return p;
+  }
+  return null;
+}
+function isCurrentlyDisabled(item){
+  return isDisabledOn(item, fmt(todayDate()));
+}
+
 function getPlan(date){
-  const dow=date.getDay(),main=[],info=[];
-  if(dow===1)info.push('Волейбол','Армрестлинг');
-  if(dow===2)info.push('Армрестлинг');
-  if(dow===3)info.push('Волейбол');
-  if(dow===4)info.push('Армрестлинг');
-  if(dow===5)info.push('Волейбол');
-  if(dow===2||dow===6)SCHEDULE.A.forEach(x=>main.push(x));
-  if(dow===4||dow===0)SCHEDULE.B.forEach(x=>main.push(x));
-  if(dow===1||dow===4)SCHEDULE.NECK.forEach(x=>main.push(x));
-  if(dow===3||dow===6)SCHEDULE.JUMPS.forEach(x=>main.push(x));
-  if(dow===6||dow===0)SCHEDULE.BICEPS.forEach(x=>main.push(x));
-  if(isCycleDay(date,'2026-10-17'))main.push('pushups');
-  if(isCycleDay(date,'2026-10-18')){main.push('pullups');main.push('front_lever')}
-  customStore.list.forEach(c=>{if(isCustomActive(c,date))main.push(c.id)});
-  const after=['abs'];
-  if([1,3,5].includes(dow))after.push('stretch');
-  after.push('growth');
-  return {info,main,after};
+  const dateStr = fmt(date);
+  const own = ownPlanStore.get();
+  const main = [];
+  const cancelled = [];
+  const inPlan = new Set();
+
+  if(own && own.enabled){
+    (own.items || []).forEach(item => {
+      if(!EX[item.id]) return;
+      inPlan.add(item.id);
+      if(!isScheduleActive(item.schedule, date)) return;
+      const dis = isDisabledOn(item, dateStr);
+      if(dis){ cancelled.push({ id: item.id, reason: dis.reason }); }
+      else{ main.push(item.id); }
+    });
+  }
+
+  customStore.list.forEach(c => {
+    if(c.deleted || inPlan.has(c.id)) return;
+    if(isCustomActive(c, date) && !main.includes(c.id)) main.push(c.id);
+  });
+
+  return { info: [], main, cancelled, after: [] };
 }
 
 /* ---------- stats & PRs ---------- */
@@ -253,9 +821,7 @@ function getExerciseHistoryBefore(exId,dateStr){
       const w=parseFloat(s.w)||0;
       const r=parseFloat(s.r)||0;
       if(w>maxW)maxW=w;
-      if(r>0){
-        if(repsByWeight[w]===undefined||r>repsByWeight[w])repsByWeight[w]=r;
-      }
+      if(r>0){ if(repsByWeight[w]===undefined||r>repsByWeight[w])repsByWeight[w]=r; }
     });
   });
   return {maxW,repsByWeight};
@@ -271,13 +837,9 @@ function checkPRs(exId,log,dateStr){
     const w=parseFloat(s.w)||0;
     const r=parseFloat(s.r)||0;
     if(r<=0)return;
-    if(w>prev.maxW){
-      if(!weightPR||w>weightPR.w||(w===weightPR.w&&r>weightPR.r))weightPR={w,r};
-    }
+    if(w>prev.maxW){ if(!weightPR||w>weightPR.w||(w===weightPR.w&&r>weightPR.r))weightPR={w,r}; }
     const prevReps=prev.repsByWeight[w];
-    if(prevReps===undefined||r>prevReps){
-      if(!repsPR||r>repsPR.r||(r===repsPR.r&&w>repsPR.w))repsPR={w,r};
-    }
+    if(prevReps===undefined||r>prevReps){ if(!repsPR||r>repsPR.r||(r===repsPR.r&&w>repsPR.w))repsPR={w,r}; }
   });
   return {weightPR,repsPR};
 }
@@ -337,12 +899,9 @@ function checkSteadyAllSets(exId,log,dateStr){
   if(filled.length<ex.sets||filled.length<2)return null;
   const w0=parseFloat(filled[0].w)||0;
   const r0=parseFloat(filled[0].r)||0;
-  const allSame=filled.every(s=>
-    (parseFloat(s.w)||0)===w0&&(parseFloat(s.r)||0)===r0
-  );
+  const allSame=filled.every(s=>(parseFloat(s.w)||0)===w0&&(parseFloat(s.r)||0)===r0);
   if(!allSame)return null;
   const logs=store.logs;
-  // 1. w0 должен быть максимальным весом за всё время
   let maxWBefore=0;
   Object.keys(logs).filter(d=>d<dateStr).forEach(d=>{
     const e=logs[d]&&logs[d][exId];
@@ -354,8 +913,6 @@ function checkSteadyAllSets(exId,log,dateStr){
     });
   });
   if(w0<maxWBefore)return null;
-  // 2. Не должно быть прошлой сессии (с тем же весом и всеми подходами),
-  //    где минимум повторов уже был >= r0
   let maxSteadyBefore=0;
   Object.keys(logs).filter(d=>d<dateStr).forEach(d=>{
     const e=logs[d]&&logs[d][exId];
@@ -495,6 +1052,8 @@ function renderExercise(exId,log){
   const dateStr=fmt(currentDate);
   const done=log?.done?'done':'',checked=log?.done?'checked':'';
   const last=getLastEntryBefore(exId,dateStr);
+  const musStr = muscleSummary(ex.muscles);
+  const musclesHtml = musStr ? `<div class="ex-last" style="color:#7a7a7a">${escapeHtml(musStr)}</div>` : '';
   const head=`<div class="ex-head">
       <input type="checkbox" ${checked} onchange="toggleDone('${exId}',this.checked)">
       <strong>${escapeHtml(ex.name)}</strong>
@@ -505,6 +1064,7 @@ function renderExercise(exId,log){
       ${head}
       <div class="ex-app"><span>${log?.done?'✓ Подтверждено':'Отметь галочку, если сделал'}</span></div>
       <div class="ex-last">Последний раз: ${last?last.date:'нет данных'}</div>
+      ${musclesHtml}
     </div>`;
   }
   const sets=ex.sets,logSets=log?.sets||[];
@@ -523,6 +1083,7 @@ function renderExercise(exId,log){
   return `<div class="ex ${done}" data-ex-id="${exId}">
     ${head}
     <div class="ex-last">Прошлый раз: ${formatSets(last)}</div>
+    ${musclesHtml}
     <div data-progress>${progressHtml}</div>
     <div data-pr>${prHtml?`<div class="pr-row">${prHtml}</div>`:''}</div>
     <div data-steady>${steady?`<div class="pr-row"><span class="pr-badge pr-max" title="Все подходы одинаковые — пора увеличить вес или повторы">🎯 ${steady.count}×${steady.r}</span></div>`:''}</div>
@@ -536,6 +1097,7 @@ function renderTabs(){
     <button class="${view==='custom'?'active':''}" onclick="setView('custom')">Свои</button>
     <button class="${view==='search'?'active':''}" onclick="setView('search')">Поиск</button>
     <button class="${view==='stats'||view==='stats-ex'?'active':''}" onclick="setView('stats')">Стата</button>
+    <button class="${view==='trainer'?'active':''}" onclick="setView('trainer')">Тренер</button>
   </div>`;
 }
 function renderToday(){
@@ -574,8 +1136,28 @@ html+=`<div id="day-meta" class="meta-row" style="display:${dayMetaHtml?'flex':'
   }
   if(!skipped){
     if(plan.main.length){html+=`<h2>Основные</h2>`;plan.main.forEach(id=>html+=renderExercise(id,dayLog[id]))}
-    html+=`<h2>Потом</h2>`;
-    plan.after.forEach(id=>html+=renderExercise(id,dayLog[id]));
+    if(plan.cancelled && plan.cancelled.length){
+      html+=`<h2>Отменено</h2>`;
+      plan.cancelled.forEach(c=>{
+        const ex=EX[c.id];
+        if(!ex) return;
+        html+=`<div class="ex ex-cancelled">
+          <div class="ex-head">
+            <span style="color:#c66;font-size:14px;line-height:1">⊘</span>
+            <strong style="text-decoration:line-through;color:#999">${escapeHtml(ex.name)}</strong>
+            <span class="meta" style="color:#c66">отменено</span>
+          </div>
+          <div class="ex-last" style="color:#aa8;margin-bottom:0">Причина: ${escapeHtml(c.reason||'без причины')}</div>
+        </div>`;
+      });
+    }
+    if(plan.after.length){html+=`<h2>Потом</h2>`;plan.after.forEach(id=>html+=renderExercise(id,dayLog[id]))}
+    if(!plan.main.length && !plan.after.length && !(plan.cancelled && plan.cancelled.length)){
+      html+=`<div class="ex" style="color:#777">
+        На этот день упражнений нет.
+        <button class="mini-btn" style="margin-top:8px" onclick="setView('custom')">Настроить план</button>
+      </div>`;
+    }
   }
   html+=`<h2>Заметка</h2>
   <textarea class="form-input" rows="2" placeholder="Как прошло, самочувствие…" oninput="setDayNote(this.value)">${escapeHtml(dayLog._note||'')}</textarea>`;
@@ -594,35 +1176,43 @@ function getHistoryStartDate(){
   return dates[0]||null;
 }
 function getDayStatus(dateStr){
-  const date=new Date(dateStr+'T00:00:00');
-  const today=todayDate();
-  const todayStr=fmt(today);
-  const isFuture=date>today;
-  const isToday=dateStr===todayStr;
-  if(isFuture)return {state:'future',isToday:false,isFuture:true,date};
-  const start=getHistoryStartDate();
+  const date = new Date(dateStr+'T00:00:00');
+  const today = todayDate();
+  const todayStr = fmt(today);
+  const isFuture = date > today;
+  const isToday = dateStr === todayStr;
+  if(isFuture) return {state:'future',isToday:false,isFuture:true,date};
+  const start = getHistoryStartDate();
   if(!isToday && (!start || dateStr < start)){
     return {state:'before',isToday:false,isFuture:false,date};
   }
-  const dayLog=store.logs[dateStr]||{};
-  if(dayLog._skip)return {state:'skip',reason:dayLog._skip.reason||'',isToday,isFuture:false,dayLog,date};
-  const plan=getPlan(date);
-  const expected=[...plan.main,...plan.after].filter(id=>EX[id]);
-  const doneSet=new Set();
+  const dayLog = store.logs[dateStr] || {};
+  if(dayLog._skip) return {state:'skip',reason:dayLog._skip.reason||'',isToday,isFuture:false,dayLog,date};
+  const plan = getPlan(date);
+  const expected = [...plan.main, ...plan.after].filter(id=>EX[id]);
+  const cancelled = plan.cancelled || [];
+  const doneSet = new Set();
   Object.entries(dayLog).forEach(([id,e])=>{
-    if(id.startsWith('_'))return;
-    if(e&&e.done&&EX[id])doneSet.add(id);
+    if(id.startsWith('_')) return;
+    if(e && e.done && EX[id]) doneSet.add(id);
   });
-  const doneInPlan=expected.filter(id=>doneSet.has(id));
-  const missed=expected.filter(id=>!doneSet.has(id));
-  const offPlan=[...doneSet].filter(id=>!expected.includes(id));
+  const doneInPlan = expected.filter(id => doneSet.has(id));
+  const missed = expected.filter(id => !doneSet.has(id));
+  const cancelledIds = new Set(cancelled.map(c => c.id));
+  const offPlan = [...doneSet].filter(id => !expected.includes(id) && !cancelledIds.has(id));
+
   let state;
-  if(expected.length===0){state=offPlan.length>0?'offplan':'empty';}
-  else if(doneInPlan.length===expected.length){state='done';}
-  else if(doneInPlan.length>0){state='part';}
-  else{state=isToday?'today-none':'full-miss';}
-  if(isToday&&state==='part')state='today-part';
-  return {state,isToday,isFuture:false,dayLog,date,plan,expected,doneInPlan,missed,offPlan};
+  if(expected.length === 0){
+    if(offPlan.length > 0) state = 'offplan';
+    else if(cancelled.length > 0) state = 'cancelled';
+    else state = 'empty';
+  }
+  else if(doneInPlan.length === expected.length){state='done';}
+  else if(doneInPlan.length > 0){state='part';}
+  else{state = isToday ? 'today-none' : 'full-miss';}
+  if(isToday && state === 'part') state = 'today-part';
+
+  return {state, isToday, isFuture:false, dayLog, date, plan, expected, cancelled, doneInPlan, missed, offPlan};
 }
 function renderDayCard(dateStr){
   const status=getDayStatus(dateStr);
@@ -656,9 +1246,7 @@ function renderDayCard(dateStr){
     body+=`<div class="ex" style="color:#aaa;font-size:13px;white-space:pre-wrap">📝 ${escapeHtml(dayLog._note)}</div>`;
   }
   const plan=status.plan||getPlan(d);
-  if(plan.info&&plan.info.length){
-    body+=`<div class="info">${plan.info.join(' · ')}</div>`;
-  }
+  if(plan.info&&plan.info.length){ body+=`<div class="info">${plan.info.join(' · ')}</div>`; }
   const expected=status.expected||[];
   const missed=status.missed||[];
   const doneInPlan=status.doneInPlan||[];
@@ -679,6 +1267,22 @@ function renderDayCard(dateStr){
           <button class="del-btn" title="Удалить запись" onclick="deleteHistoryEntry('${id}','${dateStr}')">✕</button>
         </div>
         ${badges?`<div class="pr-row" style="margin-top:4px;margin-bottom:0">${badges}</div>`:''}
+      </div>`;
+    });
+  }
+  const cancelled = status.cancelled || [];
+  if(cancelled.length){
+    body+=`<h2>Отменено (${cancelled.length})</h2>`;
+    cancelled.forEach(c=>{
+      const ex = EX[c.id];
+      if(!ex) return;
+      body+=`<div class="ex ex-cancelled">
+        <div class="ex-head">
+          <span style="color:#c66;font-size:14px;line-height:1">⊘</span>
+          <strong style="text-decoration:line-through;color:#999">${escapeHtml(ex.name)}</strong>
+          <span class="meta" style="color:#c66">отменено</span>
+        </div>
+        <div class="ex-last" style="color:#aa8;margin-bottom:0">Причина: ${escapeHtml(c.reason||'без причины')}</div>
       </div>`;
     });
   }
@@ -742,7 +1346,6 @@ for(let day=1;day<=dim;day++){
   const isSkip=status.state==='skip';
   const num=isSkip?'🚫':day;
 
-  // 🏆 тоннаж — левый верхний угол
   let tonHtml='';
   if(!isSkip && status.state!=='future' && status.state!=='before'){
     const tonPR=checkTonnagePR(dateStr);
@@ -752,7 +1355,11 @@ for(let day=1;day<=dim;day++){
     }
   }
 
-  // 🔩 / 💪 — снизу
+  let cancelMark='';
+  if(status.cancelled && status.cancelled.length){
+    cancelMark=`<span class="cal-cancelled-mark" title="${status.cancelled.length} отменено">⊘</span>`;
+  }
+
   let prsHtml='';
   if(!isSkip && (status.state==='done'||status.state==='part'||status.state==='offplan'||status.state==='today-part'||status.state==='today-none'||status.state==='full-miss')){
     const prs=getDayPRCounts(dateStr);
@@ -765,7 +1372,7 @@ for(let day=1;day<=dim;day++){
       prsHtml+='</div>';
     }
   }
-  html+=`<div class="${classes.join(' ')}" ${onclick}>${tonHtml}<span class="cal-day-num">${num}</span>${prsHtml}</div>`;
+  html+=`<div class="${classes.join(' ')}" ${onclick}>${tonHtml}<span class="cal-day-num">${num}</span>${prsHtml}${cancelMark}</div>`;
 }
   html+=`</div>`;
   html+=`<div class="legend">
@@ -779,25 +1386,10 @@ for(let day=1;day<=dim;day++){
   html+=renderDayCard(selStr);
   document.getElementById('app').innerHTML=html;
 }
-function selectDate(dateStr){
-  selectedDate=new Date(dateStr+'T00:00:00');
-  render();
-}
-function shiftMonth(delta){
-  calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+delta,1);
-  render();
-}
-function goHistoryToday(){
-  selectedDate=todayDate();
-  calendarMonth=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
-  render();
-}
-function editDay(dateStr){
-  currentDate=new Date(dateStr+'T00:00:00');
-  currentDate.setHours(0,0,0,0);
-  view='today';
-  render();
-}
+function selectDate(dateStr){ selectedDate=new Date(dateStr+'T00:00:00'); render(); }
+function shiftMonth(delta){ calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+delta,1); render(); }
+function goHistoryToday(){ selectedDate=todayDate(); calendarMonth=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1); render(); }
+function editDay(dateStr){ currentDate=new Date(dateStr+'T00:00:00'); currentDate.setHours(0,0,0,0); view='today'; render(); }
 function unskipHistoryDay(dateStr){
   if(!confirm('Отменить пропуск этого дня?'))return;
   const logs=store.logs;
@@ -822,15 +1414,9 @@ function renderSearchResults(){
   const el=document.getElementById('searchResults');
   if(!el)return;
   const q=searchQuery.toLowerCase().trim();
-  if(!q){
-    el.innerHTML=`<div class="ex" style="color:#777">Введите название упражнения — покажу историю и рекорды</div>`;
-    return;
-  }
-  const matches=Object.entries(EX).filter(([id,ex])=>ex.name.toLowerCase().includes(q));
-  if(!matches.length){
-    el.innerHTML=`<div class="ex" style="color:#777">Ничего не найдено</div>`;
-    return;
-  }
+  if(!q){ el.innerHTML=`<div class="ex" style="color:#777">Введите название упражнения — покажу историю и рекорды</div>`; return; }
+  const matches=sortedExerciseEntries().filter(([id,ex])=>ex.name.toLowerCase().includes(q));
+  if(!matches.length){ el.innerHTML=`<div class="ex" style="color:#777">Ничего не найдено</div>`; return; }
   let html='';
   matches.forEach(([id,ex])=>{
     const logs=store.logs;
@@ -840,6 +1426,8 @@ function renderSearchResults(){
       if(e&&e.done)entries.push({date:d,...e});
     });
     html+=`<div class="ex ex-link" onclick="openExerciseStats('${id}')"><strong>${escapeHtml(ex.name)}</strong>`;
+    const msum = muscleSummary(ex.muscles);
+    if(msum){ html+=`<div class="ex-last" style="color:#666">${escapeHtml(msum)}</div>`; }
     if(!entries.length){
       html+=`<div class="ex-last">нет записей</div>`;
     }else{
@@ -858,89 +1446,90 @@ function renderSearchResults(){
   });
   el.innerHTML=html;
 }
-function setSearchQuery(v){
-  searchQuery=v;
-  renderSearchResults();
-}
+function setSearchQuery(v){ searchQuery=v; renderSearchResults(); }
 
 /* ---------- Custom view ---------- */
-function renderCustom(){
-  const list=customStore.list.filter(c=>!c.deleted);
-  let html=renderTabs();
-  html+=`<div class="header"><span>Свои упражнения</span></div>`;
-  if(!list.length){
-    html+=`<div class="ex" style="color:#777">Пока нет. Добавьте ниже.</div>`;
-  }else{
-    list.forEach(c=>{
-      const sd=customStartDate(c);
-      const sched=c.schedule.type==='days'
-        ?WEEK_ORDER.filter(d=>c.schedule.days.includes(d)).map(d=>DAYS[d]).join(', ')+` (с ${sd})`
-        :`раз в ${c.schedule.interval} дн. (с ${sd})`;
-      const type=c.app?'по приложению':`${c.sets}×${c.reps}`;
-      html+=`<div class="ex">
-        <div class="ex-head">
-          <strong>${escapeHtml(c.name)}</strong>
-          <span class="meta">${type}</span>
-          <button class="del-btn" onclick="deleteCustom('${c.id}')">✕</button>
-        </div>
-        <div class="ex-last">${sched}</div>
-      </div>`;
-    });
-  }
-  html+=`<h2>Добавить</h2>
-  <div class="ex">
-    <input type="text" id="cName" placeholder="Название упражнения" class="form-input">
-    <div class="form-row">
-      <label><input type="radio" name="cType" value="sets" checked onchange="updateCustomForm()"> Подходы</label>
-      <label><input type="radio" name="cType" value="app" onchange="updateCustomForm()"> По приложению</label>
-    </div>
-    <div id="cSetsBlock">
-      <input type="number" id="cSets" placeholder="Количество подходов" min="1" value="4" class="form-input">
-      <input type="text" id="cReps" placeholder="Повторения (напр. 12-15)" value="12-15" class="form-input">
-    </div>
-    <div class="form-row">
-      <label><input type="radio" name="cSched" value="days" checked onchange="updateCustomForm()"> Определённые дни</label>
-      <label><input type="radio" name="cSched" value="interval" onchange="updateCustomForm()"> Раз в N дней</label>
-    </div>
-    <div id="cDaysBlock">${WEEK_ORDER.map(d=>`<label class="day-chk"><input type="checkbox" class="cDay" value="${d}"> ${DAYS[d]}</label>`).join('')}</div>
-    <div id="cIntervalBlock" style="display:none">
-      <input type="number" id="cInterval" placeholder="Раз в N дней" min="1" value="3" class="form-input">
-    </div>
-    <div style="font-size:13px;color:#ccc;margin:4px 0 4px">Начинать отсчёт с:</div>
-    <input type="date" id="cStart" value="${fmt(new Date())}" class="form-input">
-    <button onclick="addCustom()" class="add-btn">Добавить</button>
-  </div>`;
-  document.getElementById('app').innerHTML=html;
-  updateCustomForm();
-}
+let editingCustomId=null;
+
 function updateCustomForm(){
-  const type=document.querySelector('input[name="cType"]:checked')?.value;
-  document.getElementById('cSetsBlock').style.display=type==='app'?'none':'block';
-  const sched=document.querySelector('input[name="cSched"]:checked')?.value;
-  document.getElementById('cDaysBlock').style.display=sched==='days'?'block':'none';
-  document.getElementById('cIntervalBlock').style.display=sched==='interval'?'block':'none';
+  const typeEl=document.querySelector('input[name="cType"]:checked');
+  const setsBlock=document.getElementById('cSetsBlock');
+  if(typeEl&&setsBlock)setsBlock.style.display=typeEl.value==='app'?'none':'block';
+  const schedEl=document.querySelector('input[name="cSched"]:checked');
+  const daysBlock=document.getElementById('cDaysBlock');
+  const intervalBlock=document.getElementById('cIntervalBlock');
+  if(schedEl){
+    if(daysBlock)daysBlock.style.display=schedEl.value==='days'?'block':'none';
+    if(intervalBlock)intervalBlock.style.display=schedEl.value==='interval'?'block':'none';
+  }
 }
-function addCustom(){
-  const name=document.getElementById('cName').value.trim();
+function editCustom(id){editingCustomId=id;render()}
+function cancelEditCustom(){editingCustomId=null;render()}
+function renderCustomEditForm(c){
+  const startDate=c.schedule?.startDate||fmt(todayDate());
+  const schedType=c.schedule?.type||'none';
+  const days=c.schedule?.days||[];
+  const interval=c.schedule?.interval||3;
+  const toggle=`var d=document.getElementById('editDaysBlock'),i=document.getElementById('editIntervalBlock');`;
+  return `<div class="ex" style="border-color:#3a5a3a;background:#152515">
+    <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Редактирование</div>
+    <input type="text" id="editName" class="form-input" value="${escapeHtml(c.name)}" placeholder="Название">
+    <div class="form-row">
+      <label><input type="radio" name="editType" value="sets" ${c.app?'':'checked'} onchange="document.getElementById('editSetsBlock').style.display='block'"> Подходы</label>
+      <label><input type="radio" name="editType" value="app" ${c.app?'checked':''} onchange="document.getElementById('editSetsBlock').style.display='none'"> По приложению</label>
+    </div>
+    <div id="editSetsBlock" style="display:${c.app?'none':'block'}">
+      <input type="number" id="editSets" class="form-input" value="${c.sets||4}" min="1" placeholder="Подходы">
+      <input type="text" id="editReps" class="form-input" value="${escapeHtml(c.reps||'12-15')}" placeholder="Повторения">
+    </div>
+    <div style="font-size:12px;color:#888;margin:8px 0 4px">Мышцы:</div>
+    ${renderMusclePicker(c.muscles||[],'editMuscle')}
+    <div style="font-size:13px;color:#ccc;margin:10px 0 6px">Расписание:</div>
+    <div class="form-row">
+      <label><input type="radio" name="editSched" value="none" ${schedType==='none'?'checked':''} onchange="${toggle}d.style.display='none';i.style.display='none'"> Без</label>
+      <label><input type="radio" name="editSched" value="days" ${schedType==='days'?'checked':''} onchange="${toggle}d.style.display='block';i.style.display='none'"> Дни</label>
+      <label><input type="radio" name="editSched" value="interval" ${schedType==='interval'?'checked':''} onchange="${toggle}d.style.display='none';i.style.display='block'"> Раз в N</label>
+      <label><input type="radio" name="editSched" value="even" ${schedType==='even'?'checked':''} onchange="${toggle}d.style.display='none';i.style.display='none'"> Чётные</label>
+      <label><input type="radio" name="editSched" value="odd" ${schedType==='odd'?'checked':''} onchange="${toggle}d.style.display='none';i.style.display='none'"> Нечётные</label>
+      <label><input type="radio" name="editSched" value="everyday" ${schedType==='everyday'?'checked':''} onchange="${toggle}d.style.display='none';i.style.display='none'"> Каждый</label>
+    </div>
+    <div id="editDaysBlock" style="display:${schedType==='days'?'block':'none'}">${WEEK_ORDER.map(d=>`<label class="day-chk"><input type="checkbox" class="edit-day" value="${d}" ${days.includes(d)?'checked':''}> ${DAYS[d]}</label>`).join('')}</div>
+    <div id="editIntervalBlock" style="display:${schedType==='interval'?'block':'none'}">
+      <input type="number" id="editInterval" class="form-input" value="${interval}" min="1" placeholder="Раз в N дней">
+    </div>
+    <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
+    <input type="date" id="editStart" class="form-input" value="${startDate}">
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="mini-btn" style="flex:1" onclick="cancelEditCustom()">Отмена</button>
+      <button class="mini-btn" style="flex:2;background:#2a5a2a;border-color:#3a7a3a" onclick="saveEditCustom('${c.id}')">Сохранить</button>
+    </div>
+  </div>`;
+}
+function saveEditCustom(id){
+  const c=customStore.list.find(x=>x.id===id);
+  if(!c)return;
+  const name=document.getElementById('editName').value.trim();
   if(!name){alert('Введите название');return}
-  const app=document.querySelector('input[name="cType"]:checked').value==='app';
-  const sets=parseInt(document.getElementById('cSets').value)||4;
-  const reps=document.getElementById('cReps').value.trim()||'12-15';
-  const schedType=document.querySelector('input[name="cSched"]:checked').value;
-  const startDate=document.getElementById('cStart').value||fmt(new Date());
-  let schedule;
+  const app=document.querySelector('input[name="editType"]:checked').value==='app';
+  const sets=parseInt(document.getElementById('editSets').value)||4;
+  const reps=document.getElementById('editReps').value.trim()||'12-15';
+  const loads=getMuscleLoads('editMuscle');
+  const muscles=computePercents(loads);
+  const schedType=document.querySelector('input[name="editSched"]:checked').value;
+  const startDate=document.getElementById('editStart').value||fmt(todayDate());
+  let schedule={type:'none'};
   if(schedType==='days'){
-    const days=[...document.querySelectorAll('.cDay:checked')].map(el=>parseInt(el.value));
+    const days=[...document.querySelectorAll('.edit-day:checked')].map(el=>parseInt(el.value));
     if(!days.length){alert('Выберите хотя бы один день');return}
     schedule={type:'days',days,startDate};
-  }else{
-    const interval=parseInt(document.getElementById('cInterval').value)||3;
-    schedule={type:'interval',interval,startDate};
+  }else if(schedType==='interval'){
+    schedule={type:'interval',interval:parseInt(document.getElementById('editInterval').value)||3,startDate};
+  }else if(schedType==='even'||schedType==='odd'||schedType==='everyday'){
+    schedule={type:schedType,startDate};
   }
-  const list=customStore.list;
-  list.push({id:'c'+Date.now().toString(36),name,app,sets,reps,schedule});
-  customStore.list=list;
+  customStore.list=customStore.list.map(x=>x.id===id?{...x,name,app,sets,reps,muscles,loads,schedule}:x);
   syncCustomEx();
+  editingCustomId=null;
   render();
 }
 function deleteCustom(id){
@@ -998,10 +1587,10 @@ function setDayNote(value){
   if(!Object.keys(logs[d]).length)delete logs[d];
   store.logs=logs;
 }
+
 /* ---------- Stats ---------- */
 function weekStart(d){
-  const x=new Date(d);
-  x.setHours(0,0,0,0);
+  const x=new Date(d); x.setHours(0,0,0,0);
   const dow=(x.getDay()+6)%7;
   x.setDate(x.getDate()-dow);
   return x;
@@ -1029,11 +1618,7 @@ function getWeeklyVolume(weeksBack=8){
       }
     });
     const label=String(start.getDate()).padStart(2,'0')+'.'+String(start.getMonth()+1).padStart(2,'0');
-    return {
-      label,
-      value:tonnage,
-      title:`Неделя с ${label}: ${tonnage} кг · ${sets} подх.`,
-    };
+    return { label, value:tonnage, title:`Неделя с ${label}: ${tonnage} кг · ${sets} подх.` };
   });
 }
 function getStreak(){
@@ -1041,7 +1626,6 @@ function getStreak(){
   const todayStr=fmt(today);
   const start=getHistoryStartDate();
   if(!start)return {current:0,record:0};
-  // текущий стрик
   let current=0;
   let d=new Date(today);
   let dStr=fmt(d);
@@ -1050,11 +1634,9 @@ function getStreak(){
     if(st.state==='before')break;
     if(st.state==='skip'||st.state==='full-miss')break;
     if(st.state==='done'||st.state==='part'||st.state==='today-part')current++;
-    // empty / offplan / today-none не прерывают
     d.setDate(d.getDate()-1);
     dStr=fmt(d);
   }
-  // рекорд
   let record=0,cur=0;
   let curD=new Date(start+'T00:00:00');
   let curStr=fmt(curD);
@@ -1165,11 +1747,7 @@ function renderStats(){
   html+=renderDataSection();
   document.getElementById('app').innerHTML=html;
 }
-function openExerciseStats(exId){
-  statsExerciseId=exId;
-  view='stats-ex';
-  render();
-}
+function openExerciseStats(exId){ statsExerciseId=exId; view='stats-ex'; render(); }
 function renderExerciseStats(){
   const exId=statsExerciseId;
   const ex=EX[exId];
@@ -1181,13 +1759,14 @@ function renderExerciseStats(){
   </div>`;
   const logs=store.logs;
   const sessions=Object.keys(logs).sort().filter(d=>logs[d][exId]&&logs[d][exId].done).map(d=>({date:d,log:logs[d][exId]}));
+  const msum = muscleSummary(ex.muscles);
+  if(msum){ html+=`<div class="ex"><div class="ex-last" style="color:#999">Мышцы: ${escapeHtml(msum)}</div></div>`; }
   if(!sessions.length){
     html+=`<div class="ex" style="color:#666">Нет записей для этого упражнения</div>`;
     document.getElementById('app').innerHTML=html;
     return;
   }
   if(ex.app){
-    const prs=0;
     html+=`<div class="ex"><strong>По приложению</strong><div class="ex-last">Сессий: ${sessions.length} · последняя: ${sessions[sessions.length-1].date}</div></div>`;
     html+=`<h2>Все записи</h2>`;
     sessions.slice().reverse().forEach(s=>{
@@ -1228,11 +1807,7 @@ function renderExerciseStats(){
   html+=`<h2>Тоннаж по сессиям</h2>`;
   html+=renderBars(recent.map(s=>{
     const st=getExerciseStats(s.log);
-    return {
-      label:s.date.slice(5),
-      value:st.totalVol,
-      title:`${s.date}: ${Math.round(st.totalVol)} кг`,
-    };
+    return { label:s.date.slice(5), value:st.totalVol, title:`${s.date}: ${Math.round(st.totalVol)} кг` };
   }),{fmt:v=>v>999?Math.round(v/100)/10+'к':v,color:'linear-gradient(180deg,#4a8,#2a5)'});
   html+=`<h2>Все записи</h2>`;
   sessions.slice().reverse().slice(0,30).forEach(s=>{
@@ -1248,6 +1823,7 @@ function renderExerciseStats(){
   });
   document.getElementById('app').innerHTML=html;
 }
+
 /* ---------- Data backup ---------- */
 function exportData(){
   const data={
@@ -1255,6 +1831,8 @@ function exportData(){
     exportedAt:new Date().toISOString(),
     logs:store.logs,
     customEx:customStore.list,
+    ownPlan:ownPlanStore.get(),
+    planConfigured:localStorage.getItem('planConfigured')==='1',
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
@@ -1293,6 +1871,8 @@ function handleImportFile(ev){
         customStore.list=data.customEx;
         syncCustomEx();
       }
+      if(data.ownPlan){ ownPlanStore.set(data.ownPlan); }
+      if(data.planConfigured){ localStorage.setItem('planConfigured','1'); }
       alert('Данные загружены');
       render();
     }catch(err){
@@ -1307,6 +1887,8 @@ function resetAll(){
   localStorage.removeItem('logs');
   localStorage.removeItem('customEx');
   localStorage.removeItem('lastBackupDate');
+  localStorage.removeItem('ownPlan');
+  localStorage.removeItem('planConfigured');
   location.reload();
 }
 function renderInstallSection(){
@@ -1346,17 +1928,751 @@ function renderDataSection(){
     <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImportFile(event)">
   </div>`;
 }
+
+/* ---------- Тренер ---------- */
+function renderTrainer(){
+  const { loads, days } = computeAllMuscleLoads();
+  const planMuscles = new Set();
+  const own = ownPlanStore.get();
+  (own && own.enabled ? own.items : []).forEach(it => {
+    const ex = EX[it.id];
+    if(!ex) return;
+    getMusclesFromEx(ex).forEach(({ id }) => planMuscles.add(id));
+  });
+
+  let html = renderTabs();
+  html += `<div class="header"><span>Тренер</span></div>`;
+
+  if(!days){
+    html += `<div class="ex" style="color:#888;font-size:13px">
+      Тренер начнёт анализировать, как только появятся первые выполненные упражнения с подходами.
+    </div>`;
+    html += renderTrainerAbout();
+    document.getElementById('app').innerHTML = html;
+    return;
+  }
+
+  const ready=[], moderate=[], high=[], rest=[];
+  Object.entries(loads).forEach(([m, l]) => {
+    if(!(m in MUSCLE_BY_ID)) return;
+    if(l <= LOAD_GREEN) ready.push(m);
+    else if(l <= LOAD_YELLOW) moderate.push(m);
+    else if(l <= LOAD_ORANGE) high.push(m);
+    else rest.push(m);
+  });
+
+  html += `<div class="stats-summary">
+    <div class="stat-card"><div class="stat-val" style="color:#6ab06a">${ready.length}</div><div class="stat-lbl">готовы к работе</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:#e8c44d">${moderate.length}</div><div class="stat-lbl">умеренная усталость</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:#e8a860">${high.length}</div><div class="stat-lbl">высокая усталость</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:#e85a5a">${rest.length}</div><div class="stat-lbl">нужен отдых</div></div>
+  </div>`;
+
+  MUSCLES.forEach(cat => {
+    const items = cat.groups.filter(g => g.id in MUSCLE_COEF);
+    if(!items.length) return;
+    html += `<h2>${cat.name}</h2>`;
+    items.forEach(g => {
+      const load = loads[g.id] || 0;
+      const color = getLoadColor(load);
+      const label = getLoadLabel(load);
+      const pct = Math.round(load * 100);
+      const inPlan = planMuscles.has(g.id);
+      html += `<div class="ex" style="border-left:4px solid ${color};margin-bottom:6px">
+        <div class="hist-row" style="margin-bottom:4px">
+          <strong>${escapeHtml(g.name)}</strong>
+          ${!inPlan ? `<span style="color:#e8a860;font-size:11px;margin-left:6px">не в плане</span>` : ''}
+          <span style="margin-left:auto;color:${color};font-weight:600;font-size:13px">${pct}% · ${label}</span>
+        </div>
+        <div style="height:6px;background:#222;border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${Math.min(pct,100)}%;background:${color};transition:width .3s"></div>
+        </div>
+      </div>`;
+    });
+  });
+
+  html += `<h2>Рекомендации</h2>`;
+  const recs = [];
+  if(rest.length){
+    const names = rest.slice(0,6).map(m => MUSCLE_BY_ID[m]?.name || m).join(', ');
+    recs.push(`🔴 Нужен отдых: ${names}${rest.length > 6 ? ' и др.' : ''}`);
+  }
+  if(ready.length){
+    const names = ready.slice(0,6).map(m => MUSCLE_BY_ID[m]?.name || m).join(', ');
+    recs.push(`🟢 Готовы к нагрузке: ${names}${ready.length > 6 ? ' и др.' : ''}`);
+  }
+  const pairs = [['biceps','triceps'],['pectoralis_major','lats'],['fcr','finger_extensors'],['quads','hamstrings']];
+  pairs.forEach(([a,b]) => {
+    if(!(a in loads) || !(b in loads)) return;
+    const diff = Math.abs(loads[a] - loads[b]);
+    if(diff > 0.30){
+      const big = loads[a] > loads[b] ? a : b;
+      const small = loads[a] > loads[b] ? b : a;
+      recs.push(`⚖️ Дисбаланс: ${MUSCLE_BY_ID[big].name} нагружен сильнее, чем ${MUSCLE_BY_ID[small].name} — добавь работу на ${MUSCLE_BY_ID[small].name.toLowerCase()}`);
+    }
+  });
+  const notInPlan = [];
+  MUSCLES.forEach(cat => cat.groups.forEach(g => {
+    if(g.id in MUSCLE_COEF && !planMuscles.has(g.id)) notInPlan.push(g);
+  }));
+  if(notInPlan.length){
+    recs.push(`📋 Не задействованы в плане: ${notInPlan.map(g => g.name).join(', ')}`);
+  }
+  if(!recs.length) recs.push('Пока всё сбалансировано — продолжай в том же духе.');
+
+  recs.forEach(r => {
+    html += `<div class="ex" style="font-size:13px;line-height:1.5">${r}</div>`;
+  });
+
+  html += renderTrainerAbout();
+  document.getElementById('app').innerHTML = html;
+}
+
+function renderTrainerAbout(){
+  return `<h2>О системе</h2>
+  <div class="ex" style="font-size:12.5px;color:#aaa;line-height:1.55">
+    <p style="margin:0 0 8px"><strong style="color:#ccc">Загруженность</strong> — условная «усталость» мышцы в процентах. После тренировки она растёт, в дни отдыха снижается. Если тренировался два дня подряд — день тренировки не считается днём отдыха, восстановление к нему не применяется.</p>
+    <p style="margin:0 0 8px"><strong style="color:#ccc">Формула начисления:</strong><br>
+    <code>increase = weight_ratio × tonnage_ratio × muscle_share × ${LOAD_FACTOR}</code><br>
+    где отношения берутся к личным рекордам по этому упражнению.</p>
+    <p style="margin:0 0 8px"><strong style="color:#ccc">Восстановление в день отдыха:</strong><br>
+    <code>load = max(0, load × recovery_rate − daily_subtraction)</code></p>
+    <p style="margin:0 0 8px"><strong style="color:#ccc">Порог значимости:</strong> если тоннаж сессии меньше ${Math.round(LOAD_THRESHOLD*100)}% от рекорда — нагрузка не начисляется.</p>
+    <p style="margin:0"><strong style="color:#ccc">Цвета:</strong><br>
+    🟢 0–${Math.round(LOAD_GREEN*100)}% — восстановлена, можно тяжёлую работу<br>
+    🟡 ${Math.round(LOAD_GREEN*100)}–${Math.round(LOAD_YELLOW*100)}% — умеренная усталость<br>
+    🟠 ${Math.round(LOAD_YELLOW*100)}–${Math.round(LOAD_ORANGE*100)}% — только лёгкая сессия<br>
+    🔴 &gt;${Math.round(LOAD_ORANGE*100)}% — нужен отдых</p>
+  </div>`;
+}
+
+/* ---------- Онбординг / конструктор плана ---------- */
+let onbPlan = {items: []};
+let onbAdding = false;
+let onbAddType = 'existing';
+let onbAddSchedType = 'days';
+let onbEditingIdx = null;
+let prevView = null;
+let addExistingSelectedId = '';   // выбранное упражнение в форме «Добавить»
+
+function needsOnboarding(){
+  if(localStorage.getItem('planConfigured')) return false;
+  return Object.keys(store.logs).length === 0;
+}
+
+function loadOnbPlanFromStore(){
+  const own = ownPlanStore.get();
+  let items = (own && own.items) ? JSON.parse(JSON.stringify(own.items)).filter(it => EX[it.id]) : [];
+  if(items.length === 0){
+    items = customStore.list
+      .filter(c => !c.deleted && c.schedule && c.schedule.type !== 'none')
+      .map(c => ({ id: c.id, schedule: { ...c.schedule }, disabled: null }));
+  }
+  onbPlan = { items };
+  onbEditingIdx = null;
+  onbAdding = false;
+}
+function saveOnbPlanToStore(){
+  ownPlanStore.set({ enabled: true, items: onbPlan.items });
+  localStorage.setItem('planConfigured', '1');
+}
+
+/* --- Проверка несохранённых изменений --- */
+function isCustomDirty(){
+  const stored = ownPlanStore.get();
+  if(!stored) return onbPlan.items.length > 0;
+  const storedStr = JSON.stringify(stored.items || []);
+  const currentStr = JSON.stringify(onbPlan.items || []);
+  return storedStr !== currentStr;
+}
+
+/* Есть ли введённые данные в форме "Добавить упражнение" */
+function hasPendingAddData(){
+  if(!onbAdding) return false;
+  if(onbAddType === 'existing'){
+    return !!addExistingSelectedId;
+  }else{
+    const nameEl = document.getElementById('addNewName');
+    if(nameEl && nameEl.value.trim()) return true;
+    const anyMuscle = document.querySelector('.addNewMuscle-chk:checked');
+    return !!anyMuscle;
+  }
+}
+
+/* Пытается добавить упражнение из открытой формы.
+   Возвращает true при успехе, false при ошибке (показывает alert).
+   НЕ вызывает render() — это делает вызывающая сторона. */
+function attemptAddExercise(){
+  let id, newEx = null;
+
+    if(onbAddType === 'existing'){
+    id = addExistingSelectedId;
+    if(!id){alert('Выберите упражнение из списка');return false;}
+  }else{
+    const nameEl = document.getElementById('addNewName');
+    if(!nameEl){return false;}
+    const name = nameEl.value.trim();
+    if(!name){alert('Введите название');return false;}
+
+    const loads = getMuscleLoads('addNewMuscle');
+    if(Object.keys(loads).length === 0){
+      alert('Выберите хотя бы одну мышцу');
+      return false;
+    }
+    const muscles = computePercents(loads);
+
+    const app = document.querySelector('input[name="addNewType"]:checked').value === 'app';
+    const setsEl = document.getElementById('addNewSets');
+    const repsEl = document.getElementById('addNewReps');
+    const sets = setsEl ? (parseInt(setsEl.value)||4) : 4;
+    const reps = repsEl ? (repsEl.value.trim()||'12-15') : '12-15';
+    id = 'c' + Date.now().toString(36);
+    newEx = { id, name, app, sets, reps, muscles, loads, schedule: { type: 'none' } };
+  }
+
+  const targetEx = newEx || EX[id];
+  const targetName = (targetEx && targetEx.name || '').trim().toLowerCase();
+  if(!targetName){alert('Не удалось определить название упражнения');return false;}
+
+  const dup = onbPlan.items.some(it=>{
+    const e = EX[it.id];
+    return e && e.name.trim().toLowerCase() === targetName;
+  });
+  if(dup){
+    alert('Упражнение с таким названием уже есть в плане');
+    return false;
+  }
+
+  const startEl = document.getElementById('addStart');
+  const startDate = (startEl && startEl.value) || fmt(todayDate());
+  let schedule;
+  if(onbAddSchedType === 'days'){
+    const days = [...document.querySelectorAll('.add-day:checked')].map(el => parseInt(el.value));
+    if(!days.length){alert('Выберите хотя бы один день');return false;}
+    schedule = { type:'days', days, startDate };
+  }else if(onbAddSchedType === 'interval'){
+    const intEl = document.getElementById('addInterval');
+    schedule = { type:'interval', interval: parseInt(intEl && intEl.value)||3, startDate };
+  }else{
+    schedule = { type:onbAddSchedType, startDate };
+  }
+
+  if(newEx){
+    const list = customStore.list;
+    list.push(newEx);
+    customStore.list = list;
+    syncCustomEx();
+  }
+
+  onbPlan.items.push({ id, schedule, disabled: null });
+  return true;
+}
+
+function onbShowAdd(){
+  onbAdding = true;
+  onbEditingIdx = null;
+  onbAddType = 'existing';
+  onbAddSchedType = 'days';
+  addExistingSelectedId = '';
+  render();
+  setTimeout(() => {
+    const s = document.getElementById('addExistingSearch');
+    if(s) s.focus();
+  }, 50);
+}
+function onbCancelAdd(){onbAdding = false;render()}
+function onbSetAddType(t){
+  onbAddType = t;
+  document.getElementById('addExistingBlock').style.display = t === 'existing' ? 'block' : 'none';
+  document.getElementById('addNewBlock').style.display = t === 'new' ? 'block' : 'none';
+  if(t === 'existing'){
+    updateAddExistingPreview();
+  }
+}
+function onbSetSched(t){
+  onbAddSchedType = t;
+  document.getElementById('addDaysBlock').style.display = t === 'days' ? 'block' : 'none';
+  document.getElementById('addIntervalBlock').style.display = t === 'interval' ? 'block' : 'none';
+}
+
+function getExSearchInfo(ex){
+  const muscleNames = [];
+  const sectionSet = new Set();
+  Object.keys(ex.muscles || {}).forEach(mid => {
+    const m = MUSCLE_BY_ID[mid];
+    if(m) muscleNames.push(m.name);
+    const sec = MUSCLE_SECTION[mid];
+    if(sec) sectionSet.add(sec.name);
+  });
+  return { muscleNames, sectionNames: [...sectionSet] };
+}
+
+function matchExercise(ex, q){
+  const info = getExSearchInfo(ex);
+  if(!q) return { ok: true, byName: false, byMuscle: false, bySection: false, info };
+  const ql = q.toLowerCase();
+  const byName = ex.name.toLowerCase().includes(ql);
+  const byMuscle = info.muscleNames.some(m => m.toLowerCase().includes(ql));
+  const bySection = info.sectionNames.some(s => s.toLowerCase().includes(ql));
+  return { ok: byName || byMuscle || bySection, byName, byMuscle, bySection, info };
+}
+
+function highlightMatch(text, q, color){
+  if(!q) return escapeHtml(text);
+  const ql = q.toLowerCase();
+  const lower = text.toLowerCase();
+  let result = '';
+  let i = 0;
+  while(true){
+    const idx = lower.indexOf(ql, i);
+    if(idx < 0){ result += escapeHtml(text.slice(i)); break; }
+    result += escapeHtml(text.slice(i, idx));
+    result += `<span style="background:${color}33;color:${color};border-radius:2px;padding:0 1px">${escapeHtml(text.slice(idx, idx + ql.length))}</span>`;
+    i = idx + ql.length;
+  }
+  return result;
+}
+
+function renderAddExistingRow(id, name, isSel, q, match){
+  const bg = isSel ? '#1a3a1a' : '#141414';
+  const bd = isSel ? '#4a7a4a' : '#262626';
+  const fg = isSel ? '#9f9' : '#ddd';
+  const nameHtml = (match && match.byName) ? highlightMatch(name, q, '#f0c860') : escapeHtml(name);
+
+  let infoLine = '';
+  if(match && match.info){
+    const { muscleNames, sectionNames } = match.info;
+    const ql = q ? q.toLowerCase() : '';
+    const parts = [];
+    if(muscleNames.length){
+      parts.push(muscleNames.map(mn => {
+        if(ql && match.byMuscle && mn.toLowerCase().includes(ql)){
+          return `<span style="background:#7cc0e833;color:#7cc0e8;border-radius:2px;padding:0 2px">${escapeHtml(mn)}</span>`;
+        }
+        return escapeHtml(mn);
+      }).join(', '));
+    }
+    if(sectionNames.length){
+      const secHtml = sectionNames.map(sn => {
+        if(ql && match.bySection && sn.toLowerCase().includes(ql)){
+          return `<span style="background:#c090e033;color:#c090e0;border-radius:2px;padding:0 2px">${escapeHtml(sn)}</span>`;
+        }
+        return escapeHtml(sn);
+      }).join(', ');
+      parts.push(`<span style="color:#555">·</span> ${secHtml}`);
+    }
+    if(parts.length){
+      infoLine = `<div style="font-size:10.5px;color:#6a6a6a;margin-top:3px;line-height:1.35">${parts.join(' ')}</div>`;
+    }
+  }
+
+  return `<div onclick="selectAddExisting('${id}')" data-id="${id}"
+    style="padding:8px 11px;background:${bg};border:1px solid ${bd};border-radius:5px;margin-bottom:4px;cursor:pointer;font-size:13px;line-height:1.3;color:${fg}">
+    <div><span class="check-mark" style="display:${isSel ? 'inline' : 'none'}">✓ </span>${nameHtml}</div>
+    ${infoLine}
+  </div>`;
+}
+
+function updateAddExistingPreview(){
+  const el = document.getElementById('addExistingPreview');
+  if(!el) return;
+  const ex = addExistingSelectedId ? EX[addExistingSelectedId] : null;
+  const summary = ex ? muscleSummary(ex.muscles) : '';
+  el.innerHTML = summary ? '✓ ' + escapeHtml(summary) : '';
+  el.style.color = ex ? '#6ab06a' : '#888';
+}
+
+function filterAddExistingList(){
+  const search = document.getElementById('addExistingSearch');
+  const list   = document.getElementById('addExistingList');
+  const count  = document.getElementById('addExistingCount');
+  if(!search || !list) return;
+
+  const q = search.value.trim();
+  const results = [];
+  sortedExerciseEntries().forEach(([id, ex]) => {
+    const m = matchExercise(ex, q);
+    if(m.ok) results.push({ id, ex, match: m });
+  });
+
+  if(count){
+    if(!q) count.textContent = `Всего упражнений: ${results.length}`;
+    else if(!results.length) count.textContent = 'Ничего не найдено';
+    else if(results.length === 1) count.textContent = '1 совпадение';
+    else count.textContent = `Найдено: ${results.length}`;
+  }
+
+  if(!results.length){
+    list.innerHTML = '<div style="padding:14px;color:#666;font-size:13px;text-align:center">Ничего не найдено</div>';
+    addExistingSelectedId = '';
+    updateAddExistingPreview();
+    return;
+  }
+
+  if(results.length === 1){
+    addExistingSelectedId = results[0].id;
+  } else if(addExistingSelectedId && !results.some(r => r.id === addExistingSelectedId)){
+    addExistingSelectedId = '';
+  }
+
+  list.innerHTML = results.map(r =>
+    renderAddExistingRow(r.id, r.ex.name, r.id === addExistingSelectedId, q, r.match)
+  ).join('');
+
+  updateAddExistingPreview();
+}
+
+function selectAddExisting(id){
+  addExistingSelectedId = id;
+  const list = document.getElementById('addExistingList');
+  if(list){
+    list.querySelectorAll('div[data-id]').forEach(row => {
+      const rowId = row.dataset.id;
+      const isSel = rowId === id;
+      row.style.background = isSel ? '#1a3a1a' : '#141414';
+      row.style.borderColor = isSel ? '#4a7a4a' : '#262626';
+      row.style.color = isSel ? '#9f9' : '#ddd';
+      const check = row.querySelector('.check-mark');
+      if(check) check.style.display = isSel ? 'inline' : 'none';
+    });
+  }
+  updateAddExistingPreview();
+}
+
+function onbRemoveItem(idx){
+  const item = onbPlan.items[idx];
+  const ex = item ? EX[item.id] : null;
+  const name = ex ? ex.name : 'упражнение';
+  if(!confirm(`Удалить «${name}» из плана?`)) return;
+  onbPlan.items.splice(idx, 1);
+  onbEditingIdx = null;
+  render();
+}
+function onbShowEdit(idx){
+  onbEditingIdx = idx;
+  onbAdding = false;
+  render();
+}
+function onbCancelEdit(){
+  onbEditingIdx = null;
+  render();
+}
+function onbSaveEdit(idx){
+  const item = onbPlan.items[idx];
+  if(!item) return;
+
+  const schedType = document.querySelector('input[name="peSched"]:checked').value;
+  const startDate = document.getElementById('peStart').value || fmt(todayDate());
+  let schedule;
+  if(schedType === 'days'){
+    const days = [...document.querySelectorAll('.pe-day:checked')].map(el => parseInt(el.value));
+    if(!days.length){alert('Выберите хотя бы один день');return}
+    schedule = { type:'days', days, startDate };
+  }else if(schedType === 'interval'){
+    schedule = { type:'interval', interval: parseInt(document.getElementById('peIntervalVal').value)||3, startDate };
+  }else{
+    schedule = { type:schedType, startDate };
+  }
+
+  const wasDisabled = !!isCurrentlyDisabled(item);
+  const willBeDisabled = document.getElementById('peDisChk').checked;
+  const reason = document.getElementById('peDisReason').value.trim();
+  const until = document.getElementById('peDisUntil').value || null;
+  const today = fmt(todayDate());
+  const yesterday = fmt(new Date(todayDate().getTime() - 86400000));
+
+  let disabled = item.disabled ? JSON.parse(JSON.stringify(item.disabled)) : null;
+
+  if(willBeDisabled && !wasDisabled){
+    if(!reason){alert('Укажите причину отключения');return}
+    if(until && until < today){alert('Дата должна быть не раньше сегодня');return}
+    const entry = { reason, from: today, until: until };
+    if(!disabled) disabled = [];
+    disabled.push(entry);
+  }else if(!willBeDisabled && wasDisabled){
+    const arr = Array.isArray(disabled) ? disabled : [disabled];
+    disabled = arr.map(p => {
+      if(p.from <= today && (!p.until || p.until >= today)){
+        if(p.from > yesterday) return null;
+        return { ...p, until: yesterday };
+      }
+      return p;
+    }).filter(Boolean);
+    if(!disabled.length) disabled = null;
+  }else if(willBeDisabled && wasDisabled){
+    if(!reason){alert('Укажите причину отключения');return}
+    if(until && until < today){alert('Дата должна быть не раньше сегодня');return}
+    const arr = Array.isArray(disabled) ? disabled : [disabled];
+    disabled = arr.map(p => {
+      if(p.from <= today && (!p.until || p.until >= today)){
+        return { ...p, reason, until };
+      }
+      return p;
+    });
+  }
+
+  onbPlan.items[idx] = { ...item, schedule, disabled };
+  onbEditingIdx = null;
+  render();
+}
+
+function renderAddForm(){
+  const daysChecks = WEEK_ORDER.map(d =>
+    `<label class="day-chk"><input type="checkbox" class="add-day" value="${d}"> ${DAYS[d]}</label>`
+  ).join('');
+
+  return `
+    <div class="ex" style="margin-top:10px">
+      <div class="form-row">
+        <label><input type="radio" name="addType" value="existing" ${onbAddType==='existing'?'checked':''} onchange="onbSetAddType('existing')"> Существующее</label>
+        <label><input type="radio" name="addType" value="new" ${onbAddType==='new'?'checked':''} onchange="onbSetAddType('new')"> Новое</label>
+      </div>
+                  <div id="addExistingBlock" style="display:${onbAddType==='existing'?'block':'none'}">
+        <input type="text" id="addExistingSearch" class="form-input"
+               placeholder="Поиск упражнения…" autocomplete="off"
+               oninput="filterAddExistingList()">
+        <div id="addExistingCount" style="color:#6ab0ff;font-size:12px;margin:-2px 0 6px"></div>
+        <div id="addExistingList" style="max-height:320px;overflow-y:auto;margin-bottom:8px">
+          ${sortedExerciseEntries().map(([id, ex]) => {
+            const m = matchExercise(ex, '');
+            return renderAddExistingRow(id, ex.name, id === addExistingSelectedId, '', m);
+          }).join('')}
+        </div>
+        <div id="addExistingPreview" class="ex-last" style="margin-top:-4px;color:#888"></div>
+      </div>
+      <div id="addNewBlock" style="display:${onbAddType==='new'?'block':'none'}">
+        <input type="text" id="addNewName" class="form-input" placeholder="Название упражнения">
+        <div class="form-row">
+          <label><input type="radio" name="addNewType" value="sets" checked onchange="document.getElementById('addNewSetsBlock').style.display='block'"> Подходы</label>
+          <label><input type="radio" name="addNewType" value="app" onchange="document.getElementById('addNewSetsBlock').style.display='none'"> По приложению</label>
+        </div>
+        <div id="addNewSetsBlock">
+          <input type="number" id="addNewSets" class="form-input" value="4" min="1" placeholder="Количество подходов">
+          <input type="text" id="addNewReps" class="form-input" value="12-15" placeholder="Повторения">
+        </div>
+        <div style="font-size:12px;color:#888;margin:8px 0 4px">Мышцы (обязательно хотя бы одна):</div>
+        ${renderMusclePicker({},'addNewMuscle')}
+      </div>
+      <div style="font-size:13px;color:#ccc;margin:10px 0 6px">Расписание:</div>
+      <div class="form-row">
+        <label><input type="radio" name="addSched" value="days" ${onbAddSchedType==='days'?'checked':''} onchange="onbSetSched('days')"> Дни недели</label>
+        <label><input type="radio" name="addSched" value="interval" ${onbAddSchedType==='interval'?'checked':''} onchange="onbSetSched('interval')"> Раз в N</label>
+        <label><input type="radio" name="addSched" value="even" ${onbAddSchedType==='even'?'checked':''} onchange="onbSetSched('even')"> Чётные</label>
+        <label><input type="radio" name="addSched" value="odd" ${onbAddSchedType==='odd'?'checked':''} onchange="onbSetSched('odd')"> Нечётные</label>
+        <label><input type="radio" name="addSched" value="everyday" ${onbAddSchedType==='everyday'?'checked':''} onchange="onbSetSched('everyday')"> Каждый день</label>
+      </div>
+      <div id="addDaysBlock" style="display:${onbAddSchedType==='days'?'block':'none'}">${daysChecks}</div>
+      <div id="addIntervalBlock" style="display:${onbAddSchedType==='interval'?'block':'none'}">
+        <input type="number" id="addInterval" class="form-input" value="3" min="1" placeholder="Раз в N дней">
+      </div>
+      <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
+      <input type="date" id="addStart" class="form-input" value="${fmt(todayDate())}">
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="mini-btn" style="flex:1" onclick="onbCancelAdd()">Отмена</button>
+        <button class="mini-btn" style="flex:2;background:#2a5a2a;border-color:#3a7a3a" onclick="onbConfirmAdd()">Добавить</button>
+      </div>
+    </div>`;
+}
+function onbConfirmAdd(){
+  if(attemptAddExercise()){
+    onbAdding = false;
+    render();
+  }
+}
+
+function renderPlanEditForm(item, idx){
+  const ex = EX[item.id];
+  if(!ex) return '';
+  const sched = item.schedule || {};
+  const schedType = sched.type || 'days';
+  const days = sched.days || [];
+  const interval = sched.interval || 3;
+  const startDate = sched.startDate || fmt(todayDate());
+  const currentDis = isCurrentlyDisabled(item);
+  const isDis = !!currentDis;
+  const disReason = currentDis ? (currentDis.reason || '') : '';
+  const disUntil = currentDis ? (currentDis.until || '') : '';
+  const disFrom = currentDis ? currentDis.from : '';
+  const msum = muscleSummary(ex.muscles);
+
+  const toggle = `var f=document.getElementById('peDisFields');f.style.display=this.checked?'block':'none';`;
+  const schedToggle = `var d=document.getElementById('peDays'),i=document.getElementById('peInterval');`;
+
+  return `<div class="ex" style="border-color:#3a5a3a;background:#152515;margin-top:6px;margin-bottom:8px">
+    <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Редактирование: ${escapeHtml(ex.name)}</div>
+    ${msum ? `<div class="psched" style="color:#666;margin-bottom:8px;font-size:11.5px">${escapeHtml(msum)}</div>` : ''}
+
+    <div style="font-size:12px;color:#888;margin:8px 0 4px">Расписание:</div>
+    <div class="form-row">
+      <label><input type="radio" name="peSched" value="days" ${schedType==='days'?'checked':''} onchange="${schedToggle}d.style.display='block';i.style.display='none'"> Дни</label>
+      <label><input type="radio" name="peSched" value="interval" ${schedType==='interval'?'checked':''} onchange="${schedToggle}d.style.display='none';i.style.display='block'"> Раз в N</label>
+      <label><input type="radio" name="peSched" value="even" ${schedType==='even'?'checked':''} onchange="${schedToggle}d.style.display='none';i.style.display='none'"> Чётные</label>
+      <label><input type="radio" name="peSched" value="odd" ${schedType==='odd'?'checked':''} onchange="${schedToggle}d.style.display='none';i.style.display='none'"> Нечётные</label>
+      <label><input type="radio" name="peSched" value="everyday" ${schedType==='everyday'?'checked':''} onchange="${schedToggle}d.style.display='none';i.style.display='none'"> Каждый день</label>
+    </div>
+    <div id="peDays" style="display:${schedType==='days'?'block':'none'}">
+      ${WEEK_ORDER.map(d=>`<label class="day-chk"><input type="checkbox" class="pe-day" value="${d}" ${days.includes(d)?'checked':''}> ${DAYS[d]}</label>`).join('')}
+    </div>
+    <div id="peInterval" style="display:${schedType==='interval'?'block':'none'}">
+      <input type="number" id="peIntervalVal" class="form-input" value="${interval}" min="1">
+    </div>
+
+    <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
+    <input type="date" id="peStart" class="form-input" value="${startDate}">
+
+    ${isDis ? `<div class="dis-info">
+      🚫 Отключено с <strong>${disFrom}</strong>${disUntil ? ` по <strong>${disUntil}</strong>` : ' (бессрочно)'}<br>
+      Причина: <strong>${escapeHtml(disReason)}</strong>
+    </div>` : ''}
+
+    <div style="font-size:13px;color:#ccc;margin:12px 0 6px;padding-top:10px;border-top:1px solid #2a2a2a">
+      <label><input type="checkbox" id="peDisChk" ${isDis?'checked':''} onchange="${toggle}"> ${isDis ? 'Управлять отключением' : 'Отключить упражнение'}</label>
+    </div>
+    <div id="peDisFields" style="display:${isDis?'block':'none'}">
+      <input type="text" id="peDisReason" class="form-input" placeholder="Причина (болезнь, травма…)" value="${escapeHtml(disReason)}">
+      <div style="font-size:12px;color:#888;margin:4px 0">Отключить до (пусто = бессрочно):</div>
+      <input type="date" id="peDisUntil" class="form-input" value="${disUntil}">
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="mini-btn" style="flex:1" onclick="onbCancelEdit()">Отмена</button>
+      <button class="mini-btn" style="flex:2;background:#2a5a2a;border-color:#3a7a3a" onclick="onbSaveEdit(${idx})">Сохранить</button>
+    </div>
+  </div>`;
+}
+
+function renderPlanBuilderContent(){
+  const isCustomMode = view === 'custom';
+  const title = isCustomMode ? 'Мой план' : 'Соберём ваш план';
+  const subtitle = isCustomMode ? 'Добавляйте, редактируйте и отключайте упражнения' : 'Выберите упражнения и расписание для каждого';
+  const btnText = isCustomMode ? 'Сохранить' : 'Начать';
+
+  let itemsHtml = '';
+  if(!onbPlan.items.length){
+    itemsHtml = `<div class="ex" style="color:#777;font-size:13px">Пока пусто — добавьте первое упражнение</div>`;
+  }else{
+    onbPlan.items.forEach((item, idx) => {
+      const ex = EX[item.id];
+      if(!ex) return;
+      if(onbEditingIdx === idx){
+        itemsHtml += renderPlanEditForm(item, idx);
+        return;
+      }
+      const dis = isCurrentlyDisabled(item);
+      const badge = dis ? `<span class="pbadge">отменено</span>` : '';
+      const msum = muscleSummary(ex.muscles);
+      const mus = msum ? `<div class="psched" style="color:#666">${escapeHtml(msum)}</div>` : '';
+      const extra = dis ? `<div class="psched" style="color:#c66">🚫 ${escapeHtml(dis.reason)}${dis.until ? ` (до ${dis.until})` : ''}</div>` : '';
+      itemsHtml += `<div class="plan-item ${dis?'disabled':''}">
+        <div style="flex:1;min-width:0">
+          <div class="pname">${escapeHtml(ex.name)}${badge}</div>
+          <div class="psched">${scheduleSummary(item.schedule)}</div>
+          ${mus}
+          ${extra}
+        </div>
+        <button class="pdel" style="color:#6ab0ff" onclick="onbShowEdit(${idx})" title="Редактировать">✎</button>
+        <button class="pdel" onclick="onbRemoveItem(${idx})" title="Удалить">✕</button>
+      </div>`;
+    });
+  }
+
+  return `
+    <div class="onb-hero" style="padding-bottom:10px">
+      <div class="ico">🏋️</div>
+      <h1>${title}</h1>
+      <p>${subtitle}</p>
+    </div>
+
+    <h2>Упражнения (${onbPlan.items.length})</h2>
+    ${itemsHtml}
+
+    ${onbAdding ? '' : `<button class="add-btn" onclick="onbShowAdd()">+ Добавить упражнение</button>`}
+    ${onbAdding ? renderAddForm() : ''}
+
+    <div class="onb-actions">
+      <button class="primary" onclick="onbSave()">${btnText}</button>
+    </div>`;
+}
+
+function renderOnboarding(){ document.getElementById('app').innerHTML = renderPlanBuilderContent(); }
+function renderCustom(){ document.getElementById('app').innerHTML = renderTabs() + renderPlanBuilderContent(); }
+
+function onbSave(){
+  if(onbPlan.items.length === 0 && !localStorage.getItem('planConfigured')){
+    if(!confirm('В плане нет упражнений. Всё равно начать?')) return;
+  }
+
+  if(onbAdding && hasPendingAddData()){
+    if(confirm('Добавить новое упражнение перед сохранением?')){
+      if(!attemptAddExercise()){
+        return;
+      }
+    }
+    onbAdding = false;
+  }
+
+  saveOnbPlanToStore();
+  if(view === 'custom'){
+    loadOnbPlanFromStore();
+    render();
+  }else{
+    view = 'today';
+    currentDate = todayDate();
+    render();
+  }
+}
+
+function editOwnPlan(){ setView('custom'); }
+
 function render(){
-  if(view==='history')renderHistory();
-  else if(view==='custom')renderCustom();
-  else if(view==='search')renderSearch();
-  else if(view==='stats')renderStats();
-  else if(view==='stats-ex')renderExerciseStats();
+  if(needsOnboarding() || view === 'onboarding'){
+    renderOnboarding();
+    return;
+  }
+  if(view === 'history') renderHistory();
+  else if(view === 'custom') renderCustom();
+  else if(view === 'search') renderSearch();
+  else if(view === 'stats') renderStats();
+  else if(view === 'stats-ex') renderExerciseStats();
+  else if(view === 'trainer') renderTrainer();
   else renderToday();
 }
+
 function setView(v){
-  view=v;
-  if(v==='stats')statsExerciseId=null;
+  // Уходим с вкладки «Свои» — проверяем несохранённые изменения
+  if(view === 'custom' && v !== 'custom'){
+    const hasUnsavedItems = isCustomDirty();
+    const hasPendingAdd = onbAdding && hasPendingAddData();
+    // Открытая форма редактирования тоже считается «незавершённой работой»
+    const hasPendingEdit = onbEditingIdx !== null;
+
+    if(hasUnsavedItems || hasPendingAdd || hasPendingEdit){
+      const save = confirm('В плане есть несохранённые изменения. Сохранить?');
+      if(save){
+        // Если открыта форма «Добавить упражнение» с данными — уточняем
+        if(hasPendingAdd){
+          if(confirm('Добавить новое упражнение перед сохранением?')){
+            if(!attemptAddExercise()){
+              return; // валидация не прошла — остаёмся на «Свои»
+            }
+          }
+        }
+        onbAdding = false;
+        onbEditingIdx = null;
+        saveOnbPlanToStore();
+      }else{
+        // Пользователь отказался сохранять — откатываем к сохранённому
+        loadOnbPlanFromStore();
+      }
+    }
+  }
+
+  if(v === 'custom' && prevView !== 'custom'){
+    loadOnbPlanFromStore();
+  }
+  prevView = v;
+  view = v;
+  if(v === 'stats') statsExerciseId = null;
   render();
 }
 function shiftDay(d){currentDate.setDate(currentDate.getDate()+d);render()}
@@ -1421,6 +2737,7 @@ if('serviceWorker' in navigator){
 }
 
 syncCustomEx();
+loadOnbPlanFromStore();
 render();
 </script>
 </body>
