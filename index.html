@@ -584,10 +584,13 @@ function computeAllMuscleLoads(){
   Object.keys(MUSCLE_COEF).forEach(m => { loads[m] = 0; });
   if(!dates.length) return { loads, days: 0 };
 
-  const records = {};
+    const muscleRecords = {}; // mid -> { maxWeight, maxTonnage } — рекорды по каждой мышце
   const start = new Date(dates[0] + 'T00:00:00');
   const cur = new Date(start);
   let days = 0;
+
+  const BODYWEIGHT_NOMINAL = 0.001;
+  const TRANSITION_RESET   = 10;
 
   while(fmt(cur) <= todayStr){
     const dStr = fmt(cur);
@@ -604,11 +607,8 @@ function computeAllMuscleLoads(){
       muscles.forEach(m => trained.add(m.id));
     });
 
-    const BODYWEIGHT_NOMINAL = 0.001; // номинальный вес для упражнений с собственным весом
-    const TRANSITION_RESET   = 10;    // если скачок > 10x — сбрасываем базу (переход bodyweight ↔ weighted)
-
     sessions.forEach(s => {
-      const rec = records[s.id] || { maxWeight: 0, maxTonnage: 0 };
+      // Сначала считаем «сырые» показатели упражнения
       let tonnage = 0, maxW = 0;
       (s.log.sets || []).forEach(set => {
         if(!set) return;
@@ -621,30 +621,38 @@ function computeAllMuscleLoads(){
       });
       if(tonnage <= 0) return;
 
-      const rawWRatio = rec.maxWeight  > 0 ? maxW    / rec.maxWeight  : 1.0;
-      const rawTRatio = rec.maxTonnage > 0 ? tonnage / rec.maxTonnage : 1.0;
+      // Затем — для каждой мышцы отдельно, с её собственным рекордом
+      s.muscles.forEach(({ id, share }) => {
+        // Эффективные показатели: сколько именно получила эта мышца
+        const effMaxW    = maxW * share;
+        const effTonnage = tonnage * share;
 
-      // Переход между собственным весом и отягощением — сбрасываем базу,
-      // иначе ratio улетает в тысячи. Считаем эту сессию новой точкой отсчёта.
-      if(rawWRatio > TRANSITION_RESET || rawTRatio > TRANSITION_RESET){
-        records[s.id] = { maxWeight: maxW, maxTonnage: tonnage };
-        return;
-      }
+        const rec = muscleRecords[id] || { maxWeight: 0, maxTonnage: 0 };
 
-      // Обычные отношения, wRatio мягко ограничен чтобы не рвать шкалу
-      const wRatio = Math.min(rawWRatio, 3.0);
-      const tRatio = rawTRatio;
+        const rawWRatio = rec.maxWeight  > 0 ? effMaxW    / rec.maxWeight  : 1.0;
+        const rawTRatio = rec.maxTonnage > 0 ? effTonnage / rec.maxTonnage : 1.0;
 
-      if(tRatio >= LOAD_THRESHOLD){
-        s.muscles.forEach(({ id, share }) => {
-          const inc = wRatio * tRatio * share * LOAD_FACTOR;
-          // потолок за одну сессию — 40%, чтобы не улетать в «красное» с одного подхода
+        // Переход bodyweight ↔ weighted (или резкий скачок) — сбрасываем базу
+        if(rawWRatio > TRANSITION_RESET || rawTRatio > TRANSITION_RESET){
+          muscleRecords[id] = { maxWeight: effMaxW, maxTonnage: effTonnage };
+          return;
+        }
+
+                const wRatio = Math.min(rawWRatio, 3.0);
+        const tRatio = rawTRatio;
+
+        if(tRatio >= LOAD_THRESHOLD){
+          // share уже учтён в effMaxW/effTonnage — мышца получает полный
+          // стимул LOAD_FACTOR (25%), если её эффективная нагрузка — рекорд.
+          // Несколько мышц в одном упражнении могут независимо получить по 25%.
+          const inc = wRatio * tRatio * LOAD_FACTOR;
           loads[id] = (loads[id] || 0) + Math.min(inc, 0.40);
-        });
-      }
-      if(maxW    > rec.maxWeight)  rec.maxWeight  = maxW;
-      if(tonnage > rec.maxTonnage) rec.maxTonnage = tonnage;
-      records[s.id] = rec;
+        }
+
+        if(effMaxW    > rec.maxWeight)  rec.maxWeight  = effMaxW;
+        if(effTonnage > rec.maxTonnage) rec.maxTonnage = effTonnage;
+        muscleRecords[id] = rec;
+      });
     });
 
     if(dStr < todayStr){
@@ -2033,8 +2041,11 @@ function renderTrainerAbout(){
   <div class="ex" style="font-size:12.5px;color:#aaa;line-height:1.55">
     <p style="margin:0 0 8px"><strong style="color:#ccc">Загруженность</strong> — условная «усталость» мышцы в процентах. После тренировки она растёт, в дни отдыха снижается. Если тренировался два дня подряд — день тренировки не считается днём отдыха, восстановление к нему не применяется.</p>
     <p style="margin:0 0 8px"><strong style="color:#ccc">Формула начисления:</strong><br>
-    <code>increase = weight_ratio × tonnage_ratio × muscle_share × ${LOAD_FACTOR}</code><br>
-    где отношения берутся к личным рекордам по этому упражнению.</p>
+        <code>increase = weight_ratio × tonnage_ratio × ${LOAD_FACTOR}</code><br>
+    <span style="color:#888;font-size:11.5px">(доля участия мышцы уже учтена в эффективной нагрузке, по которой считается рекорд)</span><br>
+        где отношения берутся к личным рекордам <strong>этой мышцы</strong>:
+    эффективный вес = вес_упражнения × доля_участия, и сравнивается он с рекордом именно мышцы, а не упражнения.
+    Поэтому новое упражнение не даёт «автоматический рекорд» — мышца должна получить больше, чем когда-либо получала.
     <p style="margin:0 0 8px"><strong style="color:#ccc">Восстановление в день отдыха:</strong><br>
     <code>load = max(0, load × recovery_rate − daily_subtraction)</code></p>
     <p style="margin:0 0 8px"><strong style="color:#ccc">Порог значимости:</strong> если тоннаж сессии меньше ${Math.round(LOAD_THRESHOLD*100)}% от рекорда — нагрузка не начисляется.</p>
