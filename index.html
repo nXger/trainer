@@ -51,7 +51,6 @@
   .day-chk{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:#ccc;margin:0 6px 6px 0;cursor:pointer}
   .add-btn{width:100%;background:#2a5a2a;color:#e8e8e8;border:1px solid #3a7a3a;padding:10px;border-radius:6px;font-size:14px;cursor:pointer;margin-top:4px}
   .del-btn{background:transparent;border:none;color:#a55;font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0}
-  /* Calendar */
   .cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
   .cal-nav button{background:#222;color:#e8e8e8;border:1px solid #333;padding:6px 12px;border-radius:6px;font-size:16px;cursor:pointer}
   .cal-nav span{font-weight:600;font-size:15px}
@@ -84,7 +83,6 @@
   .lg-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
   .day-card{background:#141414;border:1px solid #262626;border-radius:8px;padding:12px}
   .day-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:600}
-  /* PR & progress */
   .progress-line{font-size:12px;color:#aaa;margin-bottom:4px}
   .progress-line .up{color:#9f9;font-weight:600}
   .progress-line .down{color:#c66}
@@ -95,20 +93,18 @@
   .pr-max{background:#3a2a1a;color:#f0a860;border:1px solid #5a4a2a}
   .pr-tonnage{background:#2a4a1a;color:#a8e87c;border:1px solid #4a6a2a}
   .day-tonnage{font-size:12px;color:#aaa;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  /* Stats */
-.stats-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
-.stat-card{background:#1a1a1a;border:1px solid #262626;border-radius:8px;padding:10px}
-.stat-val{font-size:20px;font-weight:600;color:#e8e8e8}
-.stat-lbl{font-size:11px;color:#777;margin-top:2px}
-.bars{display:flex;align-items:flex-end;gap:4px;height:160px;padding:8px 0;overflow-x:auto}
-.bar-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;min-width:30px;flex:1;height:100%}
-.bar{width:100%;max-width:36px;border-radius:3px 3px 0 0;min-height:2px;transition:height .2s}
-.bar-val{font-size:9px;color:#888;min-height:11px}
-.bar-label{font-size:9px;color:#666;white-space:nowrap}
-.ex-link{cursor:pointer}
-.ex-link:hover{border-color:#444}
-.ex-link:hover strong{color:#fff}
-  /* Onboarding */
+  .stats-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+  .stat-card{background:#1a1a1a;border:1px solid #262626;border-radius:8px;padding:10px}
+  .stat-val{font-size:20px;font-weight:600;color:#e8e8e8}
+  .stat-lbl{font-size:11px;color:#777;margin-top:2px}
+  .bars{display:flex;align-items:flex-end;gap:4px;height:160px;padding:8px 0;overflow-x:auto}
+  .bar-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;min-width:30px;flex:1;height:100%}
+  .bar{width:100%;max-width:36px;border-radius:3px 3px 0 0;min-height:2px;transition:height .2s}
+  .bar-val{font-size:9px;color:#888;min-height:11px}
+  .bar-label{font-size:9px;color:#666;white-space:nowrap}
+  .ex-link{cursor:pointer}
+  .ex-link:hover{border-color:#444}
+  .ex-link:hover strong{color:#fff}
   .onb-hero{text-align:center;padding:22px 0 16px}
   .onb-hero .ico{font-size:44px;line-height:1}
   .onb-hero h1{font-size:20px;margin:10px 0 6px}
@@ -127,21 +123,16 @@
   .onb-actions{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(15,15,15,0),#0f0f0f 35%);padding:14px 0 0;display:flex;gap:8px;margin-top:6px}
   .onb-actions .primary{flex:2;background:#2a5a2a;color:#e8e8e8;border:1px solid #3a7a3a;padding:11px;border-radius:8px;font-size:14px;cursor:pointer}
   .onb-actions .secondary{flex:1;background:#222;color:#e8e8e8;border:1px solid #333;padding:11px;border-radius:8px;font-size:14px;cursor:pointer}
-  /* Plan builder */
   .plan-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#1a1a1a;border:1px solid #262626;border-radius:8px;margin-bottom:6px}
   .plan-item .pname{font-size:13.5px;line-height:1.3;word-break:break-word}
   .plan-item .psched{font-size:11.5px;color:#888;margin-top:3px}
   .plan-item .pdel{background:transparent;border:none;color:#a55;font-size:17px;cursor:pointer;padding:0 4px;flex-shrink:0}
-
-  /* Cancelled / disabled */
   .cal-day.state-cancelled{background:#2a2a1a;color:#cc9}
   .cal-cancelled-mark{position:absolute;bottom:1px;right:2px;font-size:8px;color:#aa8;pointer-events:none;line-height:1}
   .plan-item.disabled{opacity:.55}
   .plan-item .pbadge{font-size:10px;color:#c66;margin-left:4px;text-transform:uppercase;letter-spacing:.3px;font-weight:600}
   .ex-cancelled{opacity:.55;background:#1a1a10;border-color:#3a3a20}
   .dis-info{background:#2a1a1a;border:1px solid #4a2020;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:12px;color:#e8a8a8;line-height:1.4}
-
-  /* Muscle loads */
   .muscle-load-row{margin-left:22px;margin-top:4px;margin-bottom:8px}
   .muscle-load-row .form-row{gap:6px;margin-bottom:6px}
   .muscle-load-row .preset-btn{padding:4px 10px;border-radius:5px;font-size:12px;background:#222;color:#ccc;border:1px solid #333;cursor:pointer}
@@ -149,8 +140,6 @@
   .muscle-load-row .slider-wrap{display:flex;align-items:center;gap:8px}
   .muscle-load-row input[type=range]{flex:1;cursor:pointer;accent-color:#6ab06a}
   .muscle-load-row .load-val{font-size:12px;color:#9f9;min-width:30px;text-align:right;font-weight:600}
-
-  /* Collapsible forearm section */
   .forearm-header{font-size:12.5px;color:#aab;margin:12px 0 6px;padding:8px 10px;background:#161616;border:1px solid #2a2a2a;border-radius:6px;cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px;transition:background .15s,border-color .15s}
   .forearm-header:hover{background:#1e1e1e;border-color:#3a3a3a}
   .forearm-header .fa-arrow{display:inline-block;width:12px;color:#888;font-size:10px;text-align:center;line-height:1}
@@ -158,6 +147,20 @@
   .forearm-header .fa-count{color:#666;font-size:11px;margin-left:auto}
   .forearm-header.has-selected{background:#1a2a1a;border-color:#2a4a2a}
   .forearm-header.has-selected strong{color:#9f9}
+  .block-header{font-size:12px;color:#aab;margin:14px 0 6px;padding:8px 12px;background:#141422;border:1px solid #2a2a3d;border-radius:6px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+  .block-header:hover{background:#1a1a2e;border-color:#3a3a5d}
+  .block-header .blk-icon{color:#8a9ee8;font-size:14px}
+  .block-header .blk-toggle{color:#8a9ee8;font-size:11px;width:12px;display:inline-block;text-align:center}
+  .block-header .blk-count{color:#666;font-size:11px;margin-left:auto}
+  .breadcrumb{font-size:13px;color:#888;margin-bottom:10px;padding:8px 12px;background:#141414;border:1px solid #262626;border-radius:6px;display:flex;align-items:center;flex-wrap:wrap;gap:2px}
+  .breadcrumb .bc-item{color:#6ab0ff;cursor:pointer;text-decoration:underline}
+  .breadcrumb .bc-item:hover{color:#8cc8ff}
+  .breadcrumb .bc-sep{color:#555;margin:0 2px}
+  .breadcrumb .bc-current{color:#e8e8e8;font-weight:600}
+  .warn-text{color:#e8a860;font-size:11.5px;margin-top:-4px;margin-bottom:6px}
+  .child-settings{background:#152515;border:1px solid #3a5a3a;border-radius:8px;padding:10px;margin-bottom:6px}
+  .marker-chip{display:inline-block;padding:1px 7px;background:#3a2a1a;color:#f0c860;border-radius:3px;font-size:10px;margin-right:3px;font-weight:500;user-select:none}
+  .marker-chip.hit{background:#f0c86033;color:#f0c860;border:1px solid #f0c860}
 </style>
 </head>
 <body>
@@ -412,8 +415,6 @@ const EX={
   shoulder_shrug_band:{name:'Подъём ключиц/плеч с резинкой',sets:4,reps:'12-15',muscles:{scalenes:30,traps:70}},
   neck_extension:{name:'Разгибание шеи с сопротивлением',sets:4,reps:'12-15',muscles:{neck_extensors:100}},
   neck_extension_prone:{name:'Подъём головы лежа на животе',sets:4,reps:'12-15',muscles:{neck_extensors:100}},
-
-  // === Дополнение: мышцы, ранее без упражнений ===
   supination_db:{name:'Супинация с гантелью',sets:3,reps:'12-15',muscles:{supinator:60,biceps:30,brachioradialis:10}},
   pronation_db:{name:'Пронация с гантелью',sets:3,reps:'12-15',muscles:{pronator_teres:50,pronator_quadratus:50}},
   scapular_elevation:{name:'Подъём лопаток с резинкой/штангой',sets:4,reps:'12-15',muscles:{levator_scapulae:60,traps:40}},
@@ -442,6 +443,171 @@ function muscleSummary(muscles){
   }).join(', ');
 }
 
+/* ---------- Markers ---------- */
+function getExerciseMarkers(exId){
+  try{
+    const all = JSON.parse(localStorage.getItem('exerciseMarkers')||'{}');
+    return Array.isArray(all[exId]) ? all[exId] : [];
+  }catch(e){ return []; }
+}
+function setExerciseMarkers(exId, markers){
+  try{
+    const all = JSON.parse(localStorage.getItem('exerciseMarkers')||'{}');
+    if(markers && markers.length) all[exId] = markers;
+    else delete all[exId];
+    localStorage.setItem('exerciseMarkers', JSON.stringify(all));
+  }catch(e){}
+}
+function parseMarkers(str){
+  return (str||'').split(',').map(s=>s.trim()).filter(Boolean);
+}
+function getAllUsedMarkers(){
+  try{
+    const all = JSON.parse(localStorage.getItem('exerciseMarkers')||'{}');
+    const set = new Set();
+    Object.values(all).forEach(arr=>{
+      if(Array.isArray(arr)) arr.forEach(m=>{ if(m) set.add(m); });
+    });
+    return [...set].sort((a,b)=>a.localeCompare(b,'ru'));
+  }catch(e){ return []; }
+}
+
+/* Simple display-only chips (used in add-form previews etc.) */
+function markersChipsHtml(markers, q){
+  if(!markers || !markers.length) return '';
+  const ql = q ? q.toLowerCase() : '';
+  return markers.map(m=>{
+    const hit = ql && m.toLowerCase().includes(ql);
+    return `<span class="marker-chip${hit?' hit':''}">${escapeHtml(m)}</span>`;
+  }).join('');
+}
+
+/* Interactive marker cells with [+] — used everywhere markers can be edited */
+let markerModalExId = null;
+
+function renderMarkerCells(exId, opts){
+  opts = opts || {};
+  const q = opts.q ? opts.q.toLowerCase() : '';
+  const markers = getExerciseMarkers(exId);
+  const chips = markers.map(m=>{
+    const enc = encodeURIComponent(m);
+    const isHit = q && m.toLowerCase().includes(q);
+    const hitStyle = isHit ? 'background:#f0c86033;border:1px solid #f0c860;' : '';
+    return `<span class="marker-chip" style="cursor:pointer;padding-right:5px;${hitStyle}" onclick="event.stopPropagation();removeMarkerConfirm('${exId}', decodeURIComponent('${enc}'))" title="Нажмите чтобы удалить">${escapeHtml(m)} <span style="opacity:.55">×</span></span>`;
+  }).join(' ');
+  const addBtn = `<span class="marker-chip" style="cursor:pointer;background:#223a22;color:#9f9;border:1px dashed #4a7a4a" onclick="event.stopPropagation();openMarkerModal('${exId}')" title="Добавить метку">+</span>`;
+  const marginTop = opts.marginTop !== false ? '4px 0' : '0';
+  return `<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin:${marginTop}">${chips}${chips ? ' ' : ''}${addBtn}</div>`;
+}
+
+function openMarkerModal(exId, focusInput){
+  if(!exId) return;
+  markerModalExId = exId;
+  const old = document.getElementById('marker-modal');
+  if(old) old.remove();
+  document.body.insertAdjacentHTML('beforeend', renderMarkerModal(exId));
+  if(focusInput){
+    setTimeout(()=>{
+      const inp = document.getElementById('marker-new-input');
+      if(inp) inp.focus();
+    }, 50);
+  }
+}
+
+function closeMarkerModal(skipRender){
+  const modal = document.getElementById('marker-modal');
+  if(modal) modal.remove();
+  markerModalExId = null;
+  if(!skipRender) render();
+}
+
+function refreshMarkerModal(focusInput){
+  if(!markerModalExId) return;
+  const exId = markerModalExId;
+  const old = document.getElementById('marker-modal');
+  if(old) old.remove();
+  document.body.insertAdjacentHTML('beforeend', renderMarkerModal(exId));
+  if(focusInput){
+    setTimeout(()=>{
+      const inp = document.getElementById('marker-new-input');
+      if(inp) inp.focus();
+    }, 30);
+  }
+}
+
+function renderMarkerModal(exId){
+  const allMarkers = getAllUsedMarkers();
+  const currentMarkers = getExerciseMarkers(exId);
+  const exName = EX[exId]?.name || exId;
+
+  const chipsHtml = allMarkers.length
+    ? allMarkers.map(m=>{
+        const isOn = currentMarkers.includes(m);
+        const enc = encodeURIComponent(m);
+        return `<button onclick="toggleMarkerOnEx(decodeURIComponent('${enc}'))" style="padding:5px 12px;border-radius:5px;font-size:13px;cursor:pointer;border:1px solid ${isOn?'#4a7a4a':'#333'};background:${isOn?'#2a5a2a':'#222'};color:${isOn?'#9f9':'#ddd'}">${isOn?'✓ ':''}${escapeHtml(m)}</button>`;
+      }).join('')
+    : `<span style="color:#666;font-size:12px">пока нет меток ни у одного упражнения</span>`;
+
+  return `<div id="marker-modal" onclick="if(event.target===this)closeMarkerModal()" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:flex-end;justify-content:center">
+    <div onclick="event.stopPropagation()" style="background:#1a1a1a;border:1px solid #333;border-radius:12px 12px 0 0;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <strong style="font-size:15px">Метки: ${escapeHtml(exName)}</strong>
+        <button onclick="closeMarkerModal()" style="background:transparent;border:none;color:#888;font-size:22px;cursor:pointer;padding:0 6px;line-height:1">×</button>
+      </div>
+      <div style="font-size:12px;color:#888;margin-bottom:8px">Все использованные метки (нажмите, чтобы поставить/снять):</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">${chipsHtml}</div>
+      <div style="font-size:12px;color:#888;margin-bottom:6px">Добавить новую метку:</div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="marker-new-input" placeholder="новая метка" autocomplete="off" style="flex:1;background:#111;border:1px solid #333;color:#e8e8e8;padding:8px 10px;border-radius:6px;font-size:14px" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewMarkerFromModal()}">
+        <button onclick="addNewMarkerFromModal()" style="padding:8px 14px;background:#2a5a2a;border:1px solid #3a7a3a;color:#e8e8e8;border-radius:6px;font-size:14px;cursor:pointer">Добавить</button>
+      </div>
+      <div style="font-size:11px;color:#666;margin-top:14px;text-align:center">Нажмите на метку, чтобы поставить/снять её с этого упражнения</div>
+    </div>
+  </div>`;
+}
+
+function toggleMarkerOnEx(marker){
+  if(!markerModalExId) return;
+  const cur = getExerciseMarkers(markerModalExId);
+  if(cur.includes(marker)){
+    setExerciseMarkers(markerModalExId, cur.filter(m=>m !== marker));
+  } else {
+    setExerciseMarkers(markerModalExId, [...cur, marker]);
+  }
+  refreshMarkerModal(false);
+}
+
+function addNewMarkerFromModal(){
+  if(!markerModalExId) return;
+  const inp = document.getElementById('marker-new-input');
+  if(!inp) return;
+  const val = inp.value.trim();
+  if(!val) return;
+  const cur = getExerciseMarkers(markerModalExId);
+  if(!cur.includes(val)) setExerciseMarkers(markerModalExId, [...cur, val]);
+  refreshMarkerModal(true);
+}
+
+function removeMarkerConfirm(exId, marker){
+  const exName = EX[exId]?.name || exId;
+  if(!confirm(`Удалить метку «${marker}» с «${exName}»?`)) return;
+  const cur = getExerciseMarkers(exId).filter(m=>m !== marker);
+  setExerciseMarkers(exId, cur);
+  if(markerModalExId === exId){
+    const modal = document.getElementById('marker-modal');
+    if(modal) modal.remove();
+    markerModalExId = null;
+  }
+  render();
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape' && document.getElementById('marker-modal')){
+    closeMarkerModal();
+  }
+});
+
+/* ---------- Muscle picker ---------- */
 function renderMusclePicker(loadsOrIds, prefix){
   let loads = {};
   if(Array.isArray(loadsOrIds)){ loadsOrIds.forEach(id=>{loads[id]=5}); }
@@ -558,6 +724,17 @@ function getMusclesFromEx(ex){
   return Object.entries(ex.muscles).map(([id, pct]) => ({ id, share: (parseFloat(pct) || 0) / 100 }));
 }
 
+function getPlanItem(exId){
+  const own = ownPlanStore.get();
+  if(!own || !own.enabled) return null;
+  return (own.items || []).find(it => it.id === exId) || null;
+}
+function getExSets(exId){
+  const item = getPlanItem(exId);
+  if(item && Number.isFinite(item.sets) && item.sets > 0) return item.sets;
+  return EX[exId]?.sets || 4;
+}
+
 function getLoadColor(load){
   if(load > LOAD_ORANGE) return '#e85a5a';
   if(load > LOAD_YELLOW) return '#e8a860';
@@ -579,25 +756,32 @@ function computeAllMuscleLoads(){
     if(!day) return false;
     return Object.entries(day).some(([k,v]) => !k.startsWith('_') && v && v.done && EX[k] && !EX[k].app);
   }).sort();
-
   const loads = {};
   Object.keys(MUSCLE_COEF).forEach(m => { loads[m] = 0; });
   if(!dates.length) return { loads, days: 0 };
-
-    const muscleRecords = {}; // mid -> { maxWeight, maxTonnage } — рекорды по каждой мышце
+  const muscleRecords = {};
   const start = new Date(dates[0] + 'T00:00:00');
   const cur = new Date(start);
   let days = 0;
-
   const BODYWEIGHT_NOMINAL = 0.001;
   const TRANSITION_RESET   = 10;
-
   while(fmt(cur) <= todayStr){
     const dStr = fmt(cur);
     const dayLog = logs[dStr] || {};
+    if(dayLog._skip){
+      if(dStr < todayStr){
+        Object.keys(loads).forEach(m => {
+          const cfg = MUSCLE_COEF[m];
+          if(!cfg) return;
+          loads[m] = Math.max(0, loads[m] * cfg.recovery_rate - cfg.daily_subtraction);
+        });
+      }
+      cur.setDate(cur.getDate() + 1);
+      days++;
+      continue;
+    }
     const sessions = [];
     const trained = new Set();
-
     Object.entries(dayLog).forEach(([id, e]) => {
       if(id.startsWith('_') || !e || !e.done || !EX[id]) return;
       if(EX[id].app) return;
@@ -606,9 +790,7 @@ function computeAllMuscleLoads(){
       sessions.push({ id, log: e, muscles });
       muscles.forEach(m => trained.add(m.id));
     });
-
     sessions.forEach(s => {
-      // Сначала считаем «сырые» показатели упражнения
       let tonnage = 0, maxW = 0;
       (s.log.sets || []).forEach(set => {
         if(!set) return;
@@ -620,41 +802,27 @@ function computeAllMuscleLoads(){
         if(effW > maxW) maxW = effW;
       });
       if(tonnage <= 0) return;
-
-      // Затем — для каждой мышцы отдельно, с её собственным рекордом
       s.muscles.forEach(({ id, share }) => {
-        // Эффективные показатели: сколько именно получила эта мышца
         const effMaxW    = maxW * share;
         const effTonnage = tonnage * share;
-
         const rec = muscleRecords[id] || { maxWeight: 0, maxTonnage: 0 };
-
         const rawWRatio = rec.maxWeight  > 0 ? effMaxW    / rec.maxWeight  : 1.0;
         const rawTRatio = rec.maxTonnage > 0 ? effTonnage / rec.maxTonnage : 1.0;
-
-        // Переход bodyweight ↔ weighted (или резкий скачок) — сбрасываем базу
         if(rawWRatio > TRANSITION_RESET || rawTRatio > TRANSITION_RESET){
           muscleRecords[id] = { maxWeight: effMaxW, maxTonnage: effTonnage };
           return;
         }
-
-                const wRatio = Math.min(rawWRatio, 3.0);
+        const wRatio = Math.min(rawWRatio, 3.0);
         const tRatio = rawTRatio;
-
         if(tRatio >= LOAD_THRESHOLD){
-          // share уже учтён в effMaxW/effTonnage — мышца получает полный
-          // стимул LOAD_FACTOR (25%), если её эффективная нагрузка — рекорд.
-          // Несколько мышц в одном упражнении могут независимо получить по 25%.
           const inc = wRatio * tRatio * LOAD_FACTOR;
           loads[id] = (loads[id] || 0) + Math.min(inc, 0.40);
         }
-
         if(effMaxW    > rec.maxWeight)  rec.maxWeight  = effMaxW;
         if(effTonnage > rec.maxTonnage) rec.maxTonnage = effTonnage;
         muscleRecords[id] = rec;
       });
     });
-
     if(dStr < todayStr){
       Object.keys(loads).forEach(m => {
         if(trained.has(m)) return;
@@ -663,7 +831,6 @@ function computeAllMuscleLoads(){
         loads[m] = Math.max(0, loads[m] * cfg.recovery_rate - cfg.daily_subtraction);
       });
     }
-
     cur.setDate(cur.getDate() + 1);
     days++;
   }
@@ -715,31 +882,28 @@ function syncCustomEx(){
     EX[c.id]={name:c.name,app:!!c.app,sets:c.sets||4,reps:c.reps||'12-15',muscles};
   });
 }
-function isCycleDay(date,startStr){
-  const start=new Date(startStr+'T00:00:00');
-  const diff=Math.floor((date-start)/86400000);
-  return diff>=0 && diff%2===0;
-}
-function isScheduleActive(schedule,date,fallbackStart){
+function isScheduleActive(schedule,date,startFallback){
   if(!schedule)return false;
-  const startStr=schedule.startDate||fallbackStart;
-  if(!startStr)return false;
-  const start=new Date(startStr+'T00:00:00');
-  const d=new Date(date);d.setHours(0,0,0,0);
-  if(d<start)return false;
+  if(schedule.type==='none')return false;
+  if(schedule.type==='delayAfterParent')return false;
+  const startStr=schedule.startDate||startFallback;
+  if(startStr){
+    const start=new Date(startStr+'T00:00:00');
+    const d=new Date(date);d.setHours(0,0,0,0);
+    if(d<start)return false;
+  }
   if(schedule.type==='everyday')return true;
   if(schedule.type==='days')return !!(schedule.days&&schedule.days.includes(date.getDay()));
   if(schedule.type==='even')return date.getDate()%2===0;
   if(schedule.type==='odd')return date.getDate()%2===1;
   if(schedule.type==='interval'){
+    const startStr2 = schedule.startDate || '1970-01-01';
+    const start=new Date(startStr2+'T00:00:00');
+    const d=new Date(date);d.setHours(0,0,0,0);
     const diff=Math.floor((d-start)/86400000);
     return diff>=0&&diff%schedule.interval===0;
   }
   return false;
-}
-function isCustomActive(c, date){
-  if(c.deleted) return false;
-  return isScheduleActive(c.schedule, date, customStartDate(c));
 }
 function scheduleSummary(schedule){
   if(!schedule||schedule.type==='none')return 'не задано';
@@ -751,6 +915,7 @@ function scheduleSummary(schedule){
     return names.length?names.join(', '):'не задано';
   }
   if(schedule.type==='interval')return 'раз в '+schedule.interval+' дн.';
+  if(schedule.type==='delayAfterParent')return 'через '+ (schedule.delayDays||2) +' дн. после родителя';
   return 'не задано';
 }
 
@@ -769,30 +934,174 @@ function isCurrentlyDisabled(item){
   return isDisabledOn(item, fmt(todayDate()));
 }
 
+/* ---------- Block helpers ---------- */
+function getBlockById(blocks, id){
+  return (blocks || []).find(b => b.id === id) || null;
+}
+
+function getBlockExercises(block, allBlocks, visited){
+  visited = visited || new Set();
+  if(!block || visited.has(block.id)) return [];
+  visited.add(block.id);
+  const result = [];
+  (block.children || []).forEach(child => {
+    if(child.type === 'exercise'){
+      if(EX[child.id]) result.push(child.id);
+    } else if(child.type === 'block'){
+      const nested = getBlockById(allBlocks, child.id);
+      if(nested) result.push(...getBlockExercises(nested, allBlocks, visited));
+    }
+  });
+  return result;
+}
+function getBlockDescendantIds(blocks, blockId, visited){
+  visited = visited || new Set();
+  if(visited.has(blockId)) return [];
+  visited.add(blockId);
+  const block = getBlockById(blocks, blockId);
+  if(!block) return [];
+  const result = [blockId];
+  (block.children || []).forEach(child => {
+    if(child.type === 'block'){
+      result.push(...getBlockDescendantIds(blocks, child.id, visited));
+    }
+  });
+  return result;
+}
+
+/* =========================================================
+   PLAN COMPUTATION
+   ========================================================= */
+function isChildEntryActive(childRef, date, parentBlock, parentActive, blocks) {
+  let schedule;
+  if (childRef.type === 'exercise') {
+    schedule = childRef.schedule || { type: 'none' };
+  } else {
+    const nested = getBlockById(blocks, childRef.id);
+    schedule = childRef.scheduleOverride || (nested ? nested.schedule : { type: 'none' });
+    if (!schedule) schedule = { type: 'none' };
+  }
+
+  const activeWithParent = childRef.activeWithParent !== false;
+
+  if (schedule.type === 'delayAfterParent') {
+    const delay = schedule.delayDays || 1;
+    const past = new Date(date);
+    past.setDate(past.getDate() - delay);
+    if (!parentBlock || !parentBlock.schedule) return false;
+    return isScheduleActive(parentBlock.schedule, past);
+  }
+
+  if (activeWithParent && !parentActive) return false;
+  if (schedule.type === 'none') return true;
+  return isScheduleActive(schedule, date);
+}
+
+function processBlockTree(block, date, blocks, output, visited, ancestorDisabled, disableReason, blockActive) {
+  if (!block || visited.has(block.id)) return;
+  visited.add(block.id);
+
+  const dateStr = fmt(date);
+  const blockDis = isDisabledOn(block, dateStr);
+  const myDisabled = ancestorDisabled || !!blockDis;
+  const myReason = blockDis ? blockDis.reason : disableReason;
+
+  (block.children || []).forEach(child => {
+    const childActive = isChildEntryActive(child, date, block, blockActive, blocks);
+
+    if (child.type === 'exercise') {
+      if (childActive) {
+        if (myDisabled) {
+          output.cancelled.push({ id: child.id, reason: myReason || 'disabled', blockName: block.name });
+        } else {
+          output.exercises.push(child.id);
+        }
+      }
+    } else if (child.type === 'block') {
+      const nested = getBlockById(blocks, child.id);
+      if (!nested) return;
+      if (childActive) {
+        processBlockTree(nested, date, blocks, output, visited, myDisabled, myReason, true);
+      }
+    }
+  });
+}
+
+function getTopLevelBlocks(){
+  const own = ownPlanStore.get();
+  const all = (own && own.blocks) || [];
+  const referenced = new Set();
+  all.forEach(b => {
+    (b.children || []).forEach(c => {
+      if (c.type === 'block') referenced.add(c.id);
+    });
+  });
+  return all.filter(b => !referenced.has(b.id));
+}
+
 function getPlan(date){
   const dateStr = fmt(date);
   const own = ownPlanStore.get();
   const main = [];
+  const groups = [];
   const cancelled = [];
-  const inPlan = new Set();
+  const seen = new Set();
+  const cancelledSeen = new Set();
 
   if(own && own.enabled){
+    const allBlocks = own.blocks || [];
+
     (own.items || []).forEach(item => {
       if(!EX[item.id]) return;
-      inPlan.add(item.id);
       if(!isScheduleActive(item.schedule, date)) return;
       const dis = isDisabledOn(item, dateStr);
-      if(dis){ cancelled.push({ id: item.id, reason: dis.reason }); }
-      else{ main.push(item.id); }
+      if(dis){
+        cancelled.push({ id: item.id, reason: dis.reason });
+        cancelledSeen.add(item.id);
+      } else {
+        main.push(item.id);
+        seen.add(item.id);
+        groups.push({ type: 'exercise', id: item.id });
+      }
+    });
+
+    const topBlocks = getTopLevelBlocks();
+    topBlocks.forEach(block => {
+      const blockActive = isScheduleActive(block.schedule, date);
+      const blockOut = { exercises: [], cancelled: [] };
+      processBlockTree(block, date, allBlocks, blockOut, new Set(), false, null, blockActive);
+
+      const newExs = blockOut.exercises.filter(id => !seen.has(id) && EX[id]);
+      const newCancelled = blockOut.cancelled.filter(c => !seen.has(c.id) && !cancelledSeen.has(c.id));
+
+      if(newExs.length){
+        newExs.forEach(id => { seen.add(id); main.push(id); });
+        groups.push({
+          type: 'block',
+          blockId: block.id,
+          name: block.name,
+          exercises: newExs
+        });
+      }
+      newCancelled.forEach(c => { cancelledSeen.add(c.id); cancelled.push(c); });
     });
   }
 
   customStore.list.forEach(c => {
-    if(c.deleted || inPlan.has(c.id)) return;
-    if(isCustomActive(c, date) && !main.includes(c.id)) main.push(c.id);
+    if(c.deleted || seen.has(c.id) || cancelledSeen.has(c.id)) return;
+    if(isCustomActive(c, date) && !main.includes(c.id)){
+      main.push(c.id);
+      seen.add(c.id);
+      groups.push({ type: 'exercise', id: c.id });
+    }
   });
 
-  return { info: [], main, cancelled, after: [] };
+  return { info: [], main, groups, cancelled, after: [] };
+}
+
+function isCustomActive(c, date){
+  if(c.deleted) return false;
+  return isScheduleActive(c.schedule, date, customStartDate(c));
 }
 
 /* ---------- stats & PRs ---------- */
@@ -903,8 +1212,9 @@ function getTargetReps(exId,dateStr){
 function checkSteadyAllSets(exId,log,dateStr){
   const ex=EX[exId];
   if(!ex||ex.app)return null;
+  const plannedSets = getExSets(exId);
   const filled=(log?.sets||[]).filter(s=>s&&parseFloat(s.r)>0);
-  if(filled.length<ex.sets||filled.length<2)return null;
+  if(filled.length<plannedSets||filled.length<2)return null;
   const w0=parseFloat(filled[0].w)||0;
   const r0=parseFloat(filled[0].r)||0;
   const allSame=filled.every(s=>(parseFloat(s.w)||0)===w0&&(parseFloat(s.r)||0)===r0);
@@ -926,7 +1236,7 @@ function checkSteadyAllSets(exId,log,dateStr){
     const e=logs[d]&&logs[d][exId];
     if(!e||!e.done)return;
     const wSets=(e.sets||[]).filter(s=>s&&(parseFloat(s.w)||0)===w0&&parseFloat(s.r)>0);
-    if(wSets.length<ex.sets)return;
+    if(wSets.length<plannedSets)return;
     const minR=Math.min(...wSets.map(s=>parseFloat(s.r)||0));
     if(minR>maxSteadyBefore)maxSteadyBefore=minR;
   });
@@ -1052,6 +1362,13 @@ let selectedDate=todayDate();
 let calendarMonth=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
 let statsExerciseId=null;
 let searchQuery='';
+let collapsedBlocks = new Set();
+
+function toggleBlockCollapse(blockId){
+  if(collapsedBlocks.has(blockId)) collapsedBlocks.delete(blockId);
+  else collapsedBlocks.add(blockId);
+  render();
+}
 
 /* ---------- Training view ---------- */
 function renderExercise(exId,log){
@@ -1062,20 +1379,22 @@ function renderExercise(exId,log){
   const last=getLastEntryBefore(exId,dateStr);
   const musStr = muscleSummary(ex.muscles);
   const musclesHtml = musStr ? `<div class="ex-last" style="color:#7a7a7a">${escapeHtml(musStr)}</div>` : '';
+  const markersHtml = `<div style="margin-bottom:6px">${renderMarkerCells(exId, {marginTop:false})}</div>`;
   const head=`<div class="ex-head">
       <input type="checkbox" ${checked} onchange="toggleDone('${exId}',this.checked)">
       <strong>${escapeHtml(ex.name)}</strong>
-      <span class="meta">${ex.app?'по приложению':ex.sets+'×'+getTargetReps(exId,dateStr)}</span>
+      <span class="meta">${ex.app?'по приложению':getExSets(exId)+'×'+getTargetReps(exId,dateStr)}</span>
     </div>`;
   if(ex.app){
     return `<div class="ex ${done}">
       ${head}
+      ${markersHtml}
       <div class="ex-app"><span>${log?.done?'✓ Подтверждено':'Отметь галочку, если сделал'}</span></div>
       <div class="ex-last">Последний раз: ${last?last.date:'нет данных'}</div>
       ${musclesHtml}
     </div>`;
   }
-  const sets=ex.sets,logSets=log?.sets||[];
+  const sets=getExSets(exId),logSets=log?.sets||[];
   let rows='';
   for(let i=0;i<sets;i++){
     const s=logSets[i]||{};
@@ -1090,6 +1409,7 @@ function renderExercise(exId,log){
   const steady=checkSteadyAllSets(exId,log,dateStr);
   return `<div class="ex ${done}" data-ex-id="${exId}">
     ${head}
+    ${markersHtml}
     <div class="ex-last">Прошлый раз: ${formatSets(last)}</div>
     ${musclesHtml}
     <div data-progress>${progressHtml}</div>
@@ -1108,13 +1428,27 @@ function renderTabs(){
     <button class="${view==='trainer'?'active':''}" onclick="setView('trainer')">Тренер</button>
   </div>`;
 }
+
+function renderBlockGroup(g, dayLog){
+  const isCollapsed = collapsedBlocks.has(g.blockId);
+  let html = `<div class="block-header" onclick="toggleBlockCollapse('${g.blockId}')">
+    <span class="blk-toggle">${isCollapsed ? '▸' : '▾'}</span>
+    <span class="blk-icon">📦</span>
+    ${escapeHtml(g.name)}
+    <span class="blk-count">${g.exercises.length} упр.</span>
+  </div>`;
+  if(!isCollapsed){
+    g.exercises.forEach(exId => { html += renderExercise(exId, dayLog[exId]); });
+  }
+  return html;
+}
+
 function renderToday(){
   const dow=currentDate.getDay();
   const plan=getPlan(currentDate);
   const dayLog=store.logs[fmt(currentDate)]||{};
   const skipped=!!dayLog._skip;
   const isToday=fmt(currentDate)===fmt(todayDate());
-  const ton=dayTonnage(dayLog);
   let html=renderTabs();
   html+=`<div class="header">
     <button onclick="shiftDay(-1)">←</button>
@@ -1123,7 +1457,7 @@ function renderToday(){
   </div>`;
   if(plan.info.length)html+=`<div class="info">${plan.info.join(' · ')}</div>`;
   const dayMetaHtml=renderDayMetaHtml(dayLog,isToday);
-html+=`<div id="day-meta" class="meta-row" style="display:${dayMetaHtml?'flex':'none'}">${dayMetaHtml}</div>`;
+  html+=`<div id="day-meta" class="meta-row" style="display:${dayMetaHtml?'flex':'none'}">${dayMetaHtml}</div>`;
   if(skipped){
     html+=`<div class="skip-banner">
       <span>🚫 Пропуск: ${escapeHtml(dayLog._skip.reason||'без причины')}</span>
@@ -1143,19 +1477,33 @@ html+=`<div id="day-meta" class="meta-row" style="display:${dayMetaHtml?'flex':'
     </div>`;
   }
   if(!skipped){
-    if(plan.main.length){html+=`<h2>Основные</h2>`;plan.main.forEach(id=>html+=renderExercise(id,dayLog[id]))}
+    if(plan.main.length){
+      html+=`<h2>Основные</h2>`;
+      if(plan.groups && plan.groups.length){
+        plan.groups.forEach(g => {
+          if(g.type === 'exercise'){
+            html+=renderExercise(g.id, dayLog[g.id]);
+          } else if(g.type === 'block'){
+            html += renderBlockGroup(g, dayLog);
+          }
+        });
+      } else {
+        plan.main.forEach(id => html+=renderExercise(id, dayLog[id]));
+      }
+    }
     if(plan.cancelled && plan.cancelled.length){
       html+=`<h2>Отменено</h2>`;
       plan.cancelled.forEach(c=>{
         const ex=EX[c.id];
         if(!ex) return;
+        const reasonText = c.blockName ? `${c.reason} (${c.blockName})` : (c.reason||'без причины');
         html+=`<div class="ex ex-cancelled">
           <div class="ex-head">
             <span style="color:#c66;font-size:14px;line-height:1">⊘</span>
             <strong style="text-decoration:line-through;color:#999">${escapeHtml(ex.name)}</strong>
             <span class="meta" style="color:#c66">отменено</span>
           </div>
-          <div class="ex-last" style="color:#aa8;margin-bottom:0">Причина: ${escapeHtml(c.reason||'без причины')}</div>
+          <div class="ex-last" style="color:#aa8;margin-bottom:0">Причина: ${escapeHtml(reasonText)}</div>
         </div>`;
       });
     }
@@ -1284,13 +1632,14 @@ function renderDayCard(dateStr){
     cancelled.forEach(c=>{
       const ex = EX[c.id];
       if(!ex) return;
+      const reasonText = c.blockName ? `${c.reason} (${c.blockName})` : (c.reason||'без причины');
       body+=`<div class="ex ex-cancelled">
         <div class="ex-head">
           <span style="color:#c66;font-size:14px;line-height:1">⊘</span>
           <strong style="text-decoration:line-through;color:#999">${escapeHtml(ex.name)}</strong>
           <span class="meta" style="color:#c66">отменено</span>
         </div>
-        <div class="ex-last" style="color:#aa8;margin-bottom:0">Причина: ${escapeHtml(c.reason||'без причины')}</div>
+        <div class="ex-last" style="color:#aa8;margin-bottom:0">Причина: ${escapeHtml(reasonText)}</div>
       </div>`;
     });
   }
@@ -1410,10 +1759,20 @@ function unskipHistoryDay(dateStr){
 }
 
 /* ---------- Search view ---------- */
+function exerciseMatchesQuery(id, ex, q){
+  if(!q) return true;
+  const ql = q.toLowerCase();
+  if(ex.name.toLowerCase().includes(ql)) return true;
+  const markers = getExerciseMarkers(id);
+  if(markers.some(m => m.toLowerCase().includes(ql))) return true;
+  const msum = muscleSummary(ex.muscles) || '';
+  if(msum.toLowerCase().includes(ql)) return true;
+  return false;
+}
 function renderSearch(){
   let html=renderTabs();
   html+=`<div class="header"><span>Поиск упражнения</span></div>`;
-  html+=`<input type="text" id="searchInput" class="form-input" placeholder="Начните вводить название…" value="${escapeHtml(searchQuery)}" oninput="setSearchQuery(this.value)">`;
+  html+=`<input type="text" id="searchInput" class="form-input" placeholder="Название, метка или мышца…" value="${escapeHtml(searchQuery)}" oninput="setSearchQuery(this.value)">`;
   html+=`<div id="searchResults"></div>`;
   document.getElementById('app').innerHTML=html;
   renderSearchResults();
@@ -1422,8 +1781,8 @@ function renderSearchResults(){
   const el=document.getElementById('searchResults');
   if(!el)return;
   const q=searchQuery.toLowerCase().trim();
-  if(!q){ el.innerHTML=`<div class="ex" style="color:#777">Введите название упражнения — покажу историю и рекорды</div>`; return; }
-  const matches=sortedExerciseEntries().filter(([id,ex])=>ex.name.toLowerCase().includes(q));
+  if(!q){ el.innerHTML=`<div class="ex" style="color:#777">Введите название упражнения, метку или мышцу</div>`; return; }
+  const matches=sortedExerciseEntries().filter(([id,ex]) => exerciseMatchesQuery(id, ex, q));
   if(!matches.length){ el.innerHTML=`<div class="ex" style="color:#777">Ничего не найдено</div>`; return; }
   let html='';
   matches.forEach(([id,ex])=>{
@@ -1433,7 +1792,11 @@ function renderSearchResults(){
       const e=logs[d]&&logs[d][id];
       if(e&&e.done)entries.push({date:d,...e});
     });
-    html+=`<div class="ex ex-link" onclick="openExerciseStats('${id}')"><strong>${escapeHtml(ex.name)}</strong>`;
+    html+=`<div class="ex ex-link" onclick="openExerciseStats('${id}')">`;
+    html+=`<div class="hist-row" style="margin-bottom:2px">
+      <strong style="flex:1">${escapeHtml(ex.name)}</strong>
+    </div>`;
+    html+=`<div onclick="event.stopPropagation()">${renderMarkerCells(id, {q: q, marginTop: false})}</div>`;
     const msum = muscleSummary(ex.muscles);
     if(msum){ html+=`<div class="ex-last" style="color:#666">${escapeHtml(msum)}</div>`; }
     if(!entries.length){
@@ -1543,6 +1906,7 @@ function saveEditCustom(id){
 function deleteCustom(id){
   if(!confirm('Удалить упражнение?'))return;
   customStore.list=customStore.list.map(c=>c.id===id?{...c,deleted:true}:c);
+  setExerciseMarkers(id, []);
   render();
 }
 
@@ -1769,6 +2133,7 @@ function renderExerciseStats(){
   const sessions=Object.keys(logs).sort().filter(d=>logs[d][exId]&&logs[d][exId].done).map(d=>({date:d,log:logs[d][exId]}));
   const msum = muscleSummary(ex.muscles);
   if(msum){ html+=`<div class="ex"><div class="ex-last" style="color:#999">Мышцы: ${escapeHtml(msum)}</div></div>`; }
+  html+=`<div class="ex">${renderMarkerCells(exId, {marginTop: false})}</div>`;
   if(!sessions.length){
     html+=`<div class="ex" style="color:#666">Нет записей для этого упражнения</div>`;
     document.getElementById('app').innerHTML=html;
@@ -1834,6 +2199,8 @@ function renderExerciseStats(){
 
 /* ---------- Data backup ---------- */
 function exportData(){
+  let exerciseMarkers = {};
+  try{ exerciseMarkers = JSON.parse(localStorage.getItem('exerciseMarkers')||'{}'); }catch(e){}
   const data={
     version:1,
     exportedAt:new Date().toISOString(),
@@ -1841,6 +2208,7 @@ function exportData(){
     customEx:customStore.list,
     ownPlan:ownPlanStore.get(),
     planConfigured:localStorage.getItem('planConfigured')==='1',
+    exerciseMarkers:exerciseMarkers,
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
@@ -1881,6 +2249,9 @@ function handleImportFile(ev){
       }
       if(data.ownPlan){ ownPlanStore.set(data.ownPlan); }
       if(data.planConfigured){ localStorage.setItem('planConfigured','1'); }
+      if(data.exerciseMarkers && typeof data.exerciseMarkers === 'object'){
+        localStorage.setItem('exerciseMarkers', JSON.stringify(data.exerciseMarkers));
+      }
       alert('Данные загружены');
       render();
     }catch(err){
@@ -1897,6 +2268,7 @@ function resetAll(){
   localStorage.removeItem('lastBackupDate');
   localStorage.removeItem('ownPlan');
   localStorage.removeItem('planConfigured');
+  localStorage.removeItem('exerciseMarkers');
   location.reload();
 }
 function renderInstallSection(){
@@ -1947,6 +2319,13 @@ function renderTrainer(){
     if(!ex) return;
     getMusclesFromEx(ex).forEach(({ id }) => planMuscles.add(id));
   });
+  if(own && own.enabled){
+    (own.blocks || []).forEach(block => {
+      getBlockExercises(block, own.blocks).forEach(exId => {
+        if(EX[exId]) getMusclesFromEx(EX[exId]).forEach(({ id }) => planMuscles.add(id));
+      });
+    });
+  }
 
   let html = renderTabs();
   html += `<div class="header"><span>Тренер</span></div>`;
@@ -2042,13 +2421,14 @@ function renderTrainerAbout(){
     <p style="margin:0 0 8px"><strong style="color:#ccc">Загруженность</strong> — условная «усталость» мышцы в процентах. После тренировки она растёт, в дни отдыха снижается. Если тренировался два дня подряд — день тренировки не считается днём отдыха, восстановление к нему не применяется.</p>
     <p style="margin:0 0 8px"><strong style="color:#ccc">Формула начисления:</strong><br>
         <code>increase = weight_ratio × tonnage_ratio × ${LOAD_FACTOR}</code><br>
-    <span style="color:#888;font-size:11.5px">(доля участия мышцы уже учтена в эффективной нагрузке, по которой считается рекорд)</span><br>
+        <span style="color:#888;font-size:11.5px">(доля участия мышцы уже учтена в эффективной нагрузке, по которой считается рекорд)</span><br>
         где отношения берутся к личным рекордам <strong>этой мышцы</strong>:
     эффективный вес = вес_упражнения × доля_участия, и сравнивается он с рекордом именно мышцы, а не упражнения.
-    Поэтому новое упражнение не даёт «автоматический рекорд» — мышца должна получить больше, чем когда-либо получала.
+    Поэтому новое упражнение не даёт «автоматический рекорд» — мышца должна получить больше, чем когда-либо получала.</p>
     <p style="margin:0 0 8px"><strong style="color:#ccc">Восстановление в день отдыха:</strong><br>
     <code>load = max(0, load × recovery_rate − daily_subtraction)</code></p>
     <p style="margin:0 0 8px"><strong style="color:#ccc">Порог значимости:</strong> если тоннаж сессии меньше ${Math.round(LOAD_THRESHOLD*100)}% от рекорда — нагрузка не начисляется.</p>
+    <p style="margin:0 0 8px"><strong style="color:#ccc">Количество подходов</strong> входит в формулу через тоннаж: <code>tonnage = Σ(weight × reps)</code>. Если рекорд мышцы 800 кг (4×10×20), а сегодня сделал 3×10×20 = 600 кг, то <code>tRatio = 0.75</code> — стимул на 25% меньше. Один подход вместо четырёх при прочих равных даёт <code>tRatio = 0.25 &lt; ${LOAD_THRESHOLD}</code> — нагрузка не начисляется. Поэтому делать всю запланированную работу выгоднее, чем «отсидеться».</p>
     <p style="margin:0"><strong style="color:#ccc">Цвета:</strong><br>
     🟢 0–${Math.round(LOAD_GREEN*100)}% — восстановлена, можно тяжёлую работу<br>
     🟡 ${Math.round(LOAD_GREEN*100)}–${Math.round(LOAD_YELLOW*100)}% — умеренная усталость<br>
@@ -2058,13 +2438,16 @@ function renderTrainerAbout(){
 }
 
 /* ---------- Онбординг / конструктор плана ---------- */
-let onbPlan = {items: []};
+let onbPlan = {items: [], blocks: []};
 let onbAdding = false;
 let onbAddType = 'existing';
 let onbAddSchedType = 'days';
 let onbEditingIdx = null;
+let onbAddingBlock = false;
+let blockEditPath = [];
 let prevView = null;
-let addExistingSelectedId = '';   // выбранное упражнение в форме «Добавить»
+let addExistingSelectedId = '';
+let editingChildIdx = null;
 
 function needsOnboarding(){
   if(localStorage.getItem('planConfigured')) return false;
@@ -2074,30 +2457,39 @@ function needsOnboarding(){
 function loadOnbPlanFromStore(){
   const own = ownPlanStore.get();
   let items = (own && own.items) ? JSON.parse(JSON.stringify(own.items)).filter(it => EX[it.id]) : [];
-  if(items.length === 0){
+  let blocks = (own && own.blocks) ? JSON.parse(JSON.stringify(own.blocks)) : [];
+  if(items.length === 0 && blocks.length === 0){
     items = customStore.list
       .filter(c => !c.deleted && c.schedule && c.schedule.type !== 'none')
       .map(c => ({ id: c.id, schedule: { ...c.schedule }, disabled: null }));
   }
-  onbPlan = { items };
+  onbPlan = { items, blocks };
   onbEditingIdx = null;
   onbAdding = false;
+  onbAddingBlock = false;
+  editingChildIdx = null;
+  const validPath = [];
+  for (const id of blockEditPath) {
+    if (blocks.some(b => b.id === id)) validPath.push(id);
+    else break;
+  }
+  blockEditPath = validPath;
 }
 function saveOnbPlanToStore(){
-  ownPlanStore.set({ enabled: true, items: onbPlan.items });
+  ownPlanStore.set({ enabled: true, items: onbPlan.items, blocks: onbPlan.blocks || [] });
   localStorage.setItem('planConfigured', '1');
 }
 
-/* --- Проверка несохранённых изменений --- */
 function isCustomDirty(){
   const stored = ownPlanStore.get();
-  if(!stored) return onbPlan.items.length > 0;
-  const storedStr = JSON.stringify(stored.items || []);
-  const currentStr = JSON.stringify(onbPlan.items || []);
-  return storedStr !== currentStr;
+  const currItemsStr = JSON.stringify(onbPlan.items || []);
+  const currBlocksStr = JSON.stringify(onbPlan.blocks || []);
+  if(!stored) return (onbPlan.items||[]).length > 0 || (onbPlan.blocks||[]).length > 0;
+  const storedItemsStr = JSON.stringify(stored.items || []);
+  const storedBlocksStr = JSON.stringify(stored.blocks || []);
+  return storedItemsStr !== currItemsStr || storedBlocksStr !== currBlocksStr;
 }
 
-/* Есть ли введённые данные в форме "Добавить упражнение" */
 function hasPendingAddData(){
   if(!onbAdding) return false;
   if(onbAddType === 'existing'){
@@ -2110,15 +2502,302 @@ function hasPendingAddData(){
   }
 }
 
-/* Пытается добавить упражнение из открытой формы.
-   Возвращает true при успехе, false при ошибке (показывает alert).
-   НЕ вызывает render() — это делает вызывающая сторона. */
+/* ---------- Block helpers ---------- */
+function getCurrentBlock() {
+  if (!blockEditPath.length) return null;
+  const id = blockEditPath[blockEditPath.length - 1];
+  return (onbPlan.blocks || []).find(b => b.id === id) || null;
+}
+
+function isTopLevelBlockLocal(blockId){
+  return !(onbPlan.blocks || []).some(b =>
+    b.id !== blockId && (b.children || []).some(c => c.type === 'block' && c.id === blockId)
+  );
+}
+
+function getTopLevelBlocksLocal() {
+  const all = onbPlan.blocks || [];
+  const referenced = new Set();
+  all.forEach(b => {
+    (b.children || []).forEach(c => {
+      if (c.type === 'block') referenced.add(c.id);
+    });
+  });
+  return all.filter(b => !referenced.has(b.id));
+}
+
+function enterBlock(blockId) {
+  blockEditPath.push(blockId);
+  editingChildIdx = null;
+  render();
+}
+
+function goToBreadcrumb(index) {
+  blockEditPath = blockEditPath.slice(0, index);
+  editingChildIdx = null;
+  render();
+}
+
+function blockNameExists(name, excludeId){
+  return (onbPlan.blocks || []).some(b => b.id !== excludeId && b.name === name);
+}
+
+function createBlockInCurrent() {
+  let n = 1;
+  let name;
+  do {
+    name = 'Блок ' + n;
+    n++;
+  } while (blockNameExists(name));
+  const newBlock = {
+    id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name,
+    schedule: { type: 'none' },
+    disabled: null,
+    children: []
+  };
+  if (!onbPlan.blocks) onbPlan.blocks = [];
+  onbPlan.blocks.push(newBlock);
+  if (blockEditPath.length) {
+    const current = getCurrentBlock();
+    if (current) {
+      current.children = current.children || [];
+      current.children.push({ type: 'block', id: newBlock.id, activeWithParent: true });
+    }
+  }
+  enterBlock(newBlock.id);
+}
+
+function deleteBlockById(blockId) {
+  const block = (onbPlan.blocks || []).find(b => b.id === blockId);
+  if (!block) return;
+  if (!confirm(`Удалить блок «${block.name}»?`)) return;
+  const toDelete = new Set([blockId]);
+  const collect = (id) => {
+    const b = (onbPlan.blocks || []).find(x => x.id === id);
+    if (!b) return;
+    (b.children || []).forEach(c => {
+      if (c.type === 'block') {
+        toDelete.add(c.id);
+        collect(c.id);
+      }
+    });
+  };
+  collect(blockId);
+  (onbPlan.blocks || []).forEach(b => {
+    b.children = (b.children || []).filter(c => !(c.type === 'block' && toDelete.has(c.id)));
+  });
+  const remainingRefs = new Set();
+  (onbPlan.blocks || []).forEach(b => {
+    if (toDelete.has(b.id)) return;
+    (b.children || []).forEach(c => {
+      if (c.type === 'block') remainingRefs.add(c.id);
+    });
+  });
+  onbPlan.blocks = (onbPlan.blocks || []).filter(b => {
+    if (!toDelete.has(b.id)) return true;
+    return remainingRefs.has(b.id);
+  });
+  const idx = blockEditPath.findIndex(id => toDelete.has(id));
+  if (idx >= 0) {
+    blockEditPath = blockEditPath.slice(0, idx);
+  }
+  editingChildIdx = null;
+  render();
+}
+
+function removeChildAt(idx) {
+  const block = getCurrentBlock();
+  if (!block) return;
+  block.children = (block.children || []).filter((_, i) => i !== idx);
+  editingChildIdx = null;
+  render();
+}
+
+function getEligibleBlocksForCurrent() {
+  const currentBlock = getCurrentBlock();
+  if (!currentBlock) return [];
+  const ancestors = new Set(blockEditPath);
+  const allBlocks = onbPlan.blocks || [];
+  return allBlocks.filter(b => {
+    if (ancestors.has(b.id)) return false;
+    const descendants = getBlockDescendantIds(allBlocks, b.id);
+    if (descendants.includes(currentBlock.id)) return false;
+    return true;
+  });
+}
+
+function showAddExistingBlock() {
+  onbAddingBlock = true;
+  render();
+}
+function cancelAddExistingBlock() {
+  onbAddingBlock = false;
+  render();
+}
+function addExistingBlockToCurrent(blockId) {
+  const current = getCurrentBlock();
+  if (!current) return;
+  if (!current.children) current.children = [];
+  current.children.push({ type: 'block', id: blockId, activeWithParent: true });
+  onbAddingBlock = false;
+  render();
+}
+
+function renameCurrentBlock(value) {
+  const block = getCurrentBlock();
+  if (!block) return;
+  block.name = value;
+  const warnEl = document.getElementById('blkNameWarn');
+  if (warnEl) {
+    const dup = value.trim() && blockNameExists(value.trim(), block.id);
+    warnEl.style.display = dup ? 'block' : 'none';
+  }
+}
+
+function updateCurrentBlockSchedule() {
+  const block = getCurrentBlock();
+  if (!block) return;
+  const schedType = document.querySelector('input[name="blkSched"]:checked').value;
+  const startDate = document.getElementById('blkStart').value || fmt(todayDate());
+  const isTop = isTopLevelBlockLocal(block.id);
+  let schedule;
+  if (schedType === 'delayAfterParent' && isTop) {
+    schedule = { type: 'none', startDate };
+  } else if (schedType === 'days') {
+    const days = [...document.querySelectorAll('.blk-day:checked')].map(el => parseInt(el.value));
+    schedule = { type: 'days', days, startDate };
+  } else if (schedType === 'interval') {
+    const interval = parseInt(document.getElementById('blkIntervalVal').value) || 3;
+    schedule = { type: 'interval', interval, startDate };
+  } else if (schedType === 'delayAfterParent') {
+    const delayDays = parseInt(document.getElementById('blkDelayVal').value) || 2;
+    schedule = { type: 'delayAfterParent', delayDays, startDate };
+  } else {
+    schedule = { type: schedType, startDate };
+  }
+  block.schedule = schedule;
+  render();
+}
+
+/* ---------- Child schedule editor ---------- */
+function renderChildScheduleEditor(child, prefix, isBlock) {
+  const schedule = isBlock
+    ? (child.scheduleOverride || { type: 'none' })
+    : (child.schedule || { type: 'none' });
+  const activeWithParent = child.activeWithParent !== false;
+  const days = schedule.days || [];
+  const interval = schedule.interval || 3;
+  const delayDays = schedule.delayDays || 2;
+  const schedType = schedule.type || 'none';
+
+  const scheduleOptions = [
+    ['none', 'Без'],
+    ['days', 'Дни'],
+    ['interval', 'Раз в N'],
+    ['even', 'Чётные'],
+    ['odd', 'Нечётные'],
+    ['everyday', 'Каждый'],
+    ['delayAfterParent', 'Через N после родителя']
+  ];
+
+  return `
+    <label class="day-chk" style="margin:0 0 8px">
+      <input type="checkbox" class="${prefix}-awp" ${activeWithParent ? 'checked' : ''}>
+      Активен вместе с материнским
+    </label>
+    <div style="font-size:12px;color:#888;margin:4px 0">Расписание:</div>
+    <div class="form-row" style="gap:8px">
+      ${scheduleOptions.map(([val, lbl]) =>
+        `<label><input type="radio" name="${prefix}-sched" value="${val}" ${schedType === val ? 'checked' : ''} onchange="updateChildSchedUI('${prefix}','${val}')"> ${lbl}</label>`
+      ).join('')}
+    </div>
+    <div id="${prefix}-days" style="display:${schedType === 'days' ? 'block' : 'none'}">
+      ${WEEK_ORDER.map(d => `<label class="day-chk"><input type="checkbox" class="${prefix}-day" value="${d}" ${days.includes(d) ? 'checked' : ''}> ${DAYS[d]}</label>`).join('')}
+    </div>
+    <div id="${prefix}-interval" style="display:${schedType === 'interval' ? 'block' : 'none'};margin-top:6px">
+      <input type="number" class="${prefix}-interval-val" value="${interval}" min="1" placeholder="Раз в N дней" style="width:100%;background:#111;border:1px solid #333;color:#e8e8e8;padding:6px 9px;border-radius:6px;font-size:13px">
+    </div>
+    <div id="${prefix}-delay" style="display:${schedType === 'delayAfterParent' ? 'block' : 'none'};margin-top:6px">
+      <input type="number" class="${prefix}-delay-val" value="${delayDays}" min="1" placeholder="Через N дней после активации родителя" style="width:100%;background:#111;border:1px solid #333;color:#e8e8e8;padding:6px 9px;border-radius:6px;font-size:13px">
+    </div>
+  `;
+}
+
+function updateChildSchedUI(prefix, type) {
+  const d = document.getElementById(prefix + '-days');
+  const i = document.getElementById(prefix + '-interval');
+  const dl = document.getElementById(prefix + '-delay');
+  if (d) d.style.display = type === 'days' ? 'block' : 'none';
+  if (i) i.style.display = type === 'interval' ? 'block' : 'none';
+  if (dl) dl.style.display = type === 'delayAfterParent' ? 'block' : 'none';
+}
+
+function readChildSchedule(prefix) {
+  const typeEl = document.querySelector(`input[name="${prefix}-sched"]:checked`);
+  const type = typeEl ? typeEl.value : 'none';
+  const awpEl = document.querySelector(`.${prefix}-awp`);
+  const activeWithParent = awpEl ? awpEl.checked : true;
+  let schedule = { type };
+  if (type === 'days') {
+    schedule.days = [...document.querySelectorAll(`.${prefix}-day:checked`)].map(el => parseInt(el.value));
+  } else if (type === 'interval') {
+    const el = document.querySelector(`.${prefix}-interval-val`);
+    schedule.interval = parseInt(el && el.value) || 3;
+  } else if (type === 'delayAfterParent') {
+    const el = document.querySelector(`.${prefix}-delay-val`);
+    schedule.delayDays = parseInt(el && el.value) || 2;
+  }
+  return { schedule, activeWithParent };
+}
+
+/* ---------- Child edit handlers ---------- */
+function onEditChild(idx) { editingChildIdx = idx; render(); }
+function onCancelChildEdit() { editingChildIdx = null; render(); }
+function onSaveChildEdit(idx) {
+  const block = getCurrentBlock();
+  if (!block) return;
+  const child = block.children[idx];
+  if (!child) return;
+  const prefix = 'ce' + idx;
+  const { schedule, activeWithParent } = readChildSchedule(prefix);
+  child.activeWithParent = activeWithParent;
+  if (child.type === 'exercise') {
+    child.schedule = schedule;
+  } else {
+    child.scheduleOverride = (schedule.type === 'none') ? null : schedule;
+  }
+  editingChildIdx = null;
+  render();
+}
+
+function renderChildEditForm(child, idx) {
+  const isBlock = child.type === 'block';
+  const name = isBlock
+    ? ((onbPlan.blocks || []).find(b => b.id === child.id)?.name || 'блок')
+    : (EX[child.id]?.name || 'упражнение');
+  return `<div class="child-settings">
+    <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Настройки: ${escapeHtml(name)}</div>
+    ${renderChildScheduleEditor(child, 'ce' + idx, isBlock)}
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="mini-btn" style="flex:1" onclick="onCancelChildEdit()">Отмена</button>
+      <button class="mini-btn" style="flex:2;background:#2a5a2a;border-color:#3a7a3a" onclick="onSaveChildEdit(${idx})">Сохранить</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- Add exercise logic ---------- */
 function attemptAddExercise(){
   let id, newEx = null;
+  let overrideSets = null;
+  let newMarkers = [];
 
-    if(onbAddType === 'existing'){
+  if(onbAddType === 'existing'){
     id = addExistingSelectedId;
     if(!id){alert('Выберите упражнение из списка');return false;}
+    const setsEl = document.getElementById('addExistingSets');
+    const setsVal = setsEl ? parseInt(setsEl.value) : NaN;
+    if(Number.isFinite(setsVal) && setsVal > 0) overrideSets = setsVal;
   }else{
     const nameEl = document.getElementById('addNewName');
     if(!nameEl){return false;}
@@ -2137,51 +2816,71 @@ function attemptAddExercise(){
     const repsEl = document.getElementById('addNewReps');
     const sets = setsEl ? (parseInt(setsEl.value)||4) : 4;
     const reps = repsEl ? (repsEl.value.trim()||'12-15') : '12-15';
+    const markersEl = document.getElementById('addNewMarkers');
+    newMarkers = parseMarkers(markersEl ? markersEl.value : '');
     id = 'c' + Date.now().toString(36);
     newEx = { id, name, app, sets, reps, muscles, loads, schedule: { type: 'none' } };
   }
 
-  const targetEx = newEx || EX[id];
-  const targetName = (targetEx && targetEx.name || '').trim().toLowerCase();
-  if(!targetName){alert('Не удалось определить название упражнения');return false;}
-
-  const dup = onbPlan.items.some(it=>{
-    const e = EX[it.id];
-    return e && e.name.trim().toLowerCase() === targetName;
-  });
-  if(dup){
-    alert('Упражнение с таким названием уже есть в плане');
-    return false;
+  if (blockEditPath.length) {
+    const block = getCurrentBlock();
+    if (!block) return false;
+    const dup = (block.children || []).some(c => c.type === 'exercise' && c.id === id);
+    if (dup) { alert('Это упражнение уже есть в блоке'); return false; }
+  } else {
+    if (onbPlan.items.some(it => it.id === id)) {
+      alert('Это упражнение уже есть в плане'); return false;
+    }
   }
 
-  const startEl = document.getElementById('addStart');
-  const startDate = (startEl && startEl.value) || fmt(todayDate());
-  let schedule;
-  if(onbAddSchedType === 'days'){
-    const days = [...document.querySelectorAll('.add-day:checked')].map(el => parseInt(el.value));
-    if(!days.length){alert('Выберите хотя бы один день');return false;}
-    schedule = { type:'days', days, startDate };
-  }else if(onbAddSchedType === 'interval'){
-    const intEl = document.getElementById('addInterval');
-    schedule = { type:'interval', interval: parseInt(intEl && intEl.value)||3, startDate };
-  }else{
-    schedule = { type:onbAddSchedType, startDate };
-  }
-
-  if(newEx){
+  if (newEx) {
     const list = customStore.list;
     list.push(newEx);
     customStore.list = list;
     syncCustomEx();
+    if (newMarkers.length) setExerciseMarkers(id, newMarkers);
   }
 
-  onbPlan.items.push({ id, schedule, disabled: null });
+  if (blockEditPath.length) {
+    const block = getCurrentBlock();
+    if (block) {
+      block.children = block.children || [];
+      const child = { type: 'exercise', id, activeWithParent: true, schedule: { type: 'none' } };
+      if (overrideSets) child.sets = overrideSets;
+      try {
+        const { schedule, activeWithParent } = readChildSchedule('addChildSched');
+        child.schedule = schedule;
+        child.activeWithParent = activeWithParent;
+      } catch(e) {}
+      block.children.push(child);
+    }
+  } else {
+    const startEl = document.getElementById('addStart');
+    const startDate = (startEl && startEl.value) || fmt(todayDate());
+    let schedule;
+    if (onbAddSchedType === 'days') {
+      const days = [...document.querySelectorAll('.add-day:checked')].map(el => parseInt(el.value));
+      if (!days.length) { alert('Выберите хотя бы один день'); return false; }
+      schedule = { type: 'days', days, startDate };
+    } else if (onbAddSchedType === 'interval') {
+      const intEl = document.getElementById('addInterval');
+      schedule = { type: 'interval', interval: parseInt(intEl && intEl.value) || 3, startDate };
+    } else {
+      schedule = { type: onbAddSchedType, startDate };
+    }
+    const newItem = { id, schedule, disabled: null };
+    if (overrideSets) newItem.sets = overrideSets;
+    onbPlan.items.push(newItem);
+  }
+
   return true;
 }
 
 function onbShowAdd(){
   onbAdding = true;
   onbEditingIdx = null;
+  onbAddingBlock = false;
+  editingChildIdx = null;
   onbAddType = 'existing';
   onbAddSchedType = 'days';
   addExistingSelectedId = '';
@@ -2206,7 +2905,7 @@ function onbSetSched(t){
   document.getElementById('addIntervalBlock').style.display = t === 'interval' ? 'block' : 'none';
 }
 
-function getExSearchInfo(ex){
+function getExSearchInfo(exId, ex){
   const muscleNames = [];
   const sectionSet = new Set();
   Object.keys(ex.muscles || {}).forEach(mid => {
@@ -2215,17 +2914,19 @@ function getExSearchInfo(ex){
     const sec = MUSCLE_SECTION[mid];
     if(sec) sectionSet.add(sec.name);
   });
-  return { muscleNames, sectionNames: [...sectionSet] };
+  const markers = exId ? getExerciseMarkers(exId) : [];
+  return { muscleNames, sectionNames: [...sectionSet], markers };
 }
 
-function matchExercise(ex, q){
-  const info = getExSearchInfo(ex);
-  if(!q) return { ok: true, byName: false, byMuscle: false, bySection: false, info };
+function matchExercise(exId, ex, q){
+  const info = getExSearchInfo(exId, ex);
+  if(!q) return { ok: true, byName: false, byMuscle: false, bySection: false, byMarker: false, info };
   const ql = q.toLowerCase();
   const byName = ex.name.toLowerCase().includes(ql);
   const byMuscle = info.muscleNames.some(m => m.toLowerCase().includes(ql));
   const bySection = info.sectionNames.some(s => s.toLowerCase().includes(ql));
-  return { ok: byName || byMuscle || bySection, byName, byMuscle, bySection, info };
+  const byMarker = info.markers.some(m => m.toLowerCase().includes(ql));
+  return { ok: byName || byMuscle || bySection || byMarker, byName, byMuscle, bySection, byMarker, info };
 }
 
 function highlightMatch(text, q, color){
@@ -2252,7 +2953,7 @@ function renderAddExistingRow(id, name, isSel, q, match){
 
   let infoLine = '';
   if(match && match.info){
-    const { muscleNames, sectionNames } = match.info;
+    const { muscleNames, sectionNames, markers } = match.info;
     const ql = q ? q.toLowerCase() : '';
     const parts = [];
     if(muscleNames.length){
@@ -2273,7 +2974,10 @@ function renderAddExistingRow(id, name, isSel, q, match){
       parts.push(`<span style="color:#555">·</span> ${secHtml}`);
     }
     if(parts.length){
-      infoLine = `<div style="font-size:10.5px;color:#6a6a6a;margin-top:3px;line-height:1.35">${parts.join(' ')}</div>`;
+      infoLine += `<div style="font-size:10.5px;color:#6a6a6a;margin-top:3px;line-height:1.35">${parts.join(' ')}</div>`;
+    }
+    if(markers && markers.length){
+      infoLine += `<div style="margin-top:3px">${markersChipsHtml(markers, q)}</div>`;
     }
   }
 
@@ -2289,7 +2993,14 @@ function updateAddExistingPreview(){
   if(!el) return;
   const ex = addExistingSelectedId ? EX[addExistingSelectedId] : null;
   const summary = ex ? muscleSummary(ex.muscles) : '';
-  el.innerHTML = summary ? '✓ ' + escapeHtml(summary) : '';
+  const markers = addExistingSelectedId ? getExerciseMarkers(addExistingSelectedId) : [];
+  let html = '';
+  if(summary) html += '✓ ' + escapeHtml(summary);
+  if(markers.length){
+    if(html) html += '<br>';
+    html += markersChipsHtml(markers);
+  }
+  el.innerHTML = html;
   el.style.color = ex ? '#6ab06a' : '#888';
 }
 
@@ -2302,7 +3013,7 @@ function filterAddExistingList(){
   const q = search.value.trim();
   const results = [];
   sortedExerciseEntries().forEach(([id, ex]) => {
-    const m = matchExercise(ex, q);
+    const m = matchExercise(id, ex, q);
     if(m.ok) results.push({ id, ex, match: m });
   });
 
@@ -2362,6 +3073,8 @@ function onbRemoveItem(idx){
 function onbShowEdit(idx){
   onbEditingIdx = idx;
   onbAdding = false;
+  onbAddingBlock = false;
+  editingChildIdx = null;
   render();
 }
 function onbCancelEdit(){
@@ -2422,15 +3135,46 @@ function onbSaveEdit(idx){
     });
   }
 
-  onbPlan.items[idx] = { ...item, schedule, disabled };
+  const setsEl = document.getElementById('peSets');
+  const setsVal = setsEl ? parseInt(setsEl.value) : NaN;
+  const newItem = { ...item, schedule, disabled };
+  if(Number.isFinite(setsVal) && setsVal > 0) newItem.sets = setsVal;
+  else delete newItem.sets;
+  onbPlan.items[idx] = newItem;
   onbEditingIdx = null;
   render();
 }
 
 function renderAddForm(){
+  const isBlockContext = blockEditPath.length > 0;
   const daysChecks = WEEK_ORDER.map(d =>
     `<label class="day-chk"><input type="checkbox" class="add-day" value="${d}"> ${DAYS[d]}</label>`
   ).join('');
+
+  let childScheduleSection = '';
+  if(isBlockContext){
+    childScheduleSection = `
+      <div style="font-size:12px;color:#888;margin:10px 0 4px;padding-top:8px;border-top:1px solid #2a2a2a">Настройки для этого блока:</div>
+      ${renderChildScheduleEditor({type:'exercise', id:'', activeWithParent:true, schedule:{type:'none'}}, 'addChildSched', false)}
+    `;
+  }
+
+  const scheduleSection = isBlockContext ? '' : `
+    <div style="font-size:13px;color:#ccc;margin:10px 0 6px">Расписание:</div>
+    <div class="form-row">
+      <label><input type="radio" name="addSched" value="days" ${onbAddSchedType==='days'?'checked':''} onchange="onbSetSched('days')"> Дни недели</label>
+      <label><input type="radio" name="addSched" value="interval" ${onbAddSchedType==='interval'?'checked':''} onchange="onbSetSched('interval')"> Раз в N</label>
+      <label><input type="radio" name="addSched" value="even" ${onbAddSchedType==='even'?'checked':''} onchange="onbSetSched('even')"> Чётные</label>
+      <label><input type="radio" name="addSched" value="odd" ${onbAddSchedType==='odd'?'checked':''} onchange="onbSetSched('odd')"> Нечётные</label>
+      <label><input type="radio" name="addSched" value="everyday" ${onbAddSchedType==='everyday'?'checked':''} onchange="onbSetSched('everyday')"> Каждый день</label>
+    </div>
+    <div id="addDaysBlock" style="display:${onbAddSchedType==='days'?'block':'none'}">${daysChecks}</div>
+    <div id="addIntervalBlock" style="display:${onbAddSchedType==='interval'?'block':'none'}">
+      <input type="number" id="addInterval" class="form-input" value="3" min="1" placeholder="Раз в N дней">
+    </div>
+    <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
+    <input type="date" id="addStart" class="form-input" value="${fmt(todayDate())}">
+  `;
 
   return `
     <div class="ex" style="margin-top:10px">
@@ -2438,18 +3182,22 @@ function renderAddForm(){
         <label><input type="radio" name="addType" value="existing" ${onbAddType==='existing'?'checked':''} onchange="onbSetAddType('existing')"> Существующее</label>
         <label><input type="radio" name="addType" value="new" ${onbAddType==='new'?'checked':''} onchange="onbSetAddType('new')"> Новое</label>
       </div>
-                  <div id="addExistingBlock" style="display:${onbAddType==='existing'?'block':'none'}">
+      <div id="addExistingBlock" style="display:${onbAddType==='existing'?'block':'none'}">
         <input type="text" id="addExistingSearch" class="form-input"
-               placeholder="Поиск упражнения…" autocomplete="off"
+               placeholder="Поиск: название, метка, мышца…" autocomplete="off"
                oninput="filterAddExistingList()">
         <div id="addExistingCount" style="color:#6ab0ff;font-size:12px;margin:-2px 0 6px"></div>
         <div id="addExistingList" style="max-height:320px;overflow-y:auto;margin-bottom:8px">
           ${sortedExerciseEntries().map(([id, ex]) => {
-            const m = matchExercise(ex, '');
+            const m = matchExercise(id, ex, '');
             return renderAddExistingRow(id, ex.name, id === addExistingSelectedId, '', m);
           }).join('')}
         </div>
         <div id="addExistingPreview" class="ex-last" style="margin-top:-4px;color:#888"></div>
+        <div style="margin-top:8px">
+          <div style="font-size:12px;color:#888;margin:6px 0 4px">Количество подходов (пусто = по умолчанию):</div>
+          <input type="number" id="addExistingSets" class="form-input" min="1" max="20" placeholder="напр. 4">
+        </div>
       </div>
       <div id="addNewBlock" style="display:${onbAddType==='new'?'block':'none'}">
         <input type="text" id="addNewName" class="form-input" placeholder="Название упражнения">
@@ -2461,23 +3209,13 @@ function renderAddForm(){
           <input type="number" id="addNewSets" class="form-input" value="4" min="1" placeholder="Количество подходов">
           <input type="text" id="addNewReps" class="form-input" value="12-15" placeholder="Повторения">
         </div>
+        <div style="font-size:12px;color:#888;margin:8px 0 4px">Метки (через запятую, необязательно):</div>
+        <input type="text" id="addNewMarkers" class="form-input" placeholder="напр. база, жим, домашние">
         <div style="font-size:12px;color:#888;margin:8px 0 4px">Мышцы (обязательно хотя бы одна):</div>
         ${renderMusclePicker({},'addNewMuscle')}
       </div>
-      <div style="font-size:13px;color:#ccc;margin:10px 0 6px">Расписание:</div>
-      <div class="form-row">
-        <label><input type="radio" name="addSched" value="days" ${onbAddSchedType==='days'?'checked':''} onchange="onbSetSched('days')"> Дни недели</label>
-        <label><input type="radio" name="addSched" value="interval" ${onbAddSchedType==='interval'?'checked':''} onchange="onbSetSched('interval')"> Раз в N</label>
-        <label><input type="radio" name="addSched" value="even" ${onbAddSchedType==='even'?'checked':''} onchange="onbSetSched('even')"> Чётные</label>
-        <label><input type="radio" name="addSched" value="odd" ${onbAddSchedType==='odd'?'checked':''} onchange="onbSetSched('odd')"> Нечётные</label>
-        <label><input type="radio" name="addSched" value="everyday" ${onbAddSchedType==='everyday'?'checked':''} onchange="onbSetSched('everyday')"> Каждый день</label>
-      </div>
-      <div id="addDaysBlock" style="display:${onbAddSchedType==='days'?'block':'none'}">${daysChecks}</div>
-      <div id="addIntervalBlock" style="display:${onbAddSchedType==='interval'?'block':'none'}">
-        <input type="number" id="addInterval" class="form-input" value="3" min="1" placeholder="Раз в N дней">
-      </div>
-      <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
-      <input type="date" id="addStart" class="form-input" value="${fmt(todayDate())}">
+      ${childScheduleSection}
+      ${scheduleSection}
       <div style="display:flex;gap:8px;margin-top:8px">
         <button class="mini-btn" style="flex:1" onclick="onbCancelAdd()">Отмена</button>
         <button class="mini-btn" style="flex:2;background:#2a5a2a;border-color:#3a7a3a" onclick="onbConfirmAdd()">Добавить</button>
@@ -2499,6 +3237,7 @@ function renderPlanEditForm(item, idx){
   const days = sched.days || [];
   const interval = sched.interval || 3;
   const startDate = sched.startDate || fmt(todayDate());
+  const plannedSets = (Number.isFinite(item.sets) && item.sets > 0) ? item.sets : (ex.sets || 4);
   const currentDis = isCurrentlyDisabled(item);
   const isDis = !!currentDis;
   const disReason = currentDis ? (currentDis.reason || '') : '';
@@ -2512,6 +3251,7 @@ function renderPlanEditForm(item, idx){
   return `<div class="ex" style="border-color:#3a5a3a;background:#152515;margin-top:6px;margin-bottom:8px">
     <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Редактирование: ${escapeHtml(ex.name)}</div>
     ${msum ? `<div class="psched" style="color:#666;margin-bottom:8px;font-size:11.5px">${escapeHtml(msum)}</div>` : ''}
+    ${renderMarkerCells(item.id, {marginTop: false})}
 
     <div style="font-size:12px;color:#888;margin:8px 0 4px">Расписание:</div>
     <div class="form-row">
@@ -2528,6 +3268,8 @@ function renderPlanEditForm(item, idx){
       <input type="number" id="peIntervalVal" class="form-input" value="${interval}" min="1">
     </div>
 
+    <div style="font-size:12px;color:#888;margin:6px 0 4px">Количество подходов:</div>
+    <input type="number" id="peSets" class="form-input" min="1" max="20" value="${plannedSets}">
     <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
     <input type="date" id="peStart" class="form-input" value="${startDate}">
 
@@ -2552,65 +3294,271 @@ function renderPlanEditForm(item, idx){
   </div>`;
 }
 
+/* ---------- Render helpers ---------- */
+function renderBreadcrumb() {
+  if (!blockEditPath.length) return '';
+  let html = '<div class="breadcrumb">';
+  html += `<span class="bc-item" onclick="goToBreadcrumb(0)">План</span>`;
+  for (let i = 0; i < blockEditPath.length; i++) {
+    const id = blockEditPath[i];
+    const block = (onbPlan.blocks || []).find(b => b.id === id);
+    if (!block) continue;
+    html += ` <span class="bc-sep">›</span> `;
+    if (i === blockEditPath.length - 1) {
+      html += `<span class="bc-current">${escapeHtml(block.name)}</span>`;
+    } else {
+      html += `<span class="bc-item" onclick="goToBreadcrumb(${i + 1})">${escapeHtml(block.name)}</span>`;
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderPlanItems() {
+  const items = onbPlan.items;
+  if(!items.length){
+    return `<div class="ex" style="color:#777;font-size:13px">Пока пусто — добавьте первое упражнение</div>`;
+  }
+  let html = '';
+  items.forEach((item, idx) => {
+    const ex = EX[item.id];
+    if(!ex) return;
+    if(onbEditingIdx === idx){
+      html += renderPlanEditForm(item, idx);
+      return;
+    }
+    const dis = isCurrentlyDisabled(item);
+    const plannedSets = (Number.isFinite(item.sets) && item.sets > 0) ? item.sets : (ex.sets || 4);
+    const badge = dis ? `<span class="pbadge">отменено</span>` : '';
+    const msum = muscleSummary(ex.muscles);
+    const mus = msum ? `<div class="psched" style="color:#666">${escapeHtml(msum)}</div>` : '';
+    const extra = dis ? `<div class="psched" style="color:#c66">🚫 ${escapeHtml(dis.reason)}${dis.until ? ` (до ${dis.until})` : ''}</div>` : '';
+    html += `<div class="plan-item ${dis?'disabled':''}">
+      <div style="flex:1;min-width:0">
+        <div class="pname">${escapeHtml(ex.name)}${badge}</div>
+        <div class="psched">${scheduleSummary(item.schedule)} · ${plannedSets} ${plannedSets===1?'подход':(plannedSets<5?'подхода':'подходов')}</div>
+        ${mus}
+        ${renderMarkerCells(item.id, {marginTop:false})}
+        ${extra}
+      </div>
+      <button class="pdel" style="color:#6ab0ff" onclick="onbShowEdit(${idx})" title="Редактировать">✎</button>
+      <button class="pdel" onclick="onbRemoveItem(${idx})" title="Удалить">✕</button>
+    </div>`;
+  });
+  return html;
+}
+
+function renderPlanBlocks() {
+  const topBlocks = getTopLevelBlocksLocal();
+  if (!topBlocks.length) {
+    return `<div class="ex" style="color:#777;font-size:13px">Пока пусто — создайте первый блок</div>`;
+  }
+  let html = `<h2>Блоки (${topBlocks.length})</h2>`;
+  topBlocks.forEach(block => {
+    const exCount = getBlockExercises(block, onbPlan.blocks || []).length;
+    html += `<div class="plan-item">
+      <div style="flex:1;min-width:0">
+        <div class="pname">📦 ${escapeHtml(block.name)}</div>
+        <div class="psched">${scheduleSummary(block.schedule)} · ${exCount} ${exCount===1?'упражнение':(exCount<5?'упражнения':'упражнений')}</div>
+      </div>
+      <button class="pdel" style="color:#6ab0ff" onclick="enterBlock('${block.id}')" title="Открыть">✎</button>
+      <button class="pdel" onclick="deleteBlockById('${block.id}')" title="Удалить">✕</button>
+    </div>`;
+  });
+  return html;
+}
+
+function renderBlockSettings(block) {
+  const sched = block.schedule || {};
+  let schedType = sched.type || 'none';
+  const isTop = isTopLevelBlockLocal(block.id);
+  if (schedType === 'delayAfterParent' && isTop) schedType = 'none';
+  const days = sched.days || [];
+  const interval = sched.interval || 3;
+  const delayDays = sched.delayDays || 2;
+  const startDate = sched.startDate || fmt(todayDate());
+
+  return `<div class="ex" style="border-color:#3a5a3a;background:#152515;margin-bottom:10px">
+    <div style="font-size:12px;color:#888;margin-bottom:4px">Название блока:</div>
+    <input type="text" id="blkName" class="form-input" value="${escapeHtml(block.name)}" oninput="renameCurrentBlock(this.value)">
+    <div id="blkNameWarn" class="warn-text" style="display:none">Это имя уже используется другим блоком</div>
+    <div style="font-size:12px;color:#888;margin:8px 0 4px">Расписание блока:</div>
+    <div class="form-row">
+      <label><input type="radio" name="blkSched" value="none" ${schedType==='none'?'checked':''} onchange="updateCurrentBlockSchedule()"> Без</label>
+      <label><input type="radio" name="blkSched" value="days" ${schedType==='days'?'checked':''} onchange="updateCurrentBlockSchedule()"> Дни</label>
+      <label><input type="radio" name="blkSched" value="interval" ${schedType==='interval'?'checked':''} onchange="updateCurrentBlockSchedule()"> Раз в N</label>
+      <label><input type="radio" name="blkSched" value="even" ${schedType==='even'?'checked':''} onchange="updateCurrentBlockSchedule()"> Чётные</label>
+      <label><input type="radio" name="blkSched" value="odd" ${schedType==='odd'?'checked':''} onchange="updateCurrentBlockSchedule()"> Нечётные</label>
+      <label><input type="radio" name="blkSched" value="everyday" ${schedType==='everyday'?'checked':''} onchange="updateCurrentBlockSchedule()"> Каждый</label>
+      ${isTop ? '' : `<label><input type="radio" name="blkSched" value="delayAfterParent" ${schedType==='delayAfterParent'?'checked':''} onchange="updateCurrentBlockSchedule()"> Через N после родителя</label>`}
+    </div>
+    <div id="blkDays" style="display:${schedType==='days'?'block':'none'}">
+      ${WEEK_ORDER.map(d=>`<label class="day-chk"><input type="checkbox" class="blk-day" value="${d}" ${days.includes(d)?'checked':''} onchange="updateCurrentBlockSchedule()"> ${DAYS[d]}</label>`).join('')}
+    </div>
+    <div id="blkInterval" style="display:${schedType==='interval'?'block':'none'}">
+      <input type="number" id="blkIntervalVal" class="form-input" value="${interval}" min="1" onchange="updateCurrentBlockSchedule()">
+    </div>
+    ${isTop ? '' : `<div id="blkDelay" style="display:${schedType==='delayAfterParent'?'block':'none'}">
+      <input type="number" id="blkDelayVal" class="form-input" value="${delayDays}" min="1" onchange="updateCurrentBlockSchedule()" placeholder="N дней">
+    </div>`}
+    <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
+    <input type="date" id="blkStart" class="form-input" value="${startDate}" onchange="updateCurrentBlockSchedule()">
+  </div>`;
+}
+
+function renderBlockChildren(block) {
+  const children = block.children || [];
+  if (!children.length) {
+    return `<div class="ex" style="color:#777;font-size:13px">В блоке пока пусто</div>`;
+  }
+
+  let html = '';
+  children.forEach((child, idx) => {
+    if (editingChildIdx === idx) {
+      html += renderChildEditForm(child, idx);
+      return;
+    }
+    if (child.type === 'exercise' && EX[child.id]) {
+      const ex = EX[child.id];
+      const schedType = child.schedule?.type || 'none';
+      const awp = child.activeWithParent !== false;
+      let schedLabel = scheduleSummary(child.schedule);
+      if (schedType === 'none') schedLabel = awp ? 'как родитель' : 'каждый день';
+      const setsInfo = child.sets ? `${child.sets} подх.` : '';
+      html += `<div class="plan-item">
+        <div style="flex:1;min-width:0">
+          <div class="pname">${escapeHtml(ex.name)}</div>
+          <div class="psched">${awp ? '' : 'независимо · '}${schedLabel}${setsInfo ? ' · '+setsInfo : ''}</div>
+          ${renderMarkerCells(child.id, {marginTop:false})}
+        </div>
+        <button class="pdel" style="color:#6ab0ff" onclick="onEditChild(${idx})" title="Настройки">✎</button>
+        <button class="pdel" onclick="removeChildAt(${idx})" title="Удалить">✕</button>
+      </div>`;
+    } else if (child.type === 'block') {
+      const nested = (onbPlan.blocks || []).find(b => b.id === child.id);
+      if (!nested) return;
+      const awp = child.activeWithParent !== false;
+      const exCount = getBlockExercises(nested, onbPlan.blocks || []).length;
+      const sched = child.scheduleOverride || nested.schedule;
+      let schedLabel = scheduleSummary(sched);
+      if (sched.type === 'none' || !sched.type) schedLabel = awp ? 'как родитель' : 'каждый день';
+      html += `<div class="plan-item">
+        <div style="flex:1;min-width:0">
+          <div class="pname">📦 ${escapeHtml(nested.name)}</div>
+          <div class="psched">${awp ? 'активен с родителем' : 'независимо'} · ${schedLabel} · ${exCount} упр.</div>
+        </div>
+        <button class="pdel" style="color:#6ab0ff" onclick="onEditChild(${idx})" title="Настройки">✎</button>
+        <button class="pdel" style="color:#6ab0ff" onclick="enterBlock('${nested.id}')" title="Открыть">↗</button>
+        <button class="pdel" onclick="removeChildAt(${idx})" title="Удалить">✕</button>
+      </div>`;
+    }
+  });
+
+  return html;
+}
+
+function renderAddExistingBlockList() {
+  const eligible = getEligibleBlocksForCurrent();
+  let inner = '';
+  if (!eligible.length) {
+    inner = `<div style="padding:14px;color:#666;font-size:13px;text-align:center">Нет доступных блоков для добавления</div>`;
+  } else {
+    inner = eligible.map(b => `
+      <div onclick="addExistingBlockToCurrent('${b.id}')" style="padding:8px 11px;background:#141414;border:1px solid #262626;border-radius:5px;margin-bottom:4px;cursor:pointer;font-size:13px;line-height:1.3;color:#ddd">
+        <div>📦 ${escapeHtml(b.name)}</div>
+        <div style="font-size:10.5px;color:#6a6a6a;margin-top:3px">${scheduleSummary(b.schedule)}</div>
+      </div>
+    `).join('');
+  }
+  return `<div class="ex" style="margin-top:10px">
+    <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Добавить существующий блок</div>
+    <div style="max-height:320px;overflow-y:auto;margin-bottom:8px">${inner}</div>
+    <button class="mini-btn" style="width:100%" onclick="cancelAddExistingBlock()">Отмена</button>
+  </div>`;
+}
+
 function renderPlanBuilderContent(){
   const isCustomMode = view === 'custom';
   const title = isCustomMode ? 'Мой план' : 'Соберём ваш план';
   const subtitle = isCustomMode ? 'Добавляйте, редактируйте и отключайте упражнения' : 'Выберите упражнения и расписание для каждого';
   const btnText = isCustomMode ? 'Сохранить' : 'Начать';
 
-  let itemsHtml = '';
-  if(!onbPlan.items.length){
-    itemsHtml = `<div class="ex" style="color:#777;font-size:13px">Пока пусто — добавьте первое упражнение</div>`;
-  }else{
-    onbPlan.items.forEach((item, idx) => {
-      const ex = EX[item.id];
-      if(!ex) return;
-      if(onbEditingIdx === idx){
-        itemsHtml += renderPlanEditForm(item, idx);
-        return;
-      }
-      const dis = isCurrentlyDisabled(item);
-      const badge = dis ? `<span class="pbadge">отменено</span>` : '';
-      const msum = muscleSummary(ex.muscles);
-      const mus = msum ? `<div class="psched" style="color:#666">${escapeHtml(msum)}</div>` : '';
-      const extra = dis ? `<div class="psched" style="color:#c66">🚫 ${escapeHtml(dis.reason)}${dis.until ? ` (до ${dis.until})` : ''}</div>` : '';
-      itemsHtml += `<div class="plan-item ${dis?'disabled':''}">
-        <div style="flex:1;min-width:0">
-          <div class="pname">${escapeHtml(ex.name)}${badge}</div>
-          <div class="psched">${scheduleSummary(item.schedule)}</div>
-          ${mus}
-          ${extra}
-        </div>
-        <button class="pdel" style="color:#6ab0ff" onclick="onbShowEdit(${idx})" title="Редактировать">✎</button>
-        <button class="pdel" onclick="onbRemoveItem(${idx})" title="Удалить">✕</button>
-      </div>`;
-    });
+  const currentBlock = getCurrentBlock();
+  const breadcrumbHtml = renderBreadcrumb();
+
+  let contentHtml = '';
+
+  if (currentBlock) {
+    contentHtml += renderBlockSettings(currentBlock);
+    contentHtml += renderBlockChildren(currentBlock);
+  } else {
+    contentHtml += renderPlanItems();
+    contentHtml += renderPlanBlocks();
   }
 
-  return `
+  const addButtonsHtml = onbAdding || onbAddingBlock || editingChildIdx !== null ? '' : `
+    <button class="add-btn" onclick="onbShowAdd()">+ Добавить упражнение</button>
+    ${currentBlock ? `<button class="add-btn" onclick="showAddExistingBlock()">+ Добавить существующий блок</button>` : ''}
+    <button class="add-btn" onclick="createBlockInCurrent()">+ Создать блок</button>
+  `;
+
+  const addingFormHtml = onbAdding ? renderAddForm() : '';
+  const addingBlockHtml = onbAddingBlock ? renderAddExistingBlockList() : '';
+
+  const planConfigured = !!localStorage.getItem('planConfigured');
+  const formOpen = onbAdding || onbEditingIdx !== null || onbAddingBlock || editingChildIdx !== null;
+  let btnDisabled = false;
+  if(formOpen){
+    btnDisabled = true;
+  } else if(isCustomMode && planConfigured && !isCustomDirty()){
+    btnDisabled = true;
+  }
+
+  const btnAttr = btnDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed"' : '';
+  const heroHtml = currentBlock ? '' : `
     <div class="onb-hero" style="padding-bottom:10px">
       <div class="ico">🏋️</div>
       <h1>${title}</h1>
       <p>${subtitle}</p>
-    </div>
+    </div>`;
 
-    <h2>Упражнения (${onbPlan.items.length})</h2>
-    ${itemsHtml}
-
-    ${onbAdding ? '' : `<button class="add-btn" onclick="onbShowAdd()">+ Добавить упражнение</button>`}
-    ${onbAdding ? renderAddForm() : ''}
-
+  return `
+    ${heroHtml}
+    ${breadcrumbHtml}
+    ${contentHtml}
+    ${addButtonsHtml}
+    ${addingFormHtml}
+    ${addingBlockHtml}
     <div class="onb-actions">
-      <button class="primary" onclick="onbSave()">${btnText}</button>
+      <button class="primary" onclick="onbSave()" ${btnAttr}>${btnText}</button>
     </div>`;
 }
 
 function renderOnboarding(){ document.getElementById('app').innerHTML = renderPlanBuilderContent(); }
 function renderCustom(){ document.getElementById('app').innerHTML = renderTabs() + renderPlanBuilderContent(); }
 
+function validateAllBlockNames(){
+  const names = new Set();
+  for (const b of (onbPlan.blocks || [])) {
+    const trimmed = (b.name || '').trim();
+    if (!trimmed) {
+      alert('У блока пустое имя. Задайте имя.');
+      return false;
+    }
+    if (names.has(trimmed)) {
+      alert(`Дублирующееся имя блока: "${trimmed}"`);
+      return false;
+    }
+    names.add(trimmed);
+  }
+  return true;
+}
+
 function onbSave(){
-  if(onbPlan.items.length === 0 && !localStorage.getItem('planConfigured')){
-    if(!confirm('В плане нет упражнений. Всё равно начать?')) return;
+  if(!validateAllBlockNames()) return;
+
+  if(onbPlan.items.length === 0 && (onbPlan.blocks||[]).length === 0 && !localStorage.getItem('planConfigured')){
+    if(!confirm('В плане нет упражнений и блоков. Всё равно начать?')) return;
   }
 
   if(onbAdding && hasPendingAddData()){
@@ -2621,6 +3569,8 @@ function onbSave(){
     }
     onbAdding = false;
   }
+  onbAddingBlock = false;
+  editingChildIdx = null;
 
   saveOnbPlanToStore();
   if(view === 'custom'){
@@ -2650,35 +3600,25 @@ function render(){
 }
 
 function setView(v){
-  // Уходим с вкладки «Свои» — проверяем несохранённые изменения
   if(view === 'custom' && v !== 'custom'){
-    const hasUnsavedItems = isCustomDirty();
-    const hasPendingAdd = onbAdding && hasPendingAddData();
-    // Открытая форма редактирования тоже считается «незавершённой работой»
-    const hasPendingEdit = onbEditingIdx !== null;
+    const hasPending = onbAdding || onbEditingIdx !== null || onbAddingBlock || editingChildIdx !== null;
+    const hasUnsaved = isCustomDirty();
 
-    if(hasUnsavedItems || hasPendingAdd || hasPendingEdit){
-      const save = confirm('В плане есть несохранённые изменения. Сохранить?');
-      if(save){
-        // Если открыта форма «Добавить упражнение» с данными — уточняем
-        if(hasPendingAdd){
-          if(confirm('Добавить новое упражнение перед сохранением?')){
-            if(!attemptAddExercise()){
-              return; // валидация не прошла — остаёмся на «Свои»
-            }
-          }
-        }
+    if(hasPending || hasUnsaved){
+      if(confirm('Сохранить изменения в плане?')){
         onbAdding = false;
         onbEditingIdx = null;
-        saveOnbPlanToStore();
-      }else{
-        // Пользователь отказался сохранять — откатываем к сохранённому
+        onbAddingBlock = false;
+        editingChildIdx = null;
+        if (validateAllBlockNames()) saveOnbPlanToStore();
+      } else {
         loadOnbPlanFromStore();
       }
     }
   }
 
   if(v === 'custom' && prevView !== 'custom'){
+    blockEditPath = [];
     loadOnbPlanFromStore();
   }
   prevView = v;
