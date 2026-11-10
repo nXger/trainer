@@ -472,6 +472,116 @@ function getAllUsedMarkers(){
   }catch(e){ return []; }
 }
 
+/* -------- Default markers seeding (from legend file) -------- */
+const DEFAULT_MARKERS = {
+  barbell_squat:['Гантели/Штанга/Гиря','Волейбол'],
+  bulgarian_split:['Гантели/Штанга/Гиря','Собственный вес','Волейбол'],
+  romanian_deadlift:['Гантели/Штанга/Гиря','Волейбол'],
+  leg_curl_machine:['Тренажер','Волейбол'],
+  leg_curl_band:['Резинка'],
+  glute_bridge_weighted:['Гантели/Штанга/Гиря','Волейбол'],
+  glute_bridge_hold:['Собственный вес'],
+  leg_abduction_band:['Резинка','Тренажер'],
+  sumo_squat_db:['Гантели/Штанга/Гиря','Волейбол'],
+  leg_adduction_machine:['Тренажер'],
+  leg_adduction_band:['Резинка'],
+  leg_abduction_machine:['Тренажер'],
+  side_steps_band:['Резинка','Волейбол'],
+  calf_raise_standing:['Собственный вес','Волейбол'],
+  calf_raise_seated:['Тренажер','Гантели/Штанга/Гиря','Волейбол'],
+  walk_toes_heels:['Собственный вес','Волейбол'],
+  toe_curl_towel:['Резинка'],
+  biceps_barbell:['Гантели/Штанга/Гиря','Армрестлинг'],
+  hammer_curl:['Гантели/Штанга/Гиря','Армрестлинг'],
+  overhead_triceps:['Гантели/Штанга/Гиря'],
+  close_pushups:['Собственный вес'],
+  wrist_curl:['Гантели/Штанга/Гиря','Армрестлинг'],
+  wrist_extension:['Гантели/Штанга/Гиря','Армрестлинг'],
+  hand_gripper:['Армрестлинг'],
+  hang_bar:['Собственный вес','Армрестлинг'],
+  plate_hold:['Гантели/Штанга/Гиря','Армрестлинг'],
+  incline_db_press:['Гантели/Штанга/Гиря','Волейбол'],
+  incline_feet_pushups:['Собственный вес'],
+  bench_press:['Гантели/Штанга/Гиря'],
+  pushups:['Собственный вес'],
+  decline_press:['Гантели/Штанга/Гиря'],
+  dips:['Собственный вес'],
+  hands_elevated_pushups:['Собственный вес'],
+  pushup_plus:['Собственный вес','Волейбол'],
+  pullover_db:['Гантели/Штанга/Гиря','Волейбол'],
+  plank_protraction:['Собственный вес','Волейбол'],
+  breath_resistance:['Резинка'],
+  pullups:['Собственный вес','Волейбол'],
+  lat_pulldown:['Тренажер','Волейбол'],
+  db_row:['Гантели/Штанга/Гиря'],
+  shrugs:['Гантели/Штанга/Гиря'],
+  y_raises_prone:['Собственный вес','Волейбол'],
+  upright_row:['Гантели/Штанга/Гиря'],
+  rows_to_waist:['Тренажер'],
+  band_pull_apart:['Резинка','Волейбол'],
+  reverse_fly_machine:['Тренажер','Волейбол'],
+  hyperextension:['Собственный вес','Волейбол'],
+  deadlift:['Гантели/Штанга/Гиря','Волейбол'],
+  bend_with_db:['Гантели/Штанга/Гиря'],
+  side_bend_db:['Гантели/Штанга/Гиря'],
+  farmers_walk:['Гантели/Штанга/Гиря','Армрестлинг'],
+  overhead_press_db:['Гантели/Штанга/Гиря','Волейбол'],
+  front_raise:['Гантели/Штанга/Гиря','Волейбол'],
+  lateral_raise:['Гантели/Штанга/Гиря','Волейбол'],
+  lateral_raise_band:['Резинка','Волейбол'],
+  bent_reverse_fly:['Гантели/Штанга/Гиря','Волейбол'],
+  reverse_pec_deck:['Тренажер','Резинка','Волейбол'],
+  arm_abduction_band:['Резинка','Армрестлинг','Волейбол'],
+  rotator_cuff_rot:['Резинка','Армрестлинг','Волейбол'],
+  crunches:['Собственный вес','Волейбол'],
+  crunches_weighted:['Гантели/Штанга/Гиря','Тренажер','Волейбол'],
+  leg_raise_hanging:['Собственный вес','Волейбол'],
+  leg_raise_lying:['Собственный вес','Волейбол'],
+  reverse_crunches:['Собственный вес','Волейбол'],
+  russian_twist:['Собственный вес','Волейбол'],
+  side_plank:['Собственный вес','Волейбол'],
+  plank:['Собственный вес','Волейбол'],
+  stomach_vacuum:['Собственный вес'],
+  knee_raise_hanging:['Собственный вес','Волейбол'],
+  leg_raise_band:['Резинка'],
+  kegel:['Собственный вес'],
+  neck_flexion:['Собственный вес'],
+  neck_side:['Собственный вес'],
+  shoulder_shrug_band:['Резинка'],
+  neck_extension:['Собственный вес'],
+  neck_extension_prone:['Собственный вес'],
+  supination_db:['Гантели/Штанга/Гиря','Армрестлинг'],
+  pronation_db:['Гантели/Штанга/Гиря','Армрестлинг'],
+  scapular_elevation:['Резинка','Гантели/Штанга/Гиря','Волейбол'],
+  arm_adduction_band:['Резинка','Армрестлинг'],
+  thumb_ip_flexion:['Резинка','Армрестлинг'],
+  finger_extension_single:['Резинка','Армрестлинг'],
+  thumb_extension_band:['Резинка','Армрестлинг'],
+  anconeus_extension:['Резинка','Армрестлинг'],
+  thumb_pinch:['Гантели/Штанга/Гиря','Армрестлинг'],
+  pinky_grip:['Резинка','Армрестлинг'],
+  finger_spread:['Резинка','Армрестлинг'],
+  palm_squeeze:['Армрестлинг'],
+};
+
+function seedDefaultMarkersIfNeeded(){
+  const FLAG = 'defaultMarkersSeeded_v1';
+  if(localStorage.getItem(FLAG) === '1') return;
+  let existing = {};
+  try{
+    existing = JSON.parse(localStorage.getItem('exerciseMarkers')||'{}');
+  }catch(e){ existing = {}; }
+  Object.entries(DEFAULT_MARKERS).forEach(([exId, markers]) => {
+    if(!existing[exId] || !Array.isArray(existing[exId]) || existing[exId].length === 0){
+      existing[exId] = markers;
+    }
+  });
+  try{
+    localStorage.setItem('exerciseMarkers', JSON.stringify(existing));
+    localStorage.setItem(FLAG, '1');
+  }catch(e){}
+}
+
 /* Simple display-only chips (used in add-form previews etc.) */
 function markersChipsHtml(markers, q){
   if(!markers || !markers.length) return '';
@@ -482,7 +592,14 @@ function markersChipsHtml(markers, q){
   }).join('');
 }
 
-/* Interactive marker cells with [+] — used everywhere markers can be edited */
+/* Read-only chips for training view */
+function renderMarkerChipsOnly(exId){
+  const markers = getExerciseMarkers(exId);
+  if(!markers.length) return '';
+  return `<div style="margin-bottom:6px;display:flex;flex-wrap:wrap;gap:3px">${markers.map(m=>`<span class="marker-chip">${escapeHtml(m)}</span>`).join('')}</div>`;
+}
+
+/* Interactive marker cells with [+] — used in search, stats, plan */
 let markerModalExId = null;
 
 function renderMarkerCells(exId, opts){
@@ -1379,7 +1496,7 @@ function renderExercise(exId,log){
   const last=getLastEntryBefore(exId,dateStr);
   const musStr = muscleSummary(ex.muscles);
   const musclesHtml = musStr ? `<div class="ex-last" style="color:#7a7a7a">${escapeHtml(musStr)}</div>` : '';
-  const markersHtml = `<div style="margin-bottom:6px">${renderMarkerCells(exId, {marginTop:false})}</div>`;
+  const markersHtml = renderMarkerChipsOnly(exId);
   const head=`<div class="ex-head">
       <input type="checkbox" ${checked} onchange="toggleDone('${exId}',this.checked)">
       <strong>${escapeHtml(ex.name)}</strong>
@@ -2251,6 +2368,7 @@ function handleImportFile(ev){
       if(data.planConfigured){ localStorage.setItem('planConfigured','1'); }
       if(data.exerciseMarkers && typeof data.exerciseMarkers === 'object'){
         localStorage.setItem('exerciseMarkers', JSON.stringify(data.exerciseMarkers));
+        localStorage.setItem('defaultMarkersSeeded_v1', '1');
       }
       alert('Данные загружены');
       render();
@@ -2269,6 +2387,7 @@ function resetAll(){
   localStorage.removeItem('ownPlan');
   localStorage.removeItem('planConfigured');
   localStorage.removeItem('exerciseMarkers');
+  localStorage.removeItem('defaultMarkersSeeded_v1');
   location.reload();
 }
 function renderInstallSection(){
@@ -3688,6 +3807,7 @@ if('serviceWorker' in navigator){
 }
 
 syncCustomEx();
+seedDefaultMarkersIfNeeded();
 loadOnbPlanFromStore();
 render();
 </script>
