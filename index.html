@@ -167,7 +167,7 @@
   .marker-chip.hit{background:#f0c86033;color:#f0c860;border:1px solid #f0c860}
   /* Стили для SVG-карты мышц */
   #muscle-map-container{display:block;margin-bottom:16px;padding:8px;background:#141414;border-radius:8px;border:1px solid #262626}
-  #muscle-map-container canvas{display:block;width:100%;height:auto;margin:0 auto;cursor:pointer}
+  #muscle-map-container canvas{display:block;width:100%;height:auto;margin:0 auto;cursor:default}
   #muscle-popup{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
   .muscle-map-legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;font-size:11px;color:#888;margin-top:6px}
   .muscle-map-legend span{display:inline-flex;align-items:center;gap:4px}
@@ -2466,21 +2466,13 @@ function normalizeColor(c) {
   return c;
 }
 
-/*
- * Новая архитектура карты:
- *  - при первичной отрисовке все фигуры (и базовые, и мышцы) складываются в allShapes
- *    в порядке рисования, с сохранением цвета заливки, цвета и толщины обводки;
- *  - при наведении карта полностью перерисовывается из allShapes, но для мышцы,
- *    на которую наведён курсор, цвет заливки плавно смешивается в более тусклый.
- *  Это убирает артефакты «заливки под другие мышцы» и одновременно позволяет
- *  нижним кубикам пресса быть видимыми (они рисуются последними).
- */
 function initMuscleMap(loads) {
   muscleMapLoads = loads;
   const container = document.getElementById('muscle-map-container');
   if (!container) return;
 
-  container.innerHTML = '<canvas id="muscle-canvas" width="1000" height="1000" style="width:100%;height:auto;display:block;margin:0 auto;cursor:pointer"></canvas>';
+  // ← ИЗМЕНЕНО: cursor:default вместо pointer — базовое состояние неактивно
+  container.innerHTML = '<canvas id="muscle-canvas" width="1000" height="1000" style="width:100%;height:auto;display:block;margin:0 auto;cursor:default"></canvas>';
   const canvas = document.getElementById('muscle-canvas');
   const ctx = canvas.getContext('2d');
 
@@ -2915,7 +2907,7 @@ function initMuscleMap(loads) {
   const muscleDullness = {};
   let targetMuscle = null;
   let animating = false;
-  const DIM_FACTOR = 0.55;  // во сколько раз тусклее становится мышца при полном наведении
+  const DIM_FACTOR = 0.55;
 
   function blendColor(rgbStr, dullness) {
     if (dullness <= 0.001) return rgbStr;
@@ -2985,21 +2977,29 @@ function initMuscleMap(loads) {
     };
   }
 
+  // ← ИЗМЕНЕНО: topmost-wins. Возвращает мышцу только если сверху лежит именно
+  // мышца; если сверху базовая часть тела — возвращает null (не кликабельно).
   function getMuscleAtPoint(x, y) {
     for (let i = allShapes.length - 1; i >= 0; i--) {
       const s = allShapes[i];
-      if (!s.muscleId) continue;
-      if (ctx.isPointInPath(s.path, x, y)) return s.muscleId;
+      if (ctx.isPointInPath(s.path, x, y)) {
+        return s.muscleId || null;
+      }
     }
     return null;
   }
 
+  // ← ИЗМЕНЕНО: обновляем cursor по тому, над чем мышка.
   canvas.addEventListener('mousemove', (e) => {
     const { x, y } = getMouseCoords(e);
-    setHoveredMuscle(getMuscleAtPoint(x, y));
+    const m = getMuscleAtPoint(x, y);
+    canvas.style.cursor = m ? 'pointer' : 'default';
+    setHoveredMuscle(m);
   });
 
+  // ← ИЗМЕНЕНО: сбрасываем cursor при уходе с канваса.
   canvas.addEventListener('mouseleave', () => {
+    canvas.style.cursor = 'default';
     setHoveredMuscle(null);
   });
 
