@@ -10,10 +10,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Тренировки">
-<script type="module">
-  import { getBodyDiagram } from 'https://esm.sh/@musclemap/assets';
-  window.MuscleMapAssets = { getBodyDiagram };
-</script>
 <style>
   *{box-sizing:border-box}
   body{font-family:-apple-system,system-ui,sans-serif;margin:0 auto;padding:12px;background:#0f0f0f;color:#e8e8e8;font-size:15px;max-width:600px}
@@ -82,10 +78,6 @@
   .cal-pr-reps{color:#7cc0e8}
   .cal-pr-steady{color:#f0a860}
   .cal-tonnage-pr{position:absolute;top:1px;left:2px;font-size:9px;line-height:1;color:#a8e87c;pointer-events:none}
-  .layer-toggle{display:flex;gap:6px;margin-bottom:10px}
-.layer-btn{flex:1;background:#1a1a1a;border:1px solid #262626;color:#888;padding:8px 10px;border-radius:6px;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
-.layer-btn:hover{background:#222}
-.layer-btn.active{background:#2a2a2a;color:#e8e8e8;border-color:#555}
   .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:#888;margin-bottom:12px}
   .legend span{display:inline-flex;align-items:center;gap:4px}
   .lg-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
@@ -169,28 +161,21 @@
   .child-settings{background:#152515;border:1px solid #3a5a3a;border-radius:8px;padding:10px;margin-bottom:6px}
   .marker-chip{display:inline-block;padding:1px 7px;background:#3a2a1a;color:#f0c860;border-radius:3px;font-size:10px;margin-right:3px;font-weight:500;user-select:none}
   .marker-chip.hit{background:#f0c86033;color:#f0c860;border:1px solid #f0c860}
-  /* Стили для SVG-карты мышц */
-  #muscle-map-container{display:block;margin-bottom:16px;padding:8px;background:#141414;border-radius:8px;border:1px solid #262626}
-  #muscle-map-container canvas{display:block;width:100%;height:auto;margin:0 auto;cursor:default}
-  #muscle-popup{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
-  .muscle-map-legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;font-size:11px;color:#888;margin-top:6px}
-  .muscle-map-legend span{display:inline-flex;align-items:center;gap:4px}
-  .muscle-map-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
-  .muscle-path{transition:fill .2s;cursor:default}
-  .muscle-path:hover{stroke:#fff;stroke-width:2}
+  .muscle-group{background:#1a1a1a;border:1px solid #262626;border-radius:8px;margin-bottom:8px;overflow:hidden}
+.muscle-group-header{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;font-size:14px;font-weight:600;user-select:none;transition:background .15s;border-left:4px solid #666}
+.muscle-group-header:hover{background:#202020}
+.mg-arrow{display:inline-block;width:14px;font-size:11px;color:#888;transition:transform .25s;text-align:center}
+.muscle-group-header.expanded .mg-arrow{transform:rotate(90deg)}
+.mg-count{margin-left:auto;font-size:12px;color:#777;font-weight:400}
+.muscle-group-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.muscle-item{padding:10px 14px;border-top:1px solid #222;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.muscle-item .mi-info{flex:1;min-width:0}
+.muscle-item .mi-name{font-size:13px;color:#ddd;display:block;margin-bottom:2px;word-break:break-word}
+.muscle-item .mi-weight{font-size:11px;color:#888}
+.muscle-item .mi-pct{font-size:14px;font-weight:700;white-space:nowrap}
+.mi-bar{height:4px;background:#222;border-radius:2px;overflow:hidden;margin-top:5px}
+.mi-bar-fill{height:100%;transition:width .3s}
 
-  /* Раскрывающиеся карточки категорий в «Тренере» */
-  .stat-card[data-cat]{cursor:pointer;transition:background .15s,border-color .15s;position:relative}
-  .stat-card[data-cat]:hover{background:#202020;border-color:#3a3a3a}
-  .stat-card[data-cat].expanded{background:#1e2a1e;border-color:#4a6a4a}
-  .stat-expand-wrap{overflow:hidden;max-height:0;transition:max-height .35s cubic-bezier(0.4,0,0.2,1)}
-  .stat-expand-content{padding-top:4px}
-  .stat-list-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;background:#141414;border:1px solid #262626;border-radius:6px;margin-bottom:4px}
-  .stat-list-item .sl-name{font-size:13px;color:#ddd;line-height:1.3;flex:1;min-width:0;word-break:break-word}
-  .stat-list-item .sl-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
-  .stat-list-item .sl-pct{font-size:13px;font-weight:600;line-height:1}
-  .stat-list-item .sl-weight{font-size:10.5px;color:#777;line-height:1;white-space:nowrap}
-  .stat-list-empty{padding:12px;color:#666;font-size:13px;text-align:center;background:#141414;border:1px solid #262626;border-radius:6px}
 </style>
 </head>
 <body>
@@ -349,28 +334,6 @@ const MUSCLE_COEF = {
   interossei:{recovery_rate:0.68,daily_subtraction:0.030},
   hand:{recovery_rate:0.70,daily_subtraction:0.025},
 };
-// К какому слою относится каждая мышца (для переключателя)
-const MUSCLE_LAYERS = {
-  // --- поверхностные ---
-  triceps:'superficial', traps:'superficial', scalenes:'superficial',
-  scm:'superficial', serratus:'superficial', intercostals:'superficial',
-  biceps:'superficial', rectus_abdominis:'superficial', adductors:'superficial',
-  obliques:'superficial', fds:'superficial', palmaris_longus:'superficial',
-  fpb:'superficial', apb:'superficial', fdm:'superficial', fcu:'superficial',
-  brachioradialis:'superficial', fcr:'superficial', adm:'superficial',
-  palmaris_brevis:'superficial', pronator_teres:'superficial',
-  pectoralis_major:'superficial', delts:'superficial', abductors:'superficial',
-  quads:'superficial', foot:'superficial',
-
-  // --- глубокие ---
-  iliopsoas:'deep', pelvic_floor:'deep', transverse:'deep',
-  fdp:'deep', fpl:'deep', pronator_quadratus:'deep', lumbricals:'deep',
-  interossei:'deep', adductor_pollicis:'deep', opponens_pollicis:'deep',
-  opponens_digiti_minimi:'deep',
-  pectoralis_minor:'superficial',   // под большой грудной
-  brachialis:'superficial',         // под бицепсом
-  coracobrachialis:'superficial',   // под короткой головкой бицепса
-};
 
 const LOAD_FACTOR    = 0.25;
 const LOAD_THRESHOLD = 0.30;
@@ -379,17 +342,6 @@ const LOAD_YELLOW    = 0.65;
 const LOAD_ORANGE    = 0.85;
 
 const FOREARM_IDS=['brachioradialis','supinator','pronator_teres','pronator_quadratus','fcr','fcu','palmaris_longus','fds','fdp','fpl','ecrl','ecrb','ecu','finger_extensors','ei','edm','apl','thumb_extensors','anconeus','fpb','apb','opponens_pollicis','adductor_pollicis','palmaris_brevis','adm','fdm','opponens_digiti_minimi','lumbricals','interossei','hand'];
-
-const GROUP_TO_INTERNAL = {
-  QUADS: 'quads', HAMSTRINGS: 'hamstrings', GLUTES: 'glutes', ADDUCTORS: 'adductors',
-  ABDUCTORS: 'abductors', CALVES: 'calves', FEET: 'foot',
-  BICEPS: 'biceps', TRICEPS: 'triceps', BRACHIALIS: 'brachialis', FOREARMS: 'brachioradialis', HANDS: 'hand',
-  CHEST: 'pectoralis_major', SERRATUS: 'serratus', INTERCOSTALS: 'intercostals',
-  LATS: 'lats', TRAPS: 'traps', RHOMBOIDS: 'rhomboids', LEVATOR_SCAPULAE: 'levator_scapulae', LOWER_BACK: 'erectors',
-  SHOULDERS: 'delts', ROTATOR_CUFF: 'rotator_cuff', TERES: 'teres',
-  ABS: 'rectus_abdominis', OBLIQUES: 'obliques', TRANSVERSE: 'transverse', HIP_FLEXORS: 'iliopsoas', PELVIC_FLOOR: 'pelvic_floor',
-  NECK: 'scm', SCALENES: 'scalenes',
-};
 
 function computePercents(loads){
   const ids = Object.keys(loads||{});
@@ -535,6 +487,7 @@ function getAllUsedMarkers(){
   }catch(e){ return []; }
 }
 
+/* -------- Default markers seeding (from legend file) -------- */
 const DEFAULT_MARKERS = {
   barbell_squat:['Гантели/Штанга/Гиря','Волейбол'],
   bulgarian_split:['Гантели/Штанга/Гиря','Собственный вес','Волейбол'],
@@ -644,6 +597,7 @@ function seedDefaultMarkersIfNeeded(){
   }catch(e){}
 }
 
+/* Simple display-only chips (used in add-form previews etc.) */
 function markersChipsHtml(markers, q){
   if(!markers || !markers.length) return '';
   const ql = q ? q.toLowerCase() : '';
@@ -653,12 +607,14 @@ function markersChipsHtml(markers, q){
   }).join('');
 }
 
+/* Read-only chips for training view */
 function renderMarkerChipsOnly(exId){
   const markers = getExerciseMarkers(exId);
   if(!markers.length) return '';
   return `<div style="margin-bottom:6px;display:flex;flex-wrap:wrap;gap:3px">${markers.map(m=>`<span class="marker-chip">${escapeHtml(m)}</span>`).join('')}</div>`;
 }
 
+/* Interactive marker cells with [+] — used in search, stats, plan */
 let markerModalExId = null;
 
 function renderMarkerCells(exId, opts){
@@ -778,9 +734,8 @@ function removeMarkerConfirm(exId, marker){
 }
 
 document.addEventListener('keydown', e=>{
-  if(e.key === 'Escape'){
-    if(document.getElementById('marker-modal')) closeMarkerModal();
-    if(document.getElementById('muscle-popup'))  closeMusclePopup();
+  if(e.key === 'Escape' && document.getElementById('marker-modal')){
+    closeMarkerModal();
   }
 });
 
@@ -1111,6 +1066,7 @@ function isCurrentlyDisabled(item){
   return isDisabledOn(item, fmt(todayDate()));
 }
 
+/* ---------- Block helpers ---------- */
 function getBlockById(blocks, id){
   return (blocks || []).find(b => b.id === id) || null;
 }
@@ -1145,6 +1101,9 @@ function getBlockDescendantIds(blocks, blockId, visited){
   return result;
 }
 
+/* =========================================================
+   PLAN COMPUTATION
+   ========================================================= */
 function isChildEntryActive(childRef, date, parentBlock, parentActive, blocks) {
   let schedule;
   if (childRef.type === 'exercise') {
@@ -1277,6 +1236,7 @@ function isCustomActive(c, date){
   return isScheduleActive(c.schedule, date, customStartDate(c));
 }
 
+/* ---------- stats & PRs ---------- */
 function getExerciseStats(log){
   let maxW=0,maxR=0,totalVol=0,totalSets=0;
   (log?.sets||[]).forEach(s=>{
@@ -1535,8 +1495,55 @@ let calendarMonth=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1)
 let statsExerciseId=null;
 let searchQuery='';
 let collapsedBlocks = new Set();
-let trainerOpenCategory = null;
-let currentTrainerLoads = {};
+let expandedMuscleGroups = new Set();
+
+function toggleMuscleGroup(key){
+  const body = document.getElementById('mg-body-' + key);
+  if(!body) return;
+  const header = body.previousElementSibling;
+
+  if(expandedMuscleGroups.has(key)){
+    // сворачивание: фиксируем фактическую высоту → reflow → 0 (чтобы анимация была плавной)
+    const h = body.scrollHeight;
+    body.style.maxHeight = h + 'px';
+    void body.offsetHeight;
+    body.style.maxHeight = '0px';
+    expandedMuscleGroups.delete(key);
+    if(header) header.classList.remove('expanded');
+  } else {
+    // разворачивание: 0 → фактическая высота
+    body.style.maxHeight = body.scrollHeight + 'px';
+    expandedMuscleGroups.add(key);
+    if(header) header.classList.add('expanded');
+  }
+}
+
+// Максимальный эффективный вес по каждой мышце: max(вес_упражнения × доля мышцы)
+function getMaxWeightByMuscle(){
+  const logs = store.logs;
+  const result = {};
+  Object.keys(logs).forEach(d => {
+    const dayLog = logs[d];
+    if(!dayLog) return;
+    Object.entries(dayLog).forEach(([id, e]) => {
+      if(id.startsWith('_') || !e || !e.done || !EX[id] || EX[id].app) return;
+      const muscles = getMusclesFromEx(EX[id]);
+      if(!muscles.length) return;
+      let maxW = 0;
+      (e.sets||[]).forEach(s => {
+        if(!s) return;
+        const w = parseFloat(s.w)||0;
+        if(w > maxW) maxW = w;
+      });
+      if(maxW <= 0) return;
+      muscles.forEach(({id: mid, share}) => {
+        const effW = maxW * share;
+        if(!result[mid] || effW > result[mid]) result[mid] = effW;
+      });
+    });
+  });
+  return result;
+}
 
 function toggleBlockCollapse(blockId){
   if(collapsedBlocks.has(blockId)) collapsedBlocks.delete(blockId);
@@ -1544,6 +1551,7 @@ function toggleBlockCollapse(blockId){
   render();
 }
 
+/* ---------- Training view ---------- */
 function renderExercise(exId,log){
   const ex=EX[exId];
   if(!ex)return '';
@@ -1693,6 +1701,7 @@ function renderToday(){
   document.getElementById('app').innerHTML=html;
 }
 
+/* ---------- History view ---------- */
 function getHistoryStartDate(){
   const logs=store.logs;
   const dates=Object.keys(logs).filter(d=>{
@@ -1930,6 +1939,7 @@ function unskipHistoryDay(dateStr){
   render();
 }
 
+/* ---------- Search view ---------- */
 function exerciseMatchesQuery(id, ex, q){
   if(!q) return true;
   const ql = q.toLowerCase();
@@ -1990,6 +2000,7 @@ function renderSearchResults(){
 }
 function setSearchQuery(v){ searchQuery=v; renderSearchResults(); }
 
+/* ---------- Custom view ---------- */
 let editingCustomId=null;
 
 function updateCustomForm(){
@@ -2080,6 +2091,7 @@ function deleteCustom(id){
   render();
 }
 
+/* ---------- Common ---------- */
 function deleteHistoryEntry(exId,date){
   const name=EX[exId]?.name||exId;
   if(!confirm(`Удалить запись «${name}» за ${date}?`))return;
@@ -2129,6 +2141,7 @@ function setDayNote(value){
   store.logs=logs;
 }
 
+/* ---------- Stats ---------- */
 function weekStart(d){
   const x=new Date(d); x.setHours(0,0,0,0);
   const dow=(x.getDay()+6)%7;
@@ -2365,6 +2378,7 @@ function renderExerciseStats(){
   document.getElementById('app').innerHTML=html;
 }
 
+/* ---------- Data backup ---------- */
 function exportData(){
   let exerciseMarkers = {};
   try{ exerciseMarkers = JSON.parse(localStorage.getItem('exerciseMarkers')||'{}'); }catch(e){}
@@ -2478,705 +2492,11 @@ function renderDataSection(){
   </div>`;
 }
 
-/* ---------- Тренер: карта мышц + раскрывающиеся списки ---------- */
-let muscleMapLoads = {};
-let muscleLayerMode = 'superficial'; // 'superficial' | 'deep'
-
-function normalizeColor(c) {
-  if (typeof c !== 'string') return '';
-  if (c.startsWith('#') && c.length === 7) {
-    const r = parseInt(c.slice(1,3), 16);
-    const g = parseInt(c.slice(3,5), 16);
-    const b = parseInt(c.slice(5,7), 16);
-    return `rgb(${r}, ${g}, ${b})`;
-  }
-  return c;
-}
-
-function initMuscleMap(loads) {
-  muscleMapLoads = loads;
-  const container = document.getElementById('muscle-map-container');
-  if (!container) return;
-
-  // ← ИЗМЕНЕНО: cursor:default вместо pointer — базовое состояние неактивно
-  container.innerHTML = '<canvas id="muscle-canvas" width="1000" height="1000" style="width:100%;height:auto;display:block;margin:0 auto;cursor:default"></canvas>';
-  const canvas = document.getElementById('muscle-canvas');
-  const ctx = canvas.getContext('2d');
-
-  const LW_SCALE = 3;
-  const allShapes = [];
-  let pendingMuscleId = null;
-  let pendingMuscleColor = null;
-  let currentPath = null;
-  let currentShape = null;
-  let rawLineWidth = 1;
-
-  const _origLWDesc = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'lineWidth');
-  Object.defineProperty(ctx, 'lineWidth', {
-    configurable: true,
-    get() { return _origLWDesc.get.call(ctx); },
-    set(v) { rawLineWidth = v; _origLWDesc.set.call(ctx, v * LW_SCALE); }
-  });
-
-  const origBeginPath = ctx.beginPath.bind(ctx);
-  ctx.beginPath = function() { currentPath = new Path2D(); origBeginPath(); };
-
-  const origMoveTo = ctx.moveTo.bind(ctx);
-  ctx.moveTo = function(x, y) { if (currentPath) currentPath.moveTo(x, y); origMoveTo(x, y); };
-
-  const origLineTo = ctx.lineTo.bind(ctx);
-  ctx.lineTo = function(x, y) { if (currentPath) currentPath.lineTo(x, y); origLineTo(x, y); };
-
-  const origBezier = ctx.bezierCurveTo.bind(ctx);
-  ctx.bezierCurveTo = function(a, b, c, d, e, f) {
-    if (currentPath) currentPath.bezierCurveTo(a, b, c, d, e, f);
-    origBezier(a, b, c, d, e, f);
-  };
-
-  const origClose = ctx.closePath.bind(ctx);
-  ctx.closePath = function() { if (currentPath) currentPath.closePath(); origClose(); };
-
-  const origFill = ctx.fill.bind(ctx);
-  ctx.fill = function(...args) {
-    if (args.length === 0 && currentPath) {
-      const fs = normalizeColor(String(ctx.fillStyle));
-      let muscleId = null;
-      if (pendingMuscleId && fs === pendingMuscleColor) {
-        muscleId = pendingMuscleId;
-      } else {
-        pendingMuscleId = null;
-        pendingMuscleColor = null;
-      }
-      currentShape = {
-  path: currentPath,
-  muscleId,
-  layerType: muscleId ? (MUSCLE_LAYERS[muscleId] || 'superficial') : 'base',
-  fillColor: fs,
-  strokeColor: null,
-  strokeWidth: 0
-};
-      allShapes.push(currentShape);
-    }
-    return origFill(...args);
-  };
-
-  const origStroke = ctx.stroke.bind(ctx);
-  ctx.stroke = function(...args) {
-    if (args.length === 0 && currentShape) {
-      currentShape.strokeColor = normalizeColor(String(ctx.strokeStyle));
-      currentShape.strokeWidth = rawLineWidth;
-    }
-    return origStroke(...args);
-  };
-
-  const getColor = (id) => {
-    pendingMuscleId = id;
-    const load = loads[id] || 0;
-    const color = getLoadColor(load);
-    pendingMuscleColor = normalizeColor(color);
-    return color;
-  };
-
-  ctx.strokeStyle = 'rgb(42, 42, 42)';
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-
-  // #левый трицепс
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('triceps');
-  ctx.moveTo(400.000000, 340.000000); ctx.bezierCurveTo(393.000000, 354.000000, 389.000000, 373.000000, 393.000000, 388.000000); ctx.bezierCurveTo(401.000000, 392.000000, 418.000000, 362.000000, 421.000000, 338.000000); ctx.bezierCurveTo(427.000000, 291.000000, 422.000000, 302.000000, 423.000000, 285.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правый трицепс
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('triceps');
-  ctx.moveTo(600.000000, 340.000000); ctx.bezierCurveTo(607.000000, 354.000000, 611.000000, 373.000000, 607.000000, 388.000000); ctx.bezierCurveTo(599.000000, 392.000000, 582.000000, 362.000000, 579.000000, 338.000000); ctx.bezierCurveTo(573.000000, 291.000000, 578.000000, 302.000000, 577.000000, 285.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #Трапециевидная мышца
-  ctx.beginPath(); ctx.lineWidth = 0.808450; ctx.fillStyle = getColor('traps');
-  ctx.moveTo(500.000000, 200.000000); ctx.lineTo(570.000000, 252.000000); ctx.bezierCurveTo(560.000000, 278.000000, 535.000000, 309.000000, 500.000000, 335.000000); ctx.bezierCurveTo(465.000000, 309.000000, 440.000000, 278.000000, 430.000000, 252.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая кисть (базовая)
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = 'rgb(26, 26, 26)';
-  ctx.moveTo(320.000000, 506.000000); ctx.bezierCurveTo(290.000000, 502.000000, 272.000000, 486.000000, 302.000000, 515.000000); ctx.bezierCurveTo(277.000000, 545.000000, 258.000000, 598.000000, 302.000000, 532.000000); ctx.bezierCurveTo(272.000000, 579.000000, 276.000000, 595.000000, 308.000000, 539.000000); ctx.bezierCurveTo(300.000000, 547.000000, 268.000000, 614.000000, 315.000000, 545.000000); ctx.bezierCurveTo(312.000000, 554.000000, 279.000000, 603.000000, 323.000000, 551.000000); ctx.bezierCurveTo(337.000000, 528.000000, 340.000000, 531.000000, 340.000000, 519.000000); ctx.bezierCurveTo(357.000000, 480.000000, 359.000000, 433.000000, 324.000000, 502.000000); ctx.bezierCurveTo(324.000000, 503.000000, 321.000000, 506.000000, 319.000000, 506.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая кисть (базовая)
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = 'rgb(26, 26, 26)';
-  ctx.moveTo(680.000000, 506.000000); ctx.bezierCurveTo(710.000000, 502.000000, 728.000000, 486.000000, 698.000000, 515.000000); ctx.bezierCurveTo(723.000000, 545.000000, 742.000000, 598.000000, 698.000000, 532.000000); ctx.bezierCurveTo(728.000000, 579.000000, 724.000000, 595.000000, 692.000000, 539.000000); ctx.bezierCurveTo(700.000000, 547.000000, 732.000000, 614.000000, 685.000000, 545.000000); ctx.bezierCurveTo(688.000000, 554.000000, 721.000000, 603.000000, 677.000000, 551.000000); ctx.bezierCurveTo(663.000000, 528.000000, 660.000000, 531.000000, 660.000000, 519.000000); ctx.bezierCurveTo(643.000000, 480.000000, 641.000000, 433.000000, 676.000000, 502.000000); ctx.bezierCurveTo(676.000000, 503.000000, 679.000000, 506.000000, 681.000000, 506.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #туловище (базовая)
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = 'rgb(26, 26, 26)';
-  ctx.moveTo(425.000000, 255.000000); ctx.bezierCurveTo(460.000000, 249.000000, 485.000000, 244.000000, 500.000000, 244.000000); ctx.bezierCurveTo(515.000000, 244.000000, 540.000000, 250.000000, 575.000000, 255.000000); ctx.bezierCurveTo(582.000000, 306.000000, 572.000000, 346.000000, 560.000000, 386.000000); ctx.bezierCurveTo(557.000000, 414.000000, 562.000000, 443.000000, 566.000000, 466.000000); ctx.lineTo(434.000000, 466.000000); ctx.bezierCurveTo(438.000000, 443.000000, 443.000000, 415.000000, 440.000000, 386.000000); ctx.bezierCurveTo(428.000000, 346.000000, 418.000000, 306.000000, 425.000000, 255.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #шея (базовая)
-  ctx.beginPath(); ctx.lineWidth = 0.808448; ctx.fillStyle = 'rgb(26, 26, 26)';
-  ctx.moveTo(470.000000, 201.000000); ctx.bezierCurveTo(469.000000, 225.000000, 463.000000, 235.000000, 460.000000, 248.000000); ctx.lineTo(540.000000, 248.000000); ctx.bezierCurveTo(537.000000, 236.000000, 531.000000, 225.000000, 530.000000, 201.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левые лестничные мышцы
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('scalenes');
-  ctx.moveTo(460.000000, 248.000000); ctx.lineTo(484.000000, 248.000000); ctx.bezierCurveTo(485.000000, 232.000000, 486.000000, 230.000000, 487.000000, 212.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая лестничные мышцы
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('scalenes');
-  ctx.moveTo(540.000000, 248.000000); ctx.lineTo(516.000000, 248.000000); ctx.bezierCurveTo(515.000000, 232.000000, 514.000000, 230.000000, 513.000000, 212.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая грудино-ключично-сосцевидная мышца
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('scm');
-  ctx.moveTo(470.000000, 201.000000); ctx.bezierCurveTo(469.000000, 225.000000, 477.000000, 235.000000, 474.000000, 248.000000); ctx.lineTo(492.000000, 248.000000); ctx.bezierCurveTo(489.000000, 236.000000, 478.000000, 226.000000, 477.000000, 202.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая грудино-ключично-сосцевидная мышца
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('scm');
-  ctx.moveTo(530.000000, 201.000000); ctx.bezierCurveTo(531.000000, 225.000000, 523.000000, 235.000000, 526.000000, 248.000000); ctx.lineTo(508.000000, 248.000000); ctx.bezierCurveTo(511.000000, 236.000000, 522.000000, 226.000000, 523.000000, 202.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левые косые мышцы
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('obliques');
-  ctx.moveTo(429.000000, 254.000000); ctx.bezierCurveTo(440.000000, 323.000000, 440.000000, 392.000000, 434.000000, 466.000000); ctx.lineTo(470.000000, 466.000000); ctx.bezierCurveTo(460.000000, 414.000000, 461.000000, 360.000000, 461.000000, 317.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правые косые мышцы
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('obliques');
-  ctx.moveTo(571.000000, 254.000000); ctx.bezierCurveTo(560.000000, 323.000000, 560.000000, 392.000000, 566.000000, 466.000000); ctx.lineTo(530.000000, 466.000000); ctx.bezierCurveTo(540.000000, 414.000000, 539.000000, 360.000000, 539.000000, 317.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая передняя зубчатая
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('serratus');
-  ctx.moveTo(423.000000, 313.000000); ctx.bezierCurveTo(427.000000, 349.000000, 429.000000, 339.000000, 432.000000, 351.000000); ctx.bezierCurveTo(438.000000, 353.000000, 445.000000, 353.000000, 451.000000, 351.000000); ctx.bezierCurveTo(444.000000, 348.000000, 434.000000, 347.000000, 430.000000, 341.000000); ctx.lineTo(429.000000, 338.000000); ctx.bezierCurveTo(435.000000, 340.000000, 445.000000, 340.000000, 451.000000, 338.000000); ctx.bezierCurveTo(444.000000, 335.000000, 430.000000, 334.000000, 426.000000, 328.000000); ctx.lineTo(425.000000, 324.000000); ctx.bezierCurveTo(431.000000, 326.000000, 445.000000, 326.000000, 451.000000, 325.000000); ctx.bezierCurveTo(444.000000, 322.000000, 430.000000, 321.000000, 426.000000, 316.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая передняя зубчатая
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('serratus');
-  ctx.moveTo(577.000000, 313.000000); ctx.bezierCurveTo(573.000000, 349.000000, 571.000000, 339.000000, 568.000000, 351.000000); ctx.bezierCurveTo(562.000000, 353.000000, 555.000000, 353.000000, 549.000000, 351.000000); ctx.bezierCurveTo(556.000000, 348.000000, 566.000000, 347.000000, 570.000000, 341.000000); ctx.lineTo(571.000000, 338.000000); ctx.bezierCurveTo(565.000000, 340.000000, 555.000000, 340.000000, 549.000000, 338.000000); ctx.bezierCurveTo(556.000000, 335.000000, 570.000000, 334.000000, 574.000000, 328.000000); ctx.lineTo(575.000000, 324.000000); ctx.bezierCurveTo(569.000000, 326.000000, 555.000000, 326.000000, 549.000000, 325.000000); ctx.bezierCurveTo(556.000000, 322.000000, 570.000000, 321.000000, 574.000000, 316.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая клювовидно-плечевая
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('coracobrachialis');
-  ctx.moveTo(422.000000, 284.000000); ctx.bezierCurveTo(414.000000, 291.000000, 416.000000, 311.000000, 416.000000, 321.000000); ctx.lineTo(439.000000, 298.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая клювовидно-плечевая
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('coracobrachialis');
-  ctx.moveTo(578.000000, 284.000000); ctx.bezierCurveTo(586.000000, 291.000000, 584.000000, 311.000000, 584.000000, 321.000000); ctx.lineTo(561.000000, 298.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левые межреберные
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('intercostals');
-  ctx.moveTo(426.000000, 333.000000); ctx.lineTo(438.000000, 392.000000); ctx.bezierCurveTo(448.000000, 395.000000, 459.000000, 395.000000, 469.000000, 392.000000); ctx.bezierCurveTo(458.000000, 388.000000, 443.000000, 385.000000, 436.000000, 377.000000); ctx.lineTo(435.000000, 372.000000); ctx.bezierCurveTo(445.000000, 375.000000, 459.000000, 375.000000, 469.000000, 372.000000); ctx.bezierCurveTo(458.000000, 368.000000, 439.000000, 365.000000, 432.000000, 357.000000); ctx.lineTo(430.000000, 351.000000); ctx.bezierCurveTo(440.000000, 354.000000, 459.000000, 355.000000, 469.000000, 352.000000); ctx.bezierCurveTo(458.000000, 348.000000, 437.000000, 346.000000, 430.000000, 338.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правые межреберные
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('intercostals');
-  ctx.moveTo(574.000000, 333.000000); ctx.lineTo(562.000000, 392.000000); ctx.bezierCurveTo(552.000000, 395.000000, 541.000000, 395.000000, 531.000000, 392.000000); ctx.bezierCurveTo(542.000000, 388.000000, 557.000000, 385.000000, 564.000000, 377.000000); ctx.lineTo(565.000000, 372.000000); ctx.bezierCurveTo(555.000000, 375.000000, 541.000000, 375.000000, 531.000000, 372.000000); ctx.bezierCurveTo(542.000000, 368.000000, 561.000000, 365.000000, 568.000000, 357.000000); ctx.lineTo(570.000000, 351.000000); ctx.bezierCurveTo(560.000000, 354.000000, 541.000000, 355.000000, 531.000000, 352.000000); ctx.bezierCurveTo(542.000000, 348.000000, 563.000000, 346.000000, 570.000000, 338.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левый бицепс
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('biceps');
-  ctx.moveTo(387.000000, 309.000000); ctx.bezierCurveTo(374.000000, 327.000000, 371.000000, 333.000000, 371.000000, 352.000000); ctx.bezierCurveTo(371.000000, 357.000000, 373.000000, 375.000000, 375.000000, 376.000000); ctx.bezierCurveTo(381.000000, 385.000000, 382.000000, 389.000000, 381.000000, 405.000000); ctx.bezierCurveTo(397.000000, 384.000000, 422.000000, 342.000000, 417.000000, 292.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правый бицепс
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('biceps');
-  ctx.moveTo(613.000000, 309.000000); ctx.bezierCurveTo(626.000000, 327.000000, 629.000000, 333.000000, 629.000000, 352.000000); ctx.bezierCurveTo(629.000000, 357.000000, 627.000000, 375.000000, 625.000000, 376.000000); ctx.bezierCurveTo(619.000000, 385.000000, 618.000000, 389.000000, 619.000000, 405.000000); ctx.bezierCurveTo(603.000000, 384.000000, 578.000000, 342.000000, 583.000000, 292.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая большая грудная
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('pectoralis_major');
-  ctx.moveTo(481.000000, 254.000000); ctx.bezierCurveTo(477.000000, 248.000000, 436.000000, 249.000000, 429.000000, 254.000000); ctx.bezierCurveTo(420.000000, 261.000000, 407.000000, 282.000000, 408.000000, 291.000000); ctx.bezierCurveTo(433.000000, 306.000000, 449.000000, 335.000000, 491.000000, 314.000000); ctx.bezierCurveTo(502.000000, 309.000000, 491.000000, 260.000000, 481.000000, 254.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая большая грудная
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('pectoralis_major');
-  ctx.moveTo(519.000000, 254.000000); ctx.bezierCurveTo(523.000000, 248.000000, 564.000000, 249.000000, 571.000000, 254.000000); ctx.bezierCurveTo(580.000000, 261.000000, 593.000000, 282.000000, 592.000000, 291.000000); ctx.bezierCurveTo(567.000000, 306.000000, 551.000000, 335.000000, 509.000000, 314.000000); ctx.bezierCurveTo(498.000000, 309.000000, 509.000000, 260.000000, 519.000000, 254.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая малая грудная
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('pectoralis_minor');
-  ctx.moveTo(453.000000, 297.000000); ctx.bezierCurveTo(443.000000, 284.000000, 414.000000, 241.000000, 418.000000, 278.000000); ctx.bezierCurveTo(443.000000, 293.000000, 434.000000, 315.000000, 455.000000, 320.000000); ctx.bezierCurveTo(471.000000, 321.000000, 475.000000, 325.000000, 453.000000, 297.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая малая грудная
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('pectoralis_minor');
-  ctx.moveTo(547.000000, 297.000000); ctx.bezierCurveTo(557.000000, 284.000000, 586.000000, 241.000000, 582.000000, 278.000000); ctx.bezierCurveTo(557.000000, 293.000000, 566.000000, 315.000000, 545.000000, 320.000000); ctx.bezierCurveTo(529.000000, 321.000000, 525.000000, 325.000000, 547.000000, 297.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая дельта
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('delts');
-  ctx.moveTo(430.000000, 253.000000); ctx.bezierCurveTo(397.000000, 238.000000, 371.000000, 290.000000, 387.000000, 308.000000); ctx.bezierCurveTo(428.000000, 297.000000, 418.000000, 268.000000, 430.000000, 253.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая дельта
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('delts');
-  ctx.moveTo(570.000000, 253.000000); ctx.bezierCurveTo(603.000000, 238.000000, 629.000000, 290.000000, 613.000000, 308.000000); ctx.bezierCurveTo(572.000000, 297.000000, 582.000000, 268.000000, 570.000000, 253.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #голова (базовая)
-  ctx.beginPath(); ctx.lineWidth = 0.808448; ctx.fillStyle = 'rgb(26, 26, 26)';
-  ctx.moveTo(500.000000, 217.000000); ctx.bezierCurveTo(472.000000, 217.000000, 452.000000, 181.000000, 452.000000, 144.000000); ctx.bezierCurveTo(452.000000, 108.000000, 472.000000, 82.000000, 500.000000, 82.000000); ctx.bezierCurveTo(528.000000, 82.000000, 548.000000, 108.000000, 548.000000, 144.000000); ctx.bezierCurveTo(548.000000, 180.000000, 528.000000, 217.000000, 500.000000, 217.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая нога 1 (базовая)
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = 'rgb(26, 26, 26)';
-  ctx.moveTo(434.000000, 466.000000); ctx.bezierCurveTo(430.000000, 484.000000, 423.000000, 550.000000, 423.000000, 563.000000); ctx.bezierCurveTo(423.000000, 589.000000, 437.000000, 642.000000, 434.000000, 677.000000); ctx.bezierCurveTo(475.000000, 676.000000, 488.000000, 678.000000, 489.000000, 677.000000); ctx.bezierCurveTo(500.000000, 634.000000, 497.000000, 516.000000, 501.000000, 466.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая нога 1 (базовая)
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = 'rgb(26, 26, 26)';
-  ctx.moveTo(566.000000, 466.000000); ctx.bezierCurveTo(570.000000, 484.000000, 577.000000, 550.000000, 577.000000, 563.000000); ctx.bezierCurveTo(577.000000, 589.000000, 563.000000, 642.000000, 566.000000, 677.000000); ctx.bezierCurveTo(525.000000, 676.000000, 512.000000, 678.000000, 511.000000, 677.000000); ctx.bezierCurveTo(500.000000, 634.000000, 503.000000, 516.000000, 499.000000, 466.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая нога 2 (базовая)
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = 'rgb(26, 26, 26)';
-  ctx.moveTo(435.000000, 678.000000); ctx.bezierCurveTo(424.000000, 753.000000, 435.000000, 816.000000, 446.000000, 853.000000); ctx.lineTo(478.000000, 853.000000); ctx.bezierCurveTo(489.000000, 815.000000, 493.000000, 751.000000, 490.000000, 678.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая нога 2 (базовая)
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = 'rgb(26, 26, 26)';
-  ctx.moveTo(565.000000, 678.000000); ctx.bezierCurveTo(576.000000, 753.000000, 565.000000, 816.000000, 554.000000, 853.000000); ctx.lineTo(522.000000, 853.000000); ctx.bezierCurveTo(511.000000, 815.000000, 507.000000, 751.000000, 510.000000, 678.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая нога 3 (базовая)
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = 'rgb(26, 26, 26)';
-  ctx.moveTo(445.000000, 852.000000); ctx.bezierCurveTo(434.000000, 877.000000, 402.000000, 913.000000, 412.000000, 934.000000); ctx.bezierCurveTo(422.000000, 955.000000, 459.000000, 943.000000, 459.000000, 943.000000); ctx.bezierCurveTo(465.000000, 931.000000, 484.000000, 877.000000, 478.000000, 852.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая нога 3 (базовая)
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = 'rgb(26, 26, 26)';
-  ctx.moveTo(555.000000, 852.000000); ctx.bezierCurveTo(566.000000, 877.000000, 598.000000, 913.000000, 588.000000, 934.000000); ctx.bezierCurveTo(578.000000, 955.000000, 541.000000, 943.000000, 541.000000, 943.000000); ctx.bezierCurveTo(535.000000, 931.000000, 516.000000, 877.000000, 522.000000, 852.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левые Отводящие мышцы
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('abductors');
-  ctx.moveTo(433.000000, 475.000000); ctx.bezierCurveTo(488.000000, 495.000000, 453.000000, 632.000000, 442.000000, 658.000000); ctx.bezierCurveTo(426.000000, 611.000000, 411.000000, 560.000000, 433.000000, 475.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правые Отводящие мышцы
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('abductors');
-  ctx.moveTo(567.000000, 475.000000); ctx.bezierCurveTo(512.000000, 495.000000, 547.000000, 632.000000, 558.000000, 658.000000); ctx.bezierCurveTo(574.000000, 611.000000, 589.000000, 560.000000, 567.000000, 475.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левые Приводящие мышцы
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('adductors');
-  ctx.moveTo(478.000000, 678.000000); ctx.bezierCurveTo(491.000000, 637.000000, 504.000000, 525.000000, 502.000000, 466.000000); ctx.bezierCurveTo(497.000000, 507.000000, 423.000000, 468.000000, 479.000000, 678.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правые Приводящие мышцы
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('adductors');
-  ctx.moveTo(522.000000, 678.000000); ctx.bezierCurveTo(509.000000, 637.000000, 496.000000, 525.000000, 498.000000, 466.000000); ctx.bezierCurveTo(503.000000, 507.000000, 577.000000, 468.000000, 521.000000, 678.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левый поверхностный сгибатель пальцев
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('fds');
-  ctx.moveTo(392.000000, 391.000000); ctx.bezierCurveTo(380.000000, 391.000000, 381.000000, 429.000000, 323.000000, 508.000000); ctx.bezierCurveTo(333.000000, 507.000000, 335.000000, 516.000000, 339.000000, 517.000000); ctx.bezierCurveTo(342.000000, 511.000000, 371.000000, 456.000000, 372.000000, 452.000000); ctx.bezierCurveTo(377.000000, 446.000000, 378.000000, 438.000000, 381.000000, 430.000000); ctx.bezierCurveTo(386.000000, 423.000000, 390.000000, 394.000000, 391.000000, 392.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правый поверхностный сгибатель пальцев
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('fds');
-  ctx.moveTo(608.000000, 391.000000); ctx.bezierCurveTo(620.000000, 391.000000, 619.000000, 429.000000, 677.000000, 508.000000); ctx.bezierCurveTo(667.000000, 507.000000, 665.000000, 516.000000, 661.000000, 517.000000); ctx.bezierCurveTo(658.000000, 511.000000, 629.000000, 456.000000, 628.000000, 452.000000); ctx.bezierCurveTo(623.000000, 446.000000, 622.000000, 438.000000, 619.000000, 430.000000); ctx.bezierCurveTo(614.000000, 423.000000, 610.000000, 394.000000, 609.000000, 392.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая плечелучевая
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('brachioradialis');
-  ctx.moveTo(374.000000, 375.000000); ctx.bezierCurveTo(368.000000, 374.000000, 353.000000, 404.000000, 350.000000, 432.000000); ctx.bezierCurveTo(349.000000, 448.000000, 330.000000, 482.000000, 321.000000, 506.000000); ctx.bezierCurveTo(328.000000, 501.000000, 363.000000, 452.000000, 374.000000, 426.000000); ctx.bezierCurveTo(376.000000, 420.000000, 388.000000, 389.000000, 375.000000, 376.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая плечелучевая
-  ctx.beginPath(); ctx.lineWidth = 0.529167; ctx.fillStyle = getColor('brachioradialis');
-  ctx.moveTo(626.000000, 375.000000); ctx.bezierCurveTo(632.000000, 374.000000, 647.000000, 404.000000, 650.000000, 432.000000); ctx.bezierCurveTo(651.000000, 448.000000, 670.000000, 483.000000, 679.000000, 507.000000); ctx.bezierCurveTo(672.000000, 502.000000, 637.000000, 452.000000, 626.000000, 426.000000); ctx.bezierCurveTo(624.000000, 420.000000, 612.000000, 389.000000, 625.000000, 376.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левый лучевой сгибатель запястья
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('fcr');
-  ctx.moveTo(389.000000, 395.000000); ctx.bezierCurveTo(365.000000, 406.000000, 384.000000, 419.000000, 320.000000, 507.000000); ctx.bezierCurveTo(321.000000, 507.000000, 322.000000, 508.000000, 323.000000, 508.000000); ctx.bezierCurveTo(330.000000, 498.000000, 369.000000, 444.000000, 370.000000, 442.000000); ctx.bezierCurveTo(371.000000, 440.000000, 384.000000, 412.000000, 389.000000, 395.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правый лучевой сгибатель запястья
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('fcr');
-  ctx.moveTo(611.000000, 395.000000); ctx.bezierCurveTo(635.000000, 406.000000, 616.000000, 419.000000, 680.000000, 507.000000); ctx.bezierCurveTo(679.000000, 507.000000, 678.000000, 508.000000, 677.000000, 508.000000); ctx.bezierCurveTo(670.000000, 498.000000, 631.000000, 444.000000, 630.000000, 442.000000); ctx.bezierCurveTo(629.000000, 440.000000, 616.000000, 412.000000, 611.000000, 395.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая длинная ладонная
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('palmaris_longus');
-  ctx.moveTo(374.000000, 430.000000); ctx.bezierCurveTo(372.000000, 437.000000, 364.000000, 451.000000, 328.000000, 511.000000); ctx.bezierCurveTo(326.000000, 513.000000, 294.000000, 524.000000, 298.000000, 531.000000); ctx.bezierCurveTo(301.000000, 532.000000, 305.000000, 527.000000, 305.000000, 537.000000); ctx.bezierCurveTo(307.000000, 541.000000, 312.000000, 534.000000, 311.000000, 544.000000); ctx.bezierCurveTo(316.000000, 542.000000, 319.000000, 544.000000, 319.000000, 550.000000); ctx.bezierCurveTo(325.000000, 542.000000, 330.000000, 518.000000, 330.000000, 512.000000); ctx.bezierCurveTo(337.000000, 502.000000, 363.000000, 462.000000, 364.000000, 459.000000); ctx.bezierCurveTo(378.000000, 434.000000, 387.000000, 397.000000, 391.000000, 392.000000); ctx.bezierCurveTo(386.000000, 396.000000, 376.000000, 425.000000, 374.000000, 430.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая длинная ладонная
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('palmaris_longus');
-  ctx.moveTo(626.000000, 430.000000); ctx.bezierCurveTo(628.000000, 437.000000, 636.000000, 451.000000, 672.000000, 511.000000); ctx.bezierCurveTo(674.000000, 513.000000, 706.000000, 524.000000, 702.000000, 531.000000); ctx.bezierCurveTo(699.000000, 532.000000, 695.000000, 527.000000, 695.000000, 537.000000); ctx.bezierCurveTo(693.000000, 541.000000, 688.000000, 534.000000, 689.000000, 544.000000); ctx.bezierCurveTo(684.000000, 542.000000, 681.000000, 544.000000, 681.000000, 550.000000); ctx.bezierCurveTo(675.000000, 542.000000, 670.000000, 518.000000, 670.000000, 512.000000); ctx.bezierCurveTo(663.000000, 502.000000, 637.000000, 462.000000, 636.000000, 459.000000); ctx.bezierCurveTo(622.000000, 434.000000, 613.000000, 397.000000, 609.000000, 392.000000); ctx.bezierCurveTo(614.000000, 396.000000, 624.000000, 425.000000, 626.000000, 430.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левый локтевой сгибатель запястья
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('fcu');
-  ctx.moveTo(393.000000, 389.000000); ctx.bezierCurveTo(388.000000, 401.000000, 388.000000, 426.000000, 339.000000, 517.000000); ctx.bezierCurveTo(340.000000, 517.000000, 340.000000, 518.000000, 341.000000, 519.000000); ctx.bezierCurveTo(345.000000, 513.000000, 377.000000, 454.000000, 378.000000, 450.000000); ctx.bezierCurveTo(388.000000, 429.000000, 402.000000, 400.000000, 393.000000, 390.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правый локтевой сгибатель запястья
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('fcu');
-  ctx.moveTo(607.000000, 389.000000); ctx.bezierCurveTo(612.000000, 401.000000, 612.000000, 426.000000, 661.000000, 517.000000); ctx.bezierCurveTo(660.000000, 517.000000, 660.000000, 518.000000, 659.000000, 519.000000); ctx.bezierCurveTo(655.000000, 513.000000, 623.000000, 454.000000, 622.000000, 450.000000); ctx.bezierCurveTo(612.000000, 429.000000, 598.000000, 400.000000, 607.000000, 390.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левый круглый пронатор
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('pronator_teres');
-  ctx.moveTo(393.000000, 390.000000); ctx.bezierCurveTo(389.000000, 388.000000, 384.000000, 392.000000, 377.000000, 404.000000); ctx.bezierCurveTo(376.000000, 407.000000, 371.000000, 420.000000, 369.000000, 424.000000); ctx.bezierCurveTo(388.000000, 406.000000, 395.000000, 399.000000, 393.000000, 389.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правый круглый пронатор
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('pronator_teres');
-  ctx.moveTo(607.000000, 390.000000); ctx.bezierCurveTo(611.000000, 388.000000, 616.000000, 392.000000, 623.000000, 404.000000); ctx.bezierCurveTo(624.000000, 407.000000, 629.000000, 420.000000, 631.000000, 424.000000); ctx.bezierCurveTo(612.000000, 406.000000, 605.000000, 399.000000, 607.000000, 389.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левый брахиалис
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('brachialis');
-  ctx.moveTo(412.000000, 344.000000); ctx.bezierCurveTo(398.000000, 354.000000, 396.000000, 355.000000, 389.000000, 365.000000); ctx.bezierCurveTo(383.000000, 375.000000, 380.000000, 375.000000, 377.000000, 404.000000); ctx.bezierCurveTo(404.000000, 384.000000, 406.000000, 363.000000, 412.000000, 344.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правый брахиалис
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('brachialis');
-  ctx.moveTo(588.000000, 344.000000); ctx.bezierCurveTo(602.000000, 354.000000, 604.000000, 355.000000, 611.000000, 365.000000); ctx.bezierCurveTo(617.000000, 375.000000, 620.000000, 375.000000, 623.000000, 404.000000); ctx.bezierCurveTo(596.000000, 384.000000, 594.000000, 363.000000, 588.000000, 344.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левый короткий сгибатель большого пальца кисти
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('fpb');
-  ctx.moveTo(323.000000, 510.000000); ctx.bezierCurveTo(314.000000, 513.000000, 314.000000, 518.000000, 298.000000, 505.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правый короткий сгибатель большого пальца кисти
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('fpb');
-  ctx.moveTo(677.000000, 510.000000); ctx.bezierCurveTo(686.000000, 513.000000, 686.000000, 518.000000, 702.000000, 505.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая короткая мышца, отводящая большой палец кисти
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('apb');
-  ctx.moveTo(323.000000, 508.000000); ctx.bezierCurveTo(317.000000, 504.000000, 316.000000, 499.000000, 300.000000, 502.000000); ctx.bezierCurveTo(307.000000, 504.000000, 313.000000, 507.000000, 323.000000, 508.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая короткая мышца, отводящая большой палец кисти
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('apb');
-  ctx.moveTo(677.000000, 508.000000); ctx.bezierCurveTo(683.000000, 504.000000, 684.000000, 499.000000, 700.000000, 502.000000); ctx.bezierCurveTo(693.000000, 504.000000, 687.000000, 507.000000, 677.000000, 508.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левый короткий сгибатель мизинца
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('fdm');
-  ctx.moveTo(340.000000, 519.000000); ctx.bezierCurveTo(335.000000, 527.000000, 336.000000, 524.000000, 335.000000, 527.000000); ctx.bezierCurveTo(326.000000, 540.000000, 326.000000, 538.000000, 319.000000, 550.000000); ctx.bezierCurveTo(317.000000, 544.000000, 329.000000, 520.000000, 340.000000, 519.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правый короткий сгибатель мизинца
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('fdm');
-  ctx.moveTo(660.000000, 519.000000); ctx.bezierCurveTo(665.000000, 527.000000, 664.000000, 524.000000, 665.000000, 527.000000); ctx.bezierCurveTo(674.000000, 540.000000, 674.000000, 538.000000, 681.000000, 550.000000); ctx.bezierCurveTo(683.000000, 544.000000, 671.000000, 520.000000, 660.000000, 519.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая мышца, отводящая мизинец
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('adm');
-  ctx.moveTo(340.000000, 519.000000); ctx.bezierCurveTo(341.000000, 520.000000, 341.000000, 525.000000, 340.000000, 528.000000); ctx.bezierCurveTo(331.000000, 541.000000, 325.000000, 548.000000, 319.000000, 550.000000); ctx.bezierCurveTo(328.000000, 536.000000, 337.000000, 516.000000, 340.000000, 519.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая мышца, отводящая мизинец
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('adm');
-  ctx.moveTo(660.000000, 519.000000); ctx.bezierCurveTo(659.000000, 520.000000, 659.000000, 525.000000, 660.000000, 528.000000); ctx.bezierCurveTo(669.000000, 541.000000, 675.000000, 548.000000, 681.000000, 550.000000); ctx.bezierCurveTo(672.000000, 536.000000, 663.000000, 516.000000, 660.000000, 519.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левая короткая ладонная мышца
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('palmaris_brevis');
-  ctx.moveTo(340.000000, 524.000000); ctx.bezierCurveTo(341.000000, 527.000000, 340.000000, 529.000000, 338.000000, 531.000000); ctx.bezierCurveTo(331.000000, 527.000000, 330.000000, 523.000000, 334.000000, 520.000000); ctx.bezierCurveTo(337.000000, 519.000000, 338.000000, 523.000000, 340.000000, 524.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правая короткая ладонная мышца
-  ctx.beginPath(); ctx.lineWidth = 0.264583; ctx.fillStyle = getColor('palmaris_brevis');
-  ctx.moveTo(660.000000, 524.000000); ctx.bezierCurveTo(659.000000, 527.000000, 660.000000, 529.000000, 662.000000, 531.000000); ctx.bezierCurveTo(669.000000, 527.000000, 670.000000, 523.000000, 666.000000, 520.000000); ctx.bezierCurveTo(663.000000, 519.000000, 662.000000, 523.000000, 660.000000, 524.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левые квадрицепсы
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('quads');
-  ctx.moveTo(435.000000, 678.000000); ctx.bezierCurveTo(476.000000, 677.000000, 485.000000, 678.000000, 485.000000, 677.000000); ctx.bezierCurveTo(492.000000, 635.000000, 472.000000, 531.000000, 459.000000, 484.000000); ctx.bezierCurveTo(442.000000, 566.000000, 417.000000, 567.000000, 435.000000, 677.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правые квадрицепсы
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('quads');
-  ctx.moveTo(565.000000, 678.000000); ctx.bezierCurveTo(524.000000, 677.000000, 515.000000, 678.000000, 515.000000, 677.000000); ctx.bezierCurveTo(508.000000, 635.000000, 528.000000, 531.000000, 541.000000, 484.000000); ctx.bezierCurveTo(558.000000, 566.000000, 583.000000, 567.000000, 565.000000, 677.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #левые Сгибатели/разгибатели стопы и пальцев
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('foot');
-  ctx.moveTo(445.000000, 852.000000); ctx.bezierCurveTo(442.000000, 879.000000, 434.000000, 886.000000, 425.000000, 902.000000); ctx.bezierCurveTo(447.000000, 903.000000, 460.000000, 917.000000, 460.000000, 917.000000); ctx.bezierCurveTo(466.000000, 872.000000, 467.000000, 876.000000, 477.000000, 852.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #правые Сгибатели/разгибатели стопы и пальцев
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.fillStyle = getColor('foot');
-  ctx.moveTo(555.000000, 852.000000); ctx.bezierCurveTo(558.000000, 879.000000, 566.000000, 886.000000, 575.000000, 902.000000); ctx.bezierCurveTo(553.000000, 903.000000, 540.000000, 917.000000, 540.000000, 917.000000); ctx.bezierCurveTo(534.000000, 872.000000, 533.000000, 876.000000, 523.000000, 852.000000);
-  ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  // #пресс — рисуем ПОСЛЕДНИМ, чтобы нижние кубики (1х4, 2х4) были видны поверх ног
-  ctx.fillStyle = getColor('rectus_abdominis');
-  // 1х3
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.moveTo(458.000000, 411.000000); ctx.bezierCurveTo(475.000000, 411.000000, 500.000000, 405.000000, 500.000000, 411.000000); ctx.lineTo(499.000000, 467.000000); ctx.bezierCurveTo(488.000000, 471.000000, 475.000000, 471.000000, 465.000000, 467.000000); ctx.closePath(); ctx.fill(); ctx.stroke();
-  // 2х3
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.moveTo(542.000000, 411.000000); ctx.bezierCurveTo(525.000000, 411.000000, 500.000000, 405.000000, 500.000000, 411.000000); ctx.lineTo(501.000000, 467.000000); ctx.bezierCurveTo(512.000000, 471.000000, 525.000000, 471.000000, 535.000000, 467.000000); ctx.closePath(); ctx.fill(); ctx.stroke();
-  // 1х2
-  ctx.beginPath(); ctx.lineWidth = 0.864851; ctx.moveTo(461.000000, 356.000000); ctx.bezierCurveTo(473.000000, 360.000000, 499.000000, 359.000000, 499.000000, 361.000000); ctx.lineTo(500.000000, 411.000000); ctx.bezierCurveTo(486.000000, 415.000000, 470.000000, 415.000000, 458.000000, 411.000000); ctx.closePath(); ctx.fill(); ctx.stroke();
-  // 2х2
-  ctx.beginPath(); ctx.lineWidth = 0.864851; ctx.moveTo(539.000000, 356.000000); ctx.bezierCurveTo(527.000000, 360.000000, 501.000000, 359.000000, 501.000000, 361.000000); ctx.lineTo(500.000000, 411.000000); ctx.bezierCurveTo(514.000000, 415.000000, 530.000000, 415.000000, 542.000000, 411.000000); ctx.closePath(); ctx.fill(); ctx.stroke();
-  // 1х1
-  ctx.beginPath(); ctx.lineWidth = 0.918006; ctx.moveTo(461.000000, 312.000000); ctx.bezierCurveTo(475.000000, 305.000000, 495.000000, 303.000000, 495.000000, 309.000000); ctx.lineTo(499.000000, 360.000000); ctx.bezierCurveTo(486.000000, 365.000000, 470.000000, 368.000000, 461.000000, 363.000000); ctx.closePath(); ctx.fill(); ctx.stroke();
-  // 2х1
-  ctx.beginPath(); ctx.lineWidth = 0.918006; ctx.moveTo(539.000000, 312.000000); ctx.bezierCurveTo(525.000000, 305.000000, 505.000000, 303.000000, 505.000000, 309.000000); ctx.lineTo(501.000000, 360.000000); ctx.bezierCurveTo(514.000000, 365.000000, 530.000000, 368.000000, 539.000000, 363.000000); ctx.closePath(); ctx.fill(); ctx.stroke();
-  // 1х4
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.moveTo(466.000000, 467.000000); ctx.lineTo(500.000000, 467.000000); ctx.lineTo(500.000000, 524.000000); ctx.bezierCurveTo(499.374760, 536.384930, 493.000000, 532.000000, 488.000000, 521.000000); ctx.closePath(); ctx.fill(); ctx.stroke();
-  // 2х4
-  ctx.beginPath(); ctx.lineWidth = 0.793750; ctx.moveTo(534.000000, 467.000000); ctx.lineTo(500.000000, 467.000000); ctx.lineTo(500.000000, 524.000000); ctx.bezierCurveTo(501.181250, 536.812620, 507.000000, 532.000000, 512.000000, 521.000000); ctx.closePath(); ctx.fill(); ctx.stroke();
-
-  /* ===== Всё нарисовано. Дальше — только перерисовки из allShapes. ===== */
-
-  const muscleDullness = {};
-  let targetMuscle = null;
-  let animating = false;
-  const DIM_FACTOR = 0.55;
-
-  function blendColor(rgbStr, dullness) {
-    if (dullness <= 0.001) return rgbStr;
-    const m = rgbStr.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-    if (!m) return rgbStr;
-    const factor = 1 - dullness * (1 - DIM_FACTOR);
-    const r = Math.round(parseInt(m[1]) * factor);
-    const g = Math.round(parseInt(m[2]) * factor);
-    const b = Math.round(parseInt(m[3]) * factor);
-    return `rgb(${r}, ${g}, ${b})`;
-  }
-
-  function renderShapes() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const shape of allShapes) {
-    // Мышцы не из текущего слоя — пропускаем.
-    // base-части (туловище, кисти, ноги, голова) видны всегда.
-    if (shape.muscleId && shape.layerType !== muscleLayerMode) continue;
-
-    const dullness = shape.muscleId ? (muscleDullness[shape.muscleId] || 0) : 0;
-    const fill = dullness > 0 ? blendColor(shape.fillColor, dullness) : shape.fillColor;
-    ctx.fillStyle = fill;
-    ctx.fill(shape.path);
-    if (shape.strokeColor) {
-      ctx.strokeStyle = shape.strokeColor;
-      ctx.lineWidth = shape.strokeWidth;
-      ctx.stroke(shape.path);
-    }
-  }
-}
-
-  function animateDullness() {
-    let needsMore = false;
-    const ids = new Set([...Object.keys(muscleDullness), ...(targetMuscle ? [targetMuscle] : [])]);
-    for (const id of ids) {
-      const cur = muscleDullness[id] || 0;
-      const target = (id === targetMuscle) ? 1 : 0;
-      const diff = target - cur;
-      if (Math.abs(diff) < 0.01) {
-        muscleDullness[id] = target;
-      } else {
-        muscleDullness[id] = cur + diff * 0.2;
-        needsMore = true;
-      }
-    }
-    renderShapes();
-    if (needsMore) {
-      requestAnimationFrame(animateDullness);
-    } else {
-      animating = false;
-    }
-  }
-
-  function setHoveredMuscle(m) {
-    if (m === targetMuscle) return;
-    targetMuscle = m;
-    if (m && muscleDullness[m] === undefined) muscleDullness[m] = 0;
-    if (!animating) {
-      animating = true;
-      requestAnimationFrame(animateDullness);
-    }
-  }
-
-  function getMouseCoords(e) {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY
-    };
-  }
-
-  // ← ИЗМЕНЕНО: topmost-wins. Возвращает мышцу только если сверху лежит именно
-  // мышца; если сверху базовая часть тела — возвращает null (не кликабельно).
-  function getMuscleAtPoint(x, y) {
-  for (let i = allShapes.length - 1; i >= 0; i--) {
-    const s = allShapes[i];
-    if (!s.muscleId) continue;                         // база — не кликабельна
-    if (s.layerType !== muscleLayerMode) continue;     // невидимый слой — не кликабелен
-    if (ctx.isPointInPath(s.path, x, y)) return s.muscleId;
-  }
-  return null;
-}
-
-  // ← ИЗМЕНЕНО: обновляем cursor по тому, над чем мышка.
-  canvas.addEventListener('mousemove', (e) => {
-    const { x, y } = getMouseCoords(e);
-    const m = getMuscleAtPoint(x, y);
-    canvas.style.cursor = m ? 'pointer' : 'default';
-    setHoveredMuscle(m);
-  });
-
-  // ← ИЗМЕНЕНО: сбрасываем cursor при уходе с канваса.
-  canvas.addEventListener('mouseleave', () => {
-    canvas.style.cursor = 'default';
-    setHoveredMuscle(null);
-  });
-
-  canvas.addEventListener('click', (e) => {
-    const { x, y } = getMouseCoords(e);
-    const m = getMuscleAtPoint(x, y);
-    if (m) {
-      setHoveredMuscle(m);
-      showMusclePopup(m);
-    } else {
-      setHoveredMuscle(null);
-      closeMusclePopup();
-    }
-  });
-
-  window._muscleMapClearHover = () => setHoveredMuscle(null);
-  window._muscleMapRenderShapes = renderShapes;
-}
-function setMuscleLayer(mode) {
-  muscleLayerMode = mode;
-  if (window._muscleMapRenderShapes) window._muscleMapRenderShapes();
-  // сбросить подсветку — старая мышца могла оказаться в скрытом слое
-  if (window._muscleMapClearHover) window._muscleMapClearHover();
-  // обновить активную кнопку без полного re-render
-  document.querySelectorAll('.layer-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.layer === mode);
-  });
-}
-function getMuscleMaxWeight(muscleId) {
-  const logs = store.logs;
-  let maxW = 0;
-  Object.keys(logs).forEach(d => {
-    const day = logs[d];
-    if (!day) return;
-    Object.entries(day).forEach(([exId, entry]) => {
-      if (exId.startsWith('_') || !entry || !entry.done) return;
-      const ex = EX[exId];
-      if (!ex || !ex.muscles) return;
-      const includes = Array.isArray(ex.muscles)
-        ? ex.muscles.includes(muscleId)
-        : (muscleId in ex.muscles);
-      if (!includes) return;
-      (entry.sets || []).forEach(s => {
-        if (!s) return;
-        const w = parseFloat(s.w) || 0;
-        if (w > maxW) maxW = w;
-      });
-    });
-  });
-  return maxW;
-}
-
-function showMusclePopup(muscleId) {
-  closeMusclePopup();
-  const info = MUSCLE_BY_ID[muscleId];
-  if (!info) return;
-
-  const load = muscleMapLoads[muscleId] || 0;
-  const color = getLoadColor(load);
-  const label = getLoadLabel(load);
-  const pct = Math.round(load * 100);
-  const maxW = getMuscleMaxWeight(muscleId);
-
-  document.body.insertAdjacentHTML('beforeend', `
-    <div id="muscle-popup" onclick="if(event.target===this)closeMusclePopup()">
-      <div onclick="event.stopPropagation()" style="background:#1a1a1a;border:1px solid #333;border-radius:12px;width:100%;max-width:340px;padding:20px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
-          <strong style="font-size:16px;line-height:1.3">${escapeHtml(info.name)}</strong>
-          <button onclick="closeMusclePopup()" style="background:transparent;border:none;color:#888;font-size:22px;cursor:pointer;padding:0 6px;line-height:1;margin-left:8px">×</button>
-        </div>
-        <div style="font-size:13px;color:#aaa;margin-bottom:6px">Загруженность:</div>
-        <div style="font-size:15px;font-weight:600;color:${color};margin-bottom:14px">
-          ${pct}% <span style="font-size:12px;color:#888;font-weight:400">— ${label}</span>
-        </div>
-        <div style="font-size:13px;color:#aaa;margin-bottom:6px">Максимальный вес:</div>
-        <div style="font-size:15px;font-weight:600;color:#e8e8e8">${maxW > 0 ? maxW + ' кг' : '—'}</div>
-      </div>
-    </div>
-  `);
-}
-
-function closeMusclePopup() {
-  const el = document.getElementById('muscle-popup');
-  if (el) el.remove();
-}
-
-/* ---------- Раскрывающиеся списки под карточками категорий ---------- */
-function buildStatListHtml(cat) {
-  const loads = currentTrainerLoads;
-  const buckets = { ready: [], moderate: [], high: [], rest: [] };
-  Object.entries(loads).forEach(([m, l]) => {
-    if (!(m in MUSCLE_BY_ID)) return;
-    if (l <= LOAD_GREEN) buckets.ready.push({ id: m, load: l });
-    else if (l <= LOAD_YELLOW) buckets.moderate.push({ id: m, load: l });
-    else if (l <= LOAD_ORANGE) buckets.high.push({ id: m, load: l });
-    else buckets.rest.push({ id: m, load: l });
-  });
-  const items = buckets[cat] || [];
-  if (cat === 'rest' || cat === 'high') {
-    items.sort((a, b) => b.load - a.load);
-  } else {
-    items.sort((a, b) => a.load - b.load);
-  }
-  if (!items.length) {
-    return `<div class="stat-list-empty">В этой категории мышц нет</div>`;
-  }
-  return items.map(({ id, load }) => {
-    const info = MUSCLE_BY_ID[id];
-    const color = getLoadColor(load);
-    const pct = Math.round(load * 100);
-    const maxW = getMuscleMaxWeight(id);
-    return `<div class="stat-list-item">
-      <span class="sl-name">${escapeHtml(info.name)}</span>
-      <div class="sl-right">
-        <span class="sl-pct" style="color:${color}">${pct}%</span>
-        <span class="sl-weight">${maxW > 0 ? maxW + ' кг' : '—'}</span>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function toggleStatCategory(cat) {
-  const wrap = document.getElementById('stat-expand-wrap');
-  const content = document.getElementById('stat-expand-content');
-  const cards = document.querySelectorAll('.stat-card[data-cat]');
-  if (!wrap || !content) return;
-
-  const wasOpen = (trainerOpenCategory === cat);
-
-  if (wasOpen) {
-    wrap.style.maxHeight = '0px';
-    trainerOpenCategory = null;
-    cards.forEach(c => c.classList.remove('expanded'));
-  } else {
-    trainerOpenCategory = cat;
-    content.innerHTML = buildStatListHtml(cat);
-    const h = content.scrollHeight;
-    wrap.style.maxHeight = h + 'px';
-    cards.forEach(c => c.classList.toggle('expanded', c.dataset.cat === cat));
-  }
-}
-
+/* ---------- Тренер ---------- */
 function renderTrainer(){
   const { loads, days } = computeAllMuscleLoads();
-  currentTrainerLoads = loads;
+  const maxWeights = getMaxWeightByMuscle();
+
   const planMuscles = new Set();
   const own = ownPlanStore.get();
   (own && own.enabled ? own.items : []).forEach(it => {
@@ -3204,20 +2524,6 @@ function renderTrainer(){
     return;
   }
 
-  html += `<div class="layer-toggle">
-  <button class="layer-btn ${muscleLayerMode==='superficial'?'active':''}"
-          data-layer="superficial" onclick="setMuscleLayer('superficial')">Поверхностный</button>
-  <button class="layer-btn ${muscleLayerMode==='deep'?'active':''}"
-          data-layer="deep" onclick="setMuscleLayer('deep')">Глубокий</button>
-</div>`;
-html += `<div id="muscle-map-container"></div>`;
-  html += `<div class="muscle-map-legend">
-    <span><i style="background:#6ab06a"></i> восстановлена</span>
-    <span><i style="background:#e8c44d"></i> умеренная</span>
-    <span><i style="background:#e8a860"></i> высокая</span>
-    <span><i style="background:#e85a5a"></i> нужен отдых</span>
-  </div>`;
-
   const ready=[], moderate=[], high=[], rest=[];
   Object.entries(loads).forEach(([m, l]) => {
     if(!(m in MUSCLE_BY_ID)) return;
@@ -3227,27 +2533,54 @@ html += `<div id="muscle-map-container"></div>`;
     else rest.push(m);
   });
 
-  html += `<div class="stats-summary" style="margin-top:12px">
-    <div class="stat-card" data-cat="ready" onclick="toggleStatCategory('ready')">
-      <div class="stat-val" style="color:#6ab06a">${ready.length}</div>
-      <div class="stat-lbl">готовы к работе</div>
-    </div>
-    <div class="stat-card" data-cat="moderate" onclick="toggleStatCategory('moderate')">
-      <div class="stat-val" style="color:#e8c44d">${moderate.length}</div>
-      <div class="stat-lbl">умеренная усталость</div>
-    </div>
-    <div class="stat-card" data-cat="high" onclick="toggleStatCategory('high')">
-      <div class="stat-val" style="color:#e8a860">${high.length}</div>
-      <div class="stat-lbl">высокая усталость</div>
-    </div>
-    <div class="stat-card" data-cat="rest" onclick="toggleStatCategory('rest')">
-      <div class="stat-val" style="color:#e85a5a">${rest.length}</div>
-      <div class="stat-lbl">нужен отдых</div>
-    </div>
-  </div>
-  <div class="stat-expand-wrap" id="stat-expand-wrap">
-    <div class="stat-expand-content" id="stat-expand-content"></div>
-  </div>`;
+  const groupDefs = [
+    {key:'ready',    label:'✅ Готовы к работе',    color:'#6ab06a', muscles: ready},
+    {key:'moderate', label:'🟡 Умеренная усталость', color:'#e8c44d', muscles: moderate},
+    {key:'high',     label:'🟠 Высокая усталость',   color:'#e8a860', muscles: high},
+    {key:'rest',     label:'🔴 Нужен отдых',         color:'#e85a5a', muscles: rest},
+  ];
+  groupDefs.forEach(g => g.muscles.sort((a,b) => (loads[b]||0) - (loads[a]||0)));
+
+  html += `<div class="info">Данных за ${days} дн. Нажмите на группу, чтобы раскрыть список мышц.</div>`;
+
+  groupDefs.forEach(group => {
+    const isExpanded = expandedMuscleGroups.has(group.key);
+    const n = group.muscles.length;
+    const countLabel = n === 0 ? 'пусто' : (n === 1 ? '1 мышца' : (n < 5 ? `${n} мышцы` : `${n} мышц`));
+
+    html += `<div class="muscle-group">
+      <div class="muscle-group-header ${isExpanded?'expanded':''}"
+           style="border-left-color:${group.color}"
+           onclick="toggleMuscleGroup('${group.key}')">
+        <span class="mg-arrow">▸</span>
+        <span>${group.label}</span>
+        <span class="mg-count">${countLabel}</span>
+      </div>
+      <div class="muscle-group-body" id="mg-body-${group.key}"
+           style="max-height:${isExpanded?'5000px':'0'}">
+        ${n === 0
+          ? `<div class="muscle-item" style="justify-content:center;color:#666;font-size:12px">Нет мышц в этой группе</div>`
+          : group.muscles.map(mid => {
+              const load = loads[mid] || 0;
+              const pct = Math.round(load * 100);
+              const color = getLoadColor(load);
+              const name = MUSCLE_BY_ID[mid]?.name || mid;
+              const maxW = maxWeights[mid];
+              const weightStr = maxW ? (Math.round(maxW * 10) / 10) + ' кг' : '—';
+              const inPlan = planMuscles.has(mid);
+              return `<div class="muscle-item">
+                <div class="mi-info">
+                  <span class="mi-name">${escapeHtml(name)}${!inPlan?' <span style="color:#e8a860;font-size:10.5px">(не в плане)</span>':''}</span>
+                  <span class="mi-weight">макс. вес: ${weightStr}</span>
+                  <div class="mi-bar"><div class="mi-bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
+                </div>
+                <span class="mi-pct" style="color:${color}">${pct}%</span>
+              </div>`;
+            }).join('')
+        }
+      </div>
+    </div>`;
+  });
 
   html += `<h2>Рекомендации</h2>`;
   const recs = [];
@@ -3284,21 +2617,6 @@ html += `<div id="muscle-map-container"></div>`;
 
   html += renderTrainerAbout();
   document.getElementById('app').innerHTML = html;
-
-  if (trainerOpenCategory) {
-    const wrap = document.getElementById('stat-expand-wrap');
-    const content = document.getElementById('stat-expand-content');
-    if (wrap && content) {
-      content.innerHTML = buildStatListHtml(trainerOpenCategory);
-      wrap.style.transition = 'none';
-      wrap.style.maxHeight = content.scrollHeight + 'px';
-      requestAnimationFrame(() => { wrap.style.transition = ''; });
-      const card = document.querySelector(`.stat-card[data-cat="${trainerOpenCategory}"]`);
-      if (card) card.classList.add('expanded');
-    }
-  }
-
-  initMuscleMap(loads);
 }
 
 function renderTrainerAbout(){
@@ -3388,6 +2706,7 @@ function hasPendingAddData(){
   }
 }
 
+/* ---------- Block helpers ---------- */
 function getCurrentBlock() {
   if (!blockEditPath.length) return null;
   const id = blockEditPath[blockEditPath.length - 1];
@@ -3565,6 +2884,7 @@ function updateCurrentBlockSchedule() {
   render();
 }
 
+/* ---------- Child schedule editor ---------- */
 function renderChildScheduleEditor(child, prefix, isBlock) {
   const schedule = isBlock
     ? (child.scheduleOverride || { type: 'none' })
@@ -3635,6 +2955,7 @@ function readChildSchedule(prefix) {
   return { schedule, activeWithParent };
 }
 
+/* ---------- Child edit handlers ---------- */
 function onEditChild(idx) { editingChildIdx = idx; render(); }
 function onCancelChildEdit() { editingChildIdx = null; render(); }
 function onSaveChildEdit(idx) {
@@ -3669,6 +2990,7 @@ function renderChildEditForm(child, idx) {
   </div>`;
 }
 
+/* ---------- Add exercise logic ---------- */
 function attemptAddExercise(){
   let id, newEx = null;
   let overrideSets = null;
@@ -3757,10 +3079,7 @@ function attemptAddExercise(){
 
   return true;
 }
-function destroyMuscleMap() {
-  const c = document.getElementById('muscle-map-container');
-  if (c) c.innerHTML = '';
-}
+
 function onbShowAdd(){
   onbAdding = true;
   onbEditingIdx = null;
@@ -4179,6 +3498,7 @@ function renderPlanEditForm(item, idx){
   </div>`;
 }
 
+/* ---------- Render helpers ---------- */
 function renderBreadcrumb() {
   if (!blockEditPath.length) return '';
   let html = '<div class="breadcrumb">';
@@ -4484,10 +3804,6 @@ function render(){
 }
 
 function setView(v){
-  if(view === 'trainer' && v !== 'trainer'){
-    destroyMuscleMap();
-  }
-
   if(view === 'custom' && v !== 'custom'){
     const hasPending = onbAdding || onbEditingIdx !== null || onbAddingBlock || editingChildIdx !== null;
     const hasUnsaved = isCustomDirty();
@@ -4508,9 +3824,6 @@ function setView(v){
   if(v === 'custom' && prevView !== 'custom'){
     blockEditPath = [];
     loadOnbPlanFromStore();
-  }
-  if(v === 'trainer' && prevView !== 'trainer'){
-    trainerOpenCategory = null;
   }
   prevView = v;
   view = v;
@@ -4564,6 +3877,7 @@ function getExerciseBadges(exId,log,dateStr){
   const steadyHtml=steady?`<span class="pr-badge pr-max" title="Все подходы одинаковые и максимальные повторы за всё время">🎯 ${steady.count}×${steady.r}</span>`:'';
   return pr+steadyHtml;
 }
+/* ---------- PWA ---------- */
 let deferredPrompt=null;
 window.addEventListener('beforeinstallprompt',(e)=>{
   e.preventDefault();
