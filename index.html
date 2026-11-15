@@ -225,7 +225,6 @@ const MUSCLES=[
     {id:'opponens_digiti_minimi',name:'Противопоставляющая мизинец',sub:[]},
     {id:'lumbricals',name:'Червеобразные мышцы',sub:[]},
     {id:'interossei',name:'Межкостные мышцы (ладонные и тыльные)',sub:[]},
-    {id:'hand',name:'Мышцы кисти (прочее)',sub:[]},
   ]},
   {id:'chest',name:'Грудь',groups:[
     {id:'pectoralis_major',name:'Большая грудная',sub:['Ключичная/верхняя','Грудинная/средняя','Брюшная/нижняя']},
@@ -332,7 +331,6 @@ const MUSCLE_COEF = {
   opponens_digiti_minimi:{recovery_rate:0.68,daily_subtraction:0.030},
   lumbricals:{recovery_rate:0.70,daily_subtraction:0.025},
   interossei:{recovery_rate:0.68,daily_subtraction:0.030},
-  hand:{recovery_rate:0.70,daily_subtraction:0.025},
 };
 
 const LOAD_FACTOR    = 0.25;
@@ -341,7 +339,7 @@ const LOAD_GREEN     = 0.40;
 const LOAD_YELLOW    = 0.65;
 const LOAD_ORANGE    = 0.85;
 
-const FOREARM_IDS=['brachioradialis','supinator','pronator_teres','pronator_quadratus','fcr','fcu','palmaris_longus','fds','fdp','fpl','ecrl','ecrb','ecu','finger_extensors','ei','edm','apl','thumb_extensors','anconeus','fpb','apb','opponens_pollicis','adductor_pollicis','palmaris_brevis','adm','fdm','opponens_digiti_minimi','lumbricals','interossei','hand'];
+const FOREARM_IDS=['brachioradialis','supinator','pronator_teres','pronator_quadratus','fcr','fcu','palmaris_longus','fds','fdp','fpl','ecrl','ecrb','ecu','finger_extensors','ei','edm','apl','thumb_extensors','anconeus','fpb','apb','opponens_pollicis','adductor_pollicis','palmaris_brevis','adm','fdm','opponens_digiti_minimi','lumbricals','interossei'];
 
 function computePercents(loads){
   const ids = Object.keys(loads||{});
@@ -377,9 +375,9 @@ const EX={
   close_pushups:{name:'Отжимания узким хватом',sets:4,reps:'12-15',muscles:{triceps:50,pectoralis_major:30,delts:20}},
   wrist_curl:{name:'Сгибание запястий со штангой/гантелями',sets:4,reps:'12-15',muscles:{fcr:35,fcu:25,palmaris_longus:20,fds:15,fdp:5}},
   wrist_extension:{name:'Разгибание запястий',sets:4,reps:'12-15',muscles:{finger_extensors:40,ecrl:20,ecrb:20,ecu:20}},
-  hand_gripper:{name:'Сжимание эспандера',sets:4,reps:'12-15',muscles:{fcr:20,fcu:20,fds:15,fdp:15,hand:30}},
-  hang_bar:{name:'Вис на турнике',sets:4,reps:'30-60 сек',muscles:{fcr:25,fcu:25,fds:20,fdp:10,hand:20}},
-  plate_hold:{name:'Удержание блина',sets:4,reps:'30-60 сек',muscles:{fcr:25,fcu:25,fds:20,fdp:10,hand:20}},
+  hand_gripper:{name:'Сжимание эспандера',sets:4,reps:'12-15',muscles:{fcr:25,fcu:25,fds:25,fdp:25}},
+hang_bar:{name:'Вис на турнике',sets:4,reps:'30-60 сек',muscles:{fcr:30,fcu:30,fds:25,fdp:15}},
+plate_hold:{name:'Удержание блина',sets:4,reps:'30-60 сек',muscles:{fcr:30,fcu:30,fds:25,fdp:15}},
   incline_db_press:{name:'Жим гантелей на наклонной вверх',sets:4,reps:'12-15',muscles:{pectoralis_major:45,delts:30,triceps:25}},
   incline_feet_pushups:{name:'Отжимания с ногами на возвышении',sets:4,reps:'12-15',muscles:{pectoralis_major:45,delts:30,triceps:25}},
   bench_press:{name:'Жим штанги лежа',sets:4,reps:'12-15',muscles:{pectoralis_major:55,triceps:25,delts:20}},
@@ -404,7 +402,7 @@ const EX={
   deadlift:{name:'Становая тяга',sets:4,reps:'12-15',muscles:{erectors:40,glutes:35,hamstrings:25}},
   bend_with_db:{name:'Наклон вперёд с гантелью',sets:4,reps:'12-15',muscles:{erectors:45,glutes:35,hamstrings:20}},
   side_bend_db:{name:'Наклоны в сторону с гантелью',sets:4,reps:'12-15',muscles:{ql:60,obliques:40}},
-  farmers_walk:{name:'Фермерская прогулка',sets:4,reps:'30-60 сек',muscles:{ql:30,erectors:30,fcr:15,fcu:15,hand:10}},
+  farmers_walk:{name:'Фермерская прогулка',sets:4,reps:'30-60 сек',muscles:{ql:35,erectors:35,fcr:15,fcu:15}},
   overhead_press_db:{name:'Жим гантелей сидя/стоя',sets:4,reps:'12-15',muscles:{delts:80,triceps:20}},
   front_raise:{name:'Подъём гантелей перед собой',sets:4,reps:'12-15',muscles:{delts:75,pectoralis_major:25}},
   lateral_raise:{name:'Махи гантелями в стороны',sets:4,reps:'12-15',muscles:{delts:80,rotator_cuff:20}},
@@ -441,7 +439,7 @@ const EX={
   thumb_pinch:{name:'Сжатие большого пальца (pinch grip)',sets:3,reps:'10-15',muscles:{fpb:30,apb:20,opponens_pollicis:20,adductor_pollicis:30}},
   pinky_grip:{name:'Сжатие мизинца с сопротивлением',sets:3,reps:'12-15',muscles:{adm:30,fdm:30,opponens_digiti_minimi:40}},
   finger_spread:{name:'Разведение пальцев с резинкой',sets:3,reps:'12-15',muscles:{lumbricals:40,interossei:60}},
-  palm_squeeze:{name:'Сжатие ладони с мячиком',sets:3,reps:'15-20',muscles:{palmaris_brevis:50,hand:50}},
+  palm_squeeze:{name:'Сжатие ладони с мячиком',sets:3,reps:'15-20',muscles:{palmaris_brevis:100}},
 };
 const BUILTIN_IDS=Object.keys(EX);
 
