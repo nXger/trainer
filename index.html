@@ -82,6 +82,10 @@
   .cal-pr-reps{color:#7cc0e8}
   .cal-pr-steady{color:#f0a860}
   .cal-tonnage-pr{position:absolute;top:1px;left:2px;font-size:9px;line-height:1;color:#a8e87c;pointer-events:none}
+  .layer-toggle{display:flex;gap:6px;margin-bottom:10px}
+.layer-btn{flex:1;background:#1a1a1a;border:1px solid #262626;color:#888;padding:8px 10px;border-radius:6px;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.layer-btn:hover{background:#222}
+.layer-btn.active{background:#2a2a2a;color:#e8e8e8;border-color:#555}
   .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:#888;margin-bottom:12px}
   .legend span{display:inline-flex;align-items:center;gap:4px}
   .lg-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
@@ -344,6 +348,28 @@ const MUSCLE_COEF = {
   lumbricals:{recovery_rate:0.70,daily_subtraction:0.025},
   interossei:{recovery_rate:0.68,daily_subtraction:0.030},
   hand:{recovery_rate:0.70,daily_subtraction:0.025},
+};
+// К какому слою относится каждая мышца (для переключателя)
+const MUSCLE_LAYERS = {
+  // --- поверхностные ---
+  triceps:'superficial', traps:'superficial', scalenes:'superficial',
+  scm:'superficial', serratus:'superficial', intercostals:'superficial',
+  biceps:'superficial', rectus_abdominis:'superficial', adductors:'superficial',
+  obliques:'superficial', fds:'superficial', palmaris_longus:'superficial',
+  fpb:'superficial', apb:'superficial', fdm:'superficial', fcu:'superficial',
+  brachioradialis:'superficial', fcr:'superficial', adm:'superficial',
+  palmaris_brevis:'superficial', pronator_teres:'superficial',
+  pectoralis_major:'superficial', delts:'superficial', abductors:'superficial',
+  quads:'superficial', foot:'superficial',
+
+  // --- глубокие ---
+  iliopsoas:'deep', pelvic_floor:'deep', transverse:'deep',
+  fdp:'deep', fpl:'deep', pronator_quadratus:'deep', lumbricals:'deep',
+  interossei:'deep', adductor_pollicis:'deep', opponens_pollicis:'deep',
+  opponens_digiti_minimi:'deep',
+  pectoralis_minor:'superficial',   // под большой грудной
+  brachialis:'superficial',         // под бицепсом
+  coracobrachialis:'superficial',   // под короткой головкой бицепса
 };
 
 const LOAD_FACTOR    = 0.25;
@@ -2454,6 +2480,7 @@ function renderDataSection(){
 
 /* ---------- Тренер: карта мышц + раскрывающиеся списки ---------- */
 let muscleMapLoads = {};
+let muscleLayerMode = 'superficial'; // 'superficial' | 'deep'
 
 function normalizeColor(c) {
   if (typeof c !== 'string') return '';
@@ -2521,12 +2548,13 @@ function initMuscleMap(loads) {
         pendingMuscleColor = null;
       }
       currentShape = {
-        path: currentPath,
-        muscleId,
-        fillColor: fs,
-        strokeColor: null,
-        strokeWidth: 0
-      };
+  path: currentPath,
+  muscleId,
+  layerType: muscleId ? (MUSCLE_LAYERS[muscleId] || 'superficial') : 'base',
+  fillColor: fs,
+  strokeColor: null,
+  strokeWidth: 0
+};
       allShapes.push(currentShape);
     }
     return origFill(...args);
@@ -2921,19 +2949,23 @@ function initMuscleMap(loads) {
   }
 
   function renderShapes() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (const shape of allShapes) {
-      const dullness = shape.muscleId ? (muscleDullness[shape.muscleId] || 0) : 0;
-      const fill = dullness > 0 ? blendColor(shape.fillColor, dullness) : shape.fillColor;
-      ctx.fillStyle = fill;
-      ctx.fill(shape.path);
-      if (shape.strokeColor) {
-        ctx.strokeStyle = shape.strokeColor;
-        ctx.lineWidth = shape.strokeWidth;
-        ctx.stroke(shape.path);
-      }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (const shape of allShapes) {
+    // Мышцы не из текущего слоя — пропускаем.
+    // base-части (туловище, кисти, ноги, голова) видны всегда.
+    if (shape.muscleId && shape.layerType !== muscleLayerMode) continue;
+
+    const dullness = shape.muscleId ? (muscleDullness[shape.muscleId] || 0) : 0;
+    const fill = dullness > 0 ? blendColor(shape.fillColor, dullness) : shape.fillColor;
+    ctx.fillStyle = fill;
+    ctx.fill(shape.path);
+    if (shape.strokeColor) {
+      ctx.strokeStyle = shape.strokeColor;
+      ctx.lineWidth = shape.strokeWidth;
+      ctx.stroke(shape.path);
     }
   }
+}
 
   function animateDullness() {
     let needsMore = false;
@@ -2980,14 +3012,14 @@ function initMuscleMap(loads) {
   // ← ИЗМЕНЕНО: topmost-wins. Возвращает мышцу только если сверху лежит именно
   // мышца; если сверху базовая часть тела — возвращает null (не кликабельно).
   function getMuscleAtPoint(x, y) {
-    for (let i = allShapes.length - 1; i >= 0; i--) {
-      const s = allShapes[i];
-      if (ctx.isPointInPath(s.path, x, y)) {
-        return s.muscleId || null;
-      }
-    }
-    return null;
+  for (let i = allShapes.length - 1; i >= 0; i--) {
+    const s = allShapes[i];
+    if (!s.muscleId) continue;                         // база — не кликабельна
+    if (s.layerType !== muscleLayerMode) continue;     // невидимый слой — не кликабелен
+    if (ctx.isPointInPath(s.path, x, y)) return s.muscleId;
   }
+  return null;
+}
 
   // ← ИЗМЕНЕНО: обновляем cursor по тому, над чем мышка.
   canvas.addEventListener('mousemove', (e) => {
@@ -3016,8 +3048,18 @@ function initMuscleMap(loads) {
   });
 
   window._muscleMapClearHover = () => setHoveredMuscle(null);
+  window._muscleMapRenderShapes = renderShapes;
 }
-
+function setMuscleLayer(mode) {
+  muscleLayerMode = mode;
+  if (window._muscleMapRenderShapes) window._muscleMapRenderShapes();
+  // сбросить подсветку — старая мышца могла оказаться в скрытом слое
+  if (window._muscleMapClearHover) window._muscleMapClearHover();
+  // обновить активную кнопку без полного re-render
+  document.querySelectorAll('.layer-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.layer === mode);
+  });
+}
 function getMuscleMaxWeight(muscleId) {
   const logs = store.logs;
   let maxW = 0;
@@ -3162,7 +3204,13 @@ function renderTrainer(){
     return;
   }
 
-  html += `<div id="muscle-map-container"></div>`;
+  html += `<div class="layer-toggle">
+  <button class="layer-btn ${muscleLayerMode==='superficial'?'active':''}"
+          data-layer="superficial" onclick="setMuscleLayer('superficial')">Поверхностный</button>
+  <button class="layer-btn ${muscleLayerMode==='deep'?'active':''}"
+          data-layer="deep" onclick="setMuscleLayer('deep')">Глубокий</button>
+</div>`;
+html += `<div id="muscle-map-container"></div>`;
   html += `<div class="muscle-map-legend">
     <span><i style="background:#6ab06a"></i> восстановлена</span>
     <span><i style="background:#e8c44d"></i> умеренная</span>
