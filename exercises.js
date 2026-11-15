@@ -403,5 +403,33 @@ Object.assign(EX, {
   // Специфично для Армрестлинга (Предплечье)
   db_forearm_lever: { name:'Рычаг с гантелью на скамье (пронация/супинация)', sets:4, reps:'12-15',
     muscles:{pronator_teres:30,pronator_quadratus:30,supinator:40},
-    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] }
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
+    db_hip_abduction: { name:'Отведение ноги с гантелью/блином в упоре', sets:4, reps:'12-15',
+    muscles:{abductors:100},
+    markers:['Гантели/Штанга/Гиря'] },
+
+  // Руки и предплечья (Свободный вес / Армрестлинг)
+  db_arm_adduction: { name:'Приведение руки через тело с гантелью', sets:4, reps:'12-15',
+    muscles:{coracobrachialis:50,pectoralis_major:30,delts:20},
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
+  db_thumb_flexion: { name:'Сгибание большого пальца с гантелью/блином', sets:4, reps:'12-15',
+    muscles:{fpl:50,fpb:30,adductor_pollicis:20},
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
+  plate_finger_extension: { name:'Разгибание пальцев под блином/гантелью', sets:4, reps:'12-15',
+    muscles:{finger_extensors:40,ei:30,edm:30},
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
+  db_thumb_extension: { name:'Разгибание/отведение большого пальца с гантелью', sets:4, reps:'12-15',
+    muscles:{apl:40,thumb_extensors:60},
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
+  plate_pinky_grip: { name:'Сжатие мизинца с блином/гантелью', sets:4, reps:'12-15',
+    muscles:{adm:30,fdm:30,opponens_digiti_minimi:40},
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
+  plate_finger_spread: { name:'Удержание блина пальцами в разведённом положении', sets:4, reps:'12-15',
+    muscles:{lumbricals:40,interossei:60},
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
+
+  // Грудь (Дыхательные)
+  weighted_breathing: { name:'Дыхание с блином на груди', sets:4, reps:'10-15',
+    muscles:{intercostals:100},
+    markers:['Гантели/Штанга/Гиря'] }
 });
