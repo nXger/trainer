@@ -1,0 +1,3447 @@
+﻿function computePercents(loads){
+  const ids = Object.keys(loads||{});
+  if(!ids.length) return {};
+  const sum = ids.reduce((s,id)=>s+(parseFloat(loads[id])||0), 0);
+  if(sum<=0) return {};
+  const result = {};
+  ids.forEach(id=>{ result[id] = Math.round(100/sum*(parseFloat(loads[id])||0)); });
+  return result;
+}
+
+
+const BUILTIN_IDS=Object.keys(EX);
+
+function sortedExerciseEntries(){ return Object.entries(EX).sort((a,b)=>a[1].name.localeCompare(b[1].name,'ru')); }
+function muscleNames(ids){ return (ids||[]).map(id=>MUSCLE_BY_ID[id]?.name||id); }
+function muscleSummary(muscles){
+  if(!muscles) return '';
+  let entries;
+  if(Array.isArray(muscles)) entries = muscles.map(id=>[id,null]);
+  else entries = Object.entries(muscles);
+  return entries.map(([id,pct])=>{
+    const name = MUSCLE_BY_ID[id]?.name || id;
+    return pct!=null ? `${name} ${pct}%` : name;
+  }).join(', ');
+}
+
+/* ---------- Markers ---------- */
+function getExerciseMarkers(exId){
+  try{
+    const all = JSON.parse(localStorage.getItem('exerciseMarkers')||'{}');
+    // если пользователь явно сохранял массив (даже пустой) — он главнее
+    if(Array.isArray(all[exId])) return all[exId];
+    // иначе — дефолт из exercises.js
+    const def = EX[exId] && EX[exId].markers;
+    return Array.isArray(def) ? def : [];
+  }catch(e){
+    const def = EX[exId] && EX[exId].markers;
+    return Array.isArray(def) ? def : [];
+  }
+}
+function setExerciseMarkers(exId, markers){
+  try{
+    const all = JSON.parse(localStorage.getItem('exerciseMarkers')||'{}');
+    if(Array.isArray(markers)){
+      all[exId] = markers.slice();    // и [] тоже — это "пользователь стёр"
+    }else{
+      delete all[exId];
+    }
+    localStorage.setItem('exerciseMarkers', JSON.stringify(all));
+  }catch(e){}
+}
+function parseMarkers(str){
+  return (str||'').split(',').map(s=>s.trim()).filter(Boolean);
+}
+function getAllUsedMarkers(){
+  const set = new Set();
+  // дефолты из exercises.js
+  Object.values(EX).forEach(ex => {
+    if(Array.isArray(ex.markers)) ex.markers.forEach(m => m && set.add(m));
+  });
+  // + пользовательские (могут содержать кастомные метки)
+  try{
+    const all = JSON.parse(localStorage.getItem('exerciseMarkers')||'{}');
+    Object.values(all).forEach(arr=>{
+      if(Array.isArray(arr)) arr.forEach(m => m && set.add(m));
+    });
+  }catch(e){}
+  return [...set].sort((a,b)=>a.localeCompare(b,'ru'));
+}
+
+/* -------- Default markers seeding (from legend file) -------- */
+
+
+
+/* Simple display-only chips (used in add-form previews etc.) */
+function markersChipsHtml(markers, q){
+  if(!markers || !markers.length) return '';
+  const ql = q ? q.toLowerCase() : '';
+  return markers.map(m=>{
+    const hit = ql && m.toLowerCase().includes(ql);
+    return `<span class="marker-chip${hit?' hit':''}">${escapeHtml(m)}</span>`;
+  }).join('');
+}
+
+/* Read-only chips for training view */
+function renderMarkerChipsOnly(exId){
+  const markers = getExerciseMarkers(exId);
+  if(!markers.length) return '';
+  return `<div style="margin-bottom:6px;display:flex;flex-wrap:wrap;gap:3px">${markers.map(m=>`<span class="marker-chip">${escapeHtml(m)}</span>`).join('')}</div>`;
+}
+
+/* Interactive marker cells with [+] — used in search, stats, plan */
+let markerModalExId = null;
+
+function renderMarkerCells(exId, opts){
+  opts = opts || {};
+  const q = opts.q ? opts.q.toLowerCase() : '';
+  const markers = getExerciseMarkers(exId);
+  const chips = markers.map(m=>{
+    const enc = encodeURIComponent(m);
+    const isHit = q && m.toLowerCase().includes(q);
+    const hitStyle = isHit ? 'background:#f0c86033;border:1px solid #f0c860;' : '';
+    return `<span class="marker-chip" style="cursor:pointer;padding-right:5px;${hitStyle}" onclick="event.stopPropagation();removeMarkerConfirm('${exId}', decodeURIComponent('${enc}'))" title="Нажмите чтобы удалить">${escapeHtml(m)} <span style="opacity:.55">×</span></span>`;
+  }).join(' ');
+  const addBtn = `<span class="marker-chip" style="cursor:pointer;background:#223a22;color:#9f9;border:1px dashed #4a7a4a" onclick="event.stopPropagation();openMarkerModal('${exId}')" title="Добавить метку">+</span>`;
+  const marginTop = opts.marginTop !== false ? '4px 0' : '0';
+  return `<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin:${marginTop}">${chips}${chips ? ' ' : ''}${addBtn}</div>`;
+}
+
+function openMarkerModal(exId, focusInput){
+  if(!exId) return;
+  markerModalExId = exId;
+  const old = document.getElementById('marker-modal');
+  if(old) old.remove();
+  document.body.insertAdjacentHTML('beforeend', renderMarkerModal(exId));
+  if(focusInput){
+    setTimeout(()=>{
+      const inp = document.getElementById('marker-new-input');
+      if(inp) inp.focus();
+    }, 50);
+  }
+}
+
+function closeMarkerModal(skipRender){
+  const modal = document.getElementById('marker-modal');
+  if(modal) modal.remove();
+  markerModalExId = null;
+  if(!skipRender) render();
+}
+
+function refreshMarkerModal(focusInput){
+  if(!markerModalExId) return;
+  const exId = markerModalExId;
+  const old = document.getElementById('marker-modal');
+  if(old) old.remove();
+  document.body.insertAdjacentHTML('beforeend', renderMarkerModal(exId));
+  if(focusInput){
+    setTimeout(()=>{
+      const inp = document.getElementById('marker-new-input');
+      if(inp) inp.focus();
+    }, 30);
+  }
+}
+
+function renderMarkerModal(exId){
+  const allMarkers = getAllUsedMarkers();
+  const currentMarkers = getExerciseMarkers(exId);
+  const exName = EX[exId]?.name || exId;
+
+  const chipsHtml = allMarkers.length
+    ? allMarkers.map(m=>{
+        const isOn = currentMarkers.includes(m);
+        const enc = encodeURIComponent(m);
+        return `<button onclick="toggleMarkerOnEx(decodeURIComponent('${enc}'))" style="padding:5px 12px;border-radius:5px;font-size:13px;cursor:pointer;border:1px solid ${isOn?'#4a7a4a':'#333'};background:${isOn?'#2a5a2a':'#222'};color:${isOn?'#9f9':'#ddd'}">${isOn?'✓ ':''}${escapeHtml(m)}</button>`;
+      }).join('')
+    : `<span style="color:#666;font-size:12px">пока нет меток ни у одного упражнения</span>`;
+
+  return `<div id="marker-modal" onclick="if(event.target===this)closeMarkerModal()" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:flex-end;justify-content:center">
+    <div onclick="event.stopPropagation()" style="background:#1a1a1a;border:1px solid #333;border-radius:12px 12px 0 0;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <strong style="font-size:15px">Метки: ${escapeHtml(exName)}</strong>
+        <button onclick="closeMarkerModal()" style="background:transparent;border:none;color:#888;font-size:22px;cursor:pointer;padding:0 6px;line-height:1">×</button>
+      </div>
+      <div style="font-size:12px;color:#888;margin-bottom:8px">Все использованные метки (нажмите, чтобы поставить/снять):</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">${chipsHtml}</div>
+      <div style="font-size:12px;color:#888;margin-bottom:6px">Добавить новую метку:</div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="marker-new-input" placeholder="новая метка" autocomplete="off" style="flex:1;background:#111;border:1px solid #333;color:#e8e8e8;padding:8px 10px;border-radius:6px;font-size:14px" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewMarkerFromModal()}">
+        <button onclick="addNewMarkerFromModal()" style="padding:8px 14px;background:#2a5a2a;border:1px solid #3a7a3a;color:#e8e8e8;border-radius:6px;font-size:14px;cursor:pointer">Добавить</button>
+      </div>
+      <div style="font-size:11px;color:#666;margin-top:14px;text-align:center">Нажмите на метку, чтобы поставить/снять её с этого упражнения</div>
+    </div>
+  </div>`;
+}
+
+function toggleMarkerOnEx(marker){
+  if(!markerModalExId) return;
+  const cur = getExerciseMarkers(markerModalExId);
+  if(cur.includes(marker)){
+    setExerciseMarkers(markerModalExId, cur.filter(m=>m !== marker));
+  } else {
+    setExerciseMarkers(markerModalExId, [...cur, marker]);
+  }
+  refreshMarkerModal(false);
+}
+
+function addNewMarkerFromModal(){
+  if(!markerModalExId) return;
+  const inp = document.getElementById('marker-new-input');
+  if(!inp) return;
+  const val = inp.value.trim();
+  if(!val) return;
+  const cur = getExerciseMarkers(markerModalExId);
+  if(!cur.includes(val)) setExerciseMarkers(markerModalExId, [...cur, val]);
+  refreshMarkerModal(true);
+}
+
+function removeMarkerConfirm(exId, marker){
+  const exName = EX[exId]?.name || exId;
+  if(!confirm(`Удалить метку «${marker}» с «${exName}»?`)) return;
+  const cur = getExerciseMarkers(exId).filter(m=>m !== marker);
+  setExerciseMarkers(exId, cur);
+  if(markerModalExId === exId){
+    const modal = document.getElementById('marker-modal');
+    if(modal) modal.remove();
+    markerModalExId = null;
+  }
+  render();
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape' && document.getElementById('marker-modal')){
+    closeMarkerModal();
+  }
+});
+
+/* ---------- Muscle picker ---------- */
+function renderMusclePicker(loadsOrIds, prefix){
+  let loads = {};
+  if(Array.isArray(loadsOrIds)){ loadsOrIds.forEach(id=>{loads[id]=5}); }
+  else if(loadsOrIds && typeof loadsOrIds==='object'){ loads = loadsOrIds; }
+  const renderGroup = (g)=>{
+    const isChecked = g.id in loads;
+    const loadVal = isChecked ? loads[g.id] : 5;
+    const active = v=>loadVal===v?'preset-active':'';
+    return `
+      <div style="margin-bottom:10px">
+        <label class="day-chk" style="margin:0">
+          <input type="checkbox" class="${prefix}-chk" data-mid="${g.id}" ${isChecked?'checked':''}
+            onchange="muscleToggle('${prefix}','${g.id}',this.checked)">
+          ${g.name}
+        </label>
+        <div class="${prefix}-load" data-mid="${g.id}" style="display:${isChecked?'block':'none'};margin-left:22px;margin-top:6px">
+          <div class="muscle-load-row" style="margin:0">
+            <div class="form-row" style="margin-bottom:6px">
+              <button type="button" class="preset-btn ${active(7.5)}" data-val="7.5" onclick="musclePreset('${prefix}','${g.id}',7.5)">Высокая</button>
+              <button type="button" class="preset-btn ${active(5)}" data-val="5" onclick="musclePreset('${prefix}','${g.id}',5)">Средняя</button>
+              <button type="button" class="preset-btn ${active(2.5)}" data-val="2.5" onclick="musclePreset('${prefix}','${g.id}',2.5)">Низкая</button>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" min="1" max="10" step="0.5" value="${loadVal}"
+                class="${prefix}-slider" data-mid="${g.id}"
+                oninput="muscleSliderInput('${prefix}','${g.id}',this.value)">
+              <span class="${prefix}-val load-val" data-mid="${g.id}">${loadVal}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  };
+
+  let html='';
+  MUSCLES.forEach(cat=>{
+    html+=`<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin:12px 0 6px">${cat.name}</div>`;
+    if(cat.id === 'arms'){
+      cat.groups.filter(g => !FOREARM_IDS.includes(g.id)).forEach(g => {html += renderGroup(g)});
+      const forearmGroups = cat.groups.filter(g => FOREARM_IDS.includes(g.id));
+      if(forearmGroups.length){
+        const selectedCount = forearmGroups.filter(g => g.id in loads).length;
+        const expanded = selectedCount > 0;
+        const hasClass = selectedCount > 0 ? ' has-selected' : '';
+        const countLabel = selectedCount > 0 ? `выбрано ${selectedCount}` : `${forearmGroups.length} мышц`;
+        html += `<div class="forearm-header${hasClass}" onclick="toggleForearmSection('${prefix}')">
+          <span class="fa-arrow" id="${prefix}-forearm-arrow">${expanded ? '▾' : '▸'}</span>
+          <strong>Предплечье и кисть</strong>
+          <span class="fa-count">${countLabel}</span>
+        </div>
+        <div id="${prefix}-forearm-section" style="display:${expanded ? 'block' : 'none'}">
+          ${forearmGroups.map(renderGroup).join('')}
+        </div>`;
+      }
+    }else{
+      cat.groups.forEach(g => {html += renderGroup(g)});
+    }
+  });
+  return html;
+}
+
+function toggleForearmSection(prefix){
+  const el = document.getElementById(prefix+'-forearm-section');
+  const arrow = document.getElementById(prefix+'-forearm-arrow');
+  const header = el ? el.previousElementSibling : null;
+  if(!el) return;
+  const hidden = el.style.display === 'none';
+  el.style.display = hidden ? 'block' : 'none';
+  if(arrow) arrow.textContent = hidden ? '▾' : '▸';
+  if(header && !hidden){
+    const checked = el.querySelectorAll(`.${prefix}-chk:checked`).length;
+    const countEl = header.querySelector('.fa-count');
+    const total = el.querySelectorAll(`.${prefix}-chk`).length;
+    if(countEl) countEl.textContent = checked > 0 ? `выбрано ${checked}` : `${total} мышц`;
+    header.classList.toggle('has-selected', checked > 0);
+  }
+}
+
+function muscleToggle(prefix, mid, checked){
+  const el = document.querySelector(`.${prefix}-load[data-mid="${mid}"]`);
+  if(el) el.style.display = checked ? 'block' : 'none';
+}
+function musclePreset(prefix, mid, val){
+  const slider = document.querySelector(`.${prefix}-slider[data-mid="${mid}"]`);
+  const display = document.querySelector(`.${prefix}-val[data-mid="${mid}"]`);
+  const buttons = document.querySelectorAll(`.${prefix}-load[data-mid="${mid}"] .preset-btn`);
+  if(slider) slider.value = val;
+  if(display) display.textContent = val;
+  buttons.forEach(b=>{ b.classList.toggle('preset-active', parseFloat(b.dataset.val)===val); });
+}
+function muscleSliderInput(prefix, mid, val){
+  const v = parseFloat(val);
+  const display = document.querySelector(`.${prefix}-val[data-mid="${mid}"]`);
+  const buttons = document.querySelectorAll(`.${prefix}-load[data-mid="${mid}"] .preset-btn`);
+  if(display) display.textContent = val;
+  buttons.forEach(b=>{ b.classList.toggle('preset-active', parseFloat(b.dataset.val)===v); });
+}
+function getMuscleLoads(prefix){
+  const result = {};
+  document.querySelectorAll(`.${prefix}-chk:checked`).forEach(chk=>{
+    const mid = chk.dataset.mid;
+    const slider = document.querySelector(`.${prefix}-slider[data-mid="${mid}"]`);
+    const val = slider ? (parseFloat(slider.value)||5) : 5;
+    result[mid] = val;
+  });
+  return result;
+}
+
+function getMusclesFromEx(ex){
+  if(!ex || !ex.muscles) return [];
+  if(Array.isArray(ex.muscles)){
+    const n = Math.max(ex.muscles.length, 1);
+    return ex.muscles.map(id => ({ id, share: 1 / n }));
+  }
+  return Object.entries(ex.muscles).map(([id, pct]) => ({ id, share: (parseFloat(pct) || 0) / 100 }));
+}
+
+function getPlanItem(exId){
+  const own = ownPlanStore.get();
+  if(!own || !own.enabled) return null;
+  return (own.items || []).find(it => it.id === exId) || null;
+}
+function getExSets(exId){
+  const item = getPlanItem(exId);
+  if(item && Number.isFinite(item.sets) && item.sets > 0) return item.sets;
+  return EX[exId]?.sets || 4;
+}
+
+function getLoadColor(load){
+  if(load > LOAD_ORANGE) return '#e85a5a';
+  if(load > LOAD_YELLOW) return '#e8a860';
+  if(load > LOAD_GREEN)  return '#e8c44d';
+  return '#6ab06a';
+}
+function getLoadLabel(load){
+  if(load > LOAD_ORANGE) return 'нужен отдых';
+  if(load > LOAD_YELLOW) return 'высокая';
+  if(load > LOAD_GREEN)  return 'умеренная';
+  return 'восстановлена';
+}
+
+function computeAllMuscleLoads(){
+  const logs = store.logs;
+  const todayStr = fmt(todayDate());
+  const dates = Object.keys(logs).filter(d => {
+    const day = logs[d];
+    if(!day) return false;
+    return Object.entries(day).some(([k,v]) => !k.startsWith('_') && v && v.done && EX[k] && !EX[k].app);
+  }).sort();
+  const loads = {};
+  Object.keys(MUSCLE_COEF).forEach(m => { loads[m] = 0; });
+  if(!dates.length) return { loads, days: 0 };
+  const muscleRecords = {};
+  const start = new Date(dates[0] + 'T00:00:00');
+  const cur = new Date(start);
+  let days = 0;
+  const BODYWEIGHT_NOMINAL = 0.001;
+  const TRANSITION_RESET   = 10;
+  while(fmt(cur) <= todayStr){
+    const dStr = fmt(cur);
+    const dayLog = logs[dStr] || {};
+    if(dayLog._skip){
+      if(dStr < todayStr){
+        Object.keys(loads).forEach(m => {
+          const cfg = MUSCLE_COEF[m];
+          if(!cfg) return;
+          loads[m] = Math.max(0, loads[m] * cfg.recovery_rate - cfg.daily_subtraction);
+        });
+      }
+      cur.setDate(cur.getDate() + 1);
+      days++;
+      continue;
+    }
+    const sessions = [];
+    const trained = new Set();
+    Object.entries(dayLog).forEach(([id, e]) => {
+      if(id.startsWith('_') || !e || !e.done || !EX[id]) return;
+      if(EX[id].app) return;
+      const muscles = getMusclesFromEx(EX[id]);
+      if(!muscles.length) return;
+      sessions.push({ id, log: e, muscles });
+      muscles.forEach(m => trained.add(m.id));
+    });
+    sessions.forEach(s => {
+      let tonnage = 0, maxW = 0;
+      (s.log.sets || []).forEach(set => {
+        if(!set) return;
+        const r = parseFloat(set.r) || 0;
+        if(r <= 0) return;
+        const w = parseFloat(set.w) || 0;
+        const effW = w > 0 ? w : BODYWEIGHT_NOMINAL;
+        tonnage += effW * r;
+        if(effW > maxW) maxW = effW;
+      });
+      if(tonnage <= 0) return;
+      s.muscles.forEach(({ id, share }) => {
+        const effMaxW    = maxW * share;
+        const effTonnage = tonnage * share;
+        const rec = muscleRecords[id] || { maxWeight: 0, maxTonnage: 0 };
+        const rawWRatio = rec.maxWeight  > 0 ? effMaxW    / rec.maxWeight  : 1.0;
+        const rawTRatio = rec.maxTonnage > 0 ? effTonnage / rec.maxTonnage : 1.0;
+        if(rawWRatio > TRANSITION_RESET || rawTRatio > TRANSITION_RESET){
+          muscleRecords[id] = { maxWeight: effMaxW, maxTonnage: effTonnage };
+          return;
+        }
+        const wRatio = Math.min(rawWRatio, 3.0);
+        const tRatio = rawTRatio;
+        if(tRatio >= LOAD_THRESHOLD){
+          const inc = wRatio * tRatio * LOAD_FACTOR;
+          loads[id] = (loads[id] || 0) + Math.min(inc, 0.40);
+        }
+        if(effMaxW    > rec.maxWeight)  rec.maxWeight  = effMaxW;
+        if(effTonnage > rec.maxTonnage) rec.maxTonnage = effTonnage;
+        muscleRecords[id] = rec;
+      });
+    });
+    if(dStr < todayStr){
+      Object.keys(loads).forEach(m => {
+        if(trained.has(m)) return;
+        const cfg = MUSCLE_COEF[m];
+        if(!cfg) return;
+        loads[m] = Math.max(0, loads[m] * cfg.recovery_rate - cfg.daily_subtraction);
+      });
+    }
+    cur.setDate(cur.getDate() + 1);
+    days++;
+  }
+  return { loads, days };
+}
+
+
+
+const store={
+  get logs(){return JSON.parse(localStorage.getItem('logs')||'{}')},
+  set logs(v){localStorage.setItem('logs',JSON.stringify(v))},
+};
+const customStore={
+  get list(){return JSON.parse(localStorage.getItem('customEx')||'[]')},
+  set list(v){localStorage.setItem('customEx',JSON.stringify(v))},
+};
+const ownPlanStore={
+  get(){try{return JSON.parse(localStorage.getItem('ownPlan')||'null')}catch(e){return null}},
+  set(v){localStorage.setItem('ownPlan',JSON.stringify(v))},
+};
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function fmt(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function todayDate(){const d=new Date();d.setHours(0,0,0,0);return d}
+
+function customStartDate(c){
+  if(c.schedule && c.schedule.startDate) return c.schedule.startDate;
+  try{
+    const ts=parseInt(String(c.id).slice(1),36);
+    if(!isNaN(ts))return fmt(new Date(ts));
+  }catch(e){}
+  return '1970-01-01';
+}
+function syncCustomEx(){
+  customStore.list.forEach(c=>{
+    if(c.deleted) return;
+    let muscles = c.muscles;
+    if(Array.isArray(muscles)){
+      const pct = muscles.length ? Math.floor(100/muscles.length) : 0;
+      const obj = {};
+      muscles.forEach(id=>{obj[id]=pct});
+      muscles = obj;
+    }
+    if(!muscles || typeof muscles!=='object') muscles = {};
+    EX[c.id]={name:c.name,app:!!c.app,sets:c.sets||4,reps:c.reps||'12-15',muscles};
+  });
+}
+function isScheduleActive(schedule,date,startFallback){
+  if(!schedule)return false;
+  if(schedule.type==='none')return false;
+  if(schedule.type==='delayAfterParent')return false;
+  const startStr=schedule.startDate||startFallback;
+  if(startStr){
+    const start=new Date(startStr+'T00:00:00');
+    const d=new Date(date);d.setHours(0,0,0,0);
+    if(d<start)return false;
+  }
+  if(schedule.type==='everyday')return true;
+  if(schedule.type==='days')return !!(schedule.days&&schedule.days.includes(date.getDay()));
+  if(schedule.type==='even')return date.getDate()%2===0;
+  if(schedule.type==='odd')return date.getDate()%2===1;
+  if(schedule.type==='interval'){
+    const startStr2 = schedule.startDate || '1970-01-01';
+    const start=new Date(startStr2+'T00:00:00');
+    const d=new Date(date);d.setHours(0,0,0,0);
+    const diff=Math.floor((d-start)/86400000);
+    return diff>=0&&diff%schedule.interval===0;
+  }
+  return false;
+}
+function scheduleSummary(schedule){
+  if(!schedule||schedule.type==='none')return 'не задано';
+  if(schedule.type==='everyday')return 'каждый день';
+  if(schedule.type==='even')return 'чётные дни';
+  if(schedule.type==='odd')return 'нечётные дни';
+  if(schedule.type==='days'){
+    const names=WEEK_ORDER.filter(d=>schedule.days.includes(d)).map(d=>DAYS[d]);
+    return names.length?names.join(', '):'не задано';
+  }
+  if(schedule.type==='interval')return 'раз в '+schedule.interval+' дн.';
+  if(schedule.type==='delayAfterParent')return 'через '+ (schedule.delayDays||2) +' дн. после родителя';
+  return 'не задано';
+}
+
+function isDisabledOn(item, dateStr){
+  if(!item || !item.disabled) return null;
+  const periods = Array.isArray(item.disabled) ? item.disabled : [item.disabled];
+  for(const p of periods){
+    if(!p || !p.reason) continue;
+    const fromOk = !p.from || dateStr >= p.from;
+    const untilOk = !p.until || dateStr <= p.until;
+    if(fromOk && untilOk) return p;
+  }
+  return null;
+}
+function isCurrentlyDisabled(item){
+  return isDisabledOn(item, fmt(todayDate()));
+}
+
+/* ---------- Block helpers ---------- */
+function getBlockById(blocks, id){
+  return (blocks || []).find(b => b.id === id) || null;
+}
+
+function getBlockExercises(block, allBlocks, visited){
+  visited = visited || new Set();
+  if(!block || visited.has(block.id)) return [];
+  visited.add(block.id);
+  const result = [];
+  (block.children || []).forEach(child => {
+    if(child.type === 'exercise'){
+      if(EX[child.id]) result.push(child.id);
+    } else if(child.type === 'block'){
+      const nested = getBlockById(allBlocks, child.id);
+      if(nested) result.push(...getBlockExercises(nested, allBlocks, visited));
+    }
+  });
+  return result;
+}
+function getBlockDescendantIds(blocks, blockId, visited){
+  visited = visited || new Set();
+  if(visited.has(blockId)) return [];
+  visited.add(blockId);
+  const block = getBlockById(blocks, blockId);
+  if(!block) return [];
+  const result = [blockId];
+  (block.children || []).forEach(child => {
+    if(child.type === 'block'){
+      result.push(...getBlockDescendantIds(blocks, child.id, visited));
+    }
+  });
+  return result;
+}
+
+/* =========================================================
+   PLAN COMPUTATION
+   ========================================================= */
+function isChildEntryActive(childRef, date, parentBlock, parentActive, blocks) {
+  let schedule;
+  if (childRef.type === 'exercise') {
+    schedule = childRef.schedule || { type: 'none' };
+  } else {
+    const nested = getBlockById(blocks, childRef.id);
+    schedule = childRef.scheduleOverride || (nested ? nested.schedule : { type: 'none' });
+    if (!schedule) schedule = { type: 'none' };
+  }
+
+  const activeWithParent = childRef.activeWithParent !== false;
+
+  if (schedule.type === 'delayAfterParent') {
+    const delay = schedule.delayDays || 1;
+    const past = new Date(date);
+    past.setDate(past.getDate() - delay);
+    if (!parentBlock || !parentBlock.schedule) return false;
+    return isScheduleActive(parentBlock.schedule, past);
+  }
+
+  if (activeWithParent && !parentActive) return false;
+  if (schedule.type === 'none') return true;
+  return isScheduleActive(schedule, date);
+}
+
+function processBlockTree(block, date, blocks, output, visited, ancestorDisabled, disableReason, blockActive) {
+  if (!block || visited.has(block.id)) return;
+  visited.add(block.id);
+
+  const dateStr = fmt(date);
+  const blockDis = isDisabledOn(block, dateStr);
+  const myDisabled = ancestorDisabled || !!blockDis;
+  const myReason = blockDis ? blockDis.reason : disableReason;
+
+  (block.children || []).forEach(child => {
+    const childActive = isChildEntryActive(child, date, block, blockActive, blocks);
+
+    if (child.type === 'exercise') {
+      if (childActive) {
+        if (myDisabled) {
+          output.cancelled.push({ id: child.id, reason: myReason || 'disabled', blockName: block.name });
+        } else {
+          output.exercises.push(child.id);
+        }
+      }
+    } else if (child.type === 'block') {
+      const nested = getBlockById(blocks, child.id);
+      if (!nested) return;
+      if (childActive) {
+        processBlockTree(nested, date, blocks, output, visited, myDisabled, myReason, true);
+      }
+    }
+  });
+}
+
+function getTopLevelBlocks(){
+  const own = ownPlanStore.get();
+  const all = (own && own.blocks) || [];
+  const referenced = new Set();
+  all.forEach(b => {
+    (b.children || []).forEach(c => {
+      if (c.type === 'block') referenced.add(c.id);
+    });
+  });
+  return all.filter(b => !referenced.has(b.id));
+}
+
+function getPlan(date){
+  const dateStr = fmt(date);
+  const own = ownPlanStore.get();
+  const main = [];
+  const groups = [];
+  const cancelled = [];
+  const seen = new Set();
+  const cancelledSeen = new Set();
+
+  if(own && own.enabled){
+    const allBlocks = own.blocks || [];
+
+    (own.items || []).forEach(item => {
+      if(!EX[item.id]) return;
+      if(!isScheduleActive(item.schedule, date)) return;
+      const dis = isDisabledOn(item, dateStr);
+      if(dis){
+        cancelled.push({ id: item.id, reason: dis.reason });
+        cancelledSeen.add(item.id);
+      } else {
+        main.push(item.id);
+        seen.add(item.id);
+        groups.push({ type: 'exercise', id: item.id });
+      }
+    });
+
+    const topBlocks = getTopLevelBlocks();
+    topBlocks.forEach(block => {
+      const blockActive = isScheduleActive(block.schedule, date);
+      const blockOut = { exercises: [], cancelled: [] };
+      processBlockTree(block, date, allBlocks, blockOut, new Set(), false, null, blockActive);
+
+      const newExs = blockOut.exercises.filter(id => !seen.has(id) && EX[id]);
+      const newCancelled = blockOut.cancelled.filter(c => !seen.has(c.id) && !cancelledSeen.has(c.id));
+
+      if(newExs.length){
+        newExs.forEach(id => { seen.add(id); main.push(id); });
+        groups.push({
+          type: 'block',
+          blockId: block.id,
+          name: block.name,
+          exercises: newExs
+        });
+      }
+      newCancelled.forEach(c => { cancelledSeen.add(c.id); cancelled.push(c); });
+    });
+  }
+
+  customStore.list.forEach(c => {
+    if(c.deleted || seen.has(c.id) || cancelledSeen.has(c.id)) return;
+    if(isCustomActive(c, date) && !main.includes(c.id)){
+      main.push(c.id);
+      seen.add(c.id);
+      groups.push({ type: 'exercise', id: c.id });
+    }
+  });
+
+  return { info: [], main, groups, cancelled, after: [] };
+}
+
+function isCustomActive(c, date){
+  if(c.deleted) return false;
+  return isScheduleActive(c.schedule, date, customStartDate(c));
+}
+
+/* ---------- stats & PRs ---------- */
+function getExerciseStats(log){
+  let maxW=0,maxR=0,totalVol=0,totalSets=0;
+  (log?.sets||[]).forEach(s=>{
+    if(!s)return;
+    const w=parseFloat(s.w)||0;
+    const r=parseFloat(s.r)||0;
+    if(w>maxW)maxW=w;
+    if(r>maxR)maxR=r;
+    if(r>0){totalSets++;if(w>0)totalVol+=w*r;}
+  });
+  return {maxW,maxR,totalVol,totalSets};
+}
+function getLastEntryBefore(exId,dateStr){
+  const logs=store.logs;
+  const dates=Object.keys(logs).filter(d=>d<dateStr).sort().reverse();
+  for(const d of dates){
+    const e=logs[d]&&logs[d][exId];
+    if(e&&e.done)return {date:d,...e};
+  }
+  return null;
+}
+function getExerciseHistoryBefore(exId,dateStr){
+  const logs=store.logs;
+  let maxW=0;
+  const repsByWeight={};
+  Object.keys(logs).filter(d=>d<dateStr).forEach(d=>{
+    const e=logs[d]&&logs[d][exId];
+    if(!e||!e.done)return;
+    (e.sets||[]).forEach(s=>{
+      if(!s)return;
+      const w=parseFloat(s.w)||0;
+      const r=parseFloat(s.r)||0;
+      if(w>maxW)maxW=w;
+      if(r>0){ if(repsByWeight[w]===undefined||r>repsByWeight[w])repsByWeight[w]=r; }
+    });
+  });
+  return {maxW,repsByWeight};
+}
+function checkPRs(exId,log,dateStr){
+  const sets=log?.sets||[];
+  const hasData=sets.some(s=>s&&parseFloat(s.r)>0);
+  if(!hasData)return {weightPR:null,repsPR:null};
+  const prev=getExerciseHistoryBefore(exId,dateStr);
+  let weightPR=null,repsPR=null;
+  sets.forEach(s=>{
+    if(!s)return;
+    const w=parseFloat(s.w)||0;
+    const r=parseFloat(s.r)||0;
+    if(r<=0)return;
+    if(w>prev.maxW){ if(!weightPR||w>weightPR.w||(w===weightPR.w&&r>weightPR.r))weightPR={w,r}; }
+    const prevReps=prev.repsByWeight[w];
+    if(prevReps===undefined||r>prevReps){ if(!repsPR||r>repsPR.r||(r===repsPR.r&&w>repsPR.w))repsPR={w,r}; }
+  });
+  return {weightPR,repsPR};
+}
+function getDaySteadyCount(dateStr){
+  const dayLog=store.logs[dateStr]||{};
+  let count=0;
+  Object.entries(dayLog).forEach(([id,e])=>{
+    if(id.startsWith('_')||!e||!e.done)return;
+    if(!EX[id]||EX[id].app)return;
+    if(checkSteadyAllSets(id,e,dateStr))count++;
+  });
+  return count;
+}
+function getDayPRCounts(dateStr){
+  const dayLog=store.logs[dateStr]||{};
+  let weight=0,reps=0;
+  Object.entries(dayLog).forEach(([id,e])=>{
+    if(id.startsWith('_')||!e||!e.done)return;
+    if(!EX[id]||EX[id].app)return;
+    const {weightPR,repsPR}=checkPRs(id,e,dateStr);
+    if(weightPR)weight++;
+    if(repsPR)reps++;
+  });
+  return {weight,reps};
+}
+function getPRBadgesHtml(exId,log,dateStr){
+  if(!log)return '';
+  const {weightPR,repsPR}=checkPRs(exId,log,dateStr);
+  let html='';
+  if(weightPR)html+=`<span class="pr-badge pr-weight" title="Новый максимальный вес">🔩 ${weightPR.w}кг</span>`;
+  if(repsPR)html+=`<span class="pr-badge pr-reps" title="Новый вес или больше повторений">💪 ${repsPR.w>0?repsPR.w+'кг×':''}${repsPR.r}</span>`;
+  return html;
+}
+function getTargetReps(exId,dateStr){
+  const logs=store.logs;
+  const dates=Object.keys(logs).filter(d=>d<dateStr).sort().reverse();
+  for(const d of dates){
+    const e=logs[d]?.[exId];
+    if(!e||!e.done)continue;
+    let maxW=0,repsAtMaxW=0;
+    (e.sets||[]).forEach(s=>{
+      if(!s)return;
+      const w=parseFloat(s.w)||0;
+      const r=parseFloat(s.r)||0;
+      if(r<=0)return;
+      if(w>maxW){maxW=w;repsAtMaxW=r;}
+      else if(w===maxW&&r>repsAtMaxW)repsAtMaxW=r;
+    });
+    if(repsAtMaxW>0)return Math.min(repsAtMaxW+1,15);
+  }
+  return 15;
+}
+function checkSteadyAllSets(exId,log,dateStr){
+  const ex=EX[exId];
+  if(!ex||ex.app)return null;
+  const plannedSets = getExSets(exId);
+  const filled=(log?.sets||[]).filter(s=>s&&parseFloat(s.r)>0);
+  if(filled.length<plannedSets||filled.length<2)return null;
+  const w0=parseFloat(filled[0].w)||0;
+  const r0=parseFloat(filled[0].r)||0;
+  const allSame=filled.every(s=>(parseFloat(s.w)||0)===w0&&(parseFloat(s.r)||0)===r0);
+  if(!allSame)return null;
+  const logs=store.logs;
+  let maxWBefore=0;
+  Object.keys(logs).filter(d=>d<dateStr).forEach(d=>{
+    const e=logs[d]&&logs[d][exId];
+    if(!e||!e.done)return;
+    (e.sets||[]).forEach(s=>{
+      if(!s)return;
+      const w=parseFloat(s.w)||0;
+      if(w>maxWBefore)maxWBefore=w;
+    });
+  });
+  if(w0<maxWBefore)return null;
+  let maxSteadyBefore=0;
+  Object.keys(logs).filter(d=>d<dateStr).forEach(d=>{
+    const e=logs[d]&&logs[d][exId];
+    if(!e||!e.done)return;
+    const wSets=(e.sets||[]).filter(s=>s&&(parseFloat(s.w)||0)===w0&&parseFloat(s.r)>0);
+    if(wSets.length<plannedSets)return;
+    const minR=Math.min(...wSets.map(s=>parseFloat(s.r)||0));
+    if(minR>maxSteadyBefore)maxSteadyBefore=minR;
+  });
+  if(r0<=maxSteadyBefore)return null;
+  return {count:filled.length,w:w0,r:r0};
+}
+function computeProgressHtml(exId,log,dateStr){
+  if(!log||!log.sets)return '';
+  const last=getLastEntryBefore(exId,dateStr);
+  if(!last)return '';
+  if(!log.sets.some(s=>s&&parseFloat(s.r)>0))return '';
+  const t=getExerciseStats(log),p=getExerciseStats(last);
+  const dW=Math.round((t.maxW-p.maxW)*100)/100;
+  const dR=Math.round(t.maxR-p.maxR);
+  const parts=[];
+  if(dW>0)parts.push(`<span class="up">+${dW}кг</span>`);
+  else if(dW<0)parts.push(`<span class="down">${dW}кг</span>`);
+  if(dR>0)parts.push(`<span class="up">+${dR} повт</span>`);
+  else if(dR<0)parts.push(`<span class="down">${dR} повт</span>`);
+  if(!parts.length)return '';
+  return `<div class="progress-line">${parts.join(' · ')}</div>`;
+}
+function renderDayMetaHtml(dayLog,isToday){
+  const ton=dayTonnage(dayLog);
+  let html='';
+  if(!isToday)html+=`<button class="mini-btn" onclick="goToday()">Сегодня</button>`;
+  if(ton.sets>0)html+=`<span>${ton.tonnage} кг · ${ton.sets} подх.</span>`;
+  return html;
+}
+function updateExerciseUI(exId){
+  const el=document.querySelector(`.ex[data-ex-id="${exId}"]`);
+  if(!el)return;
+  const dateStr=fmt(currentDate);
+  const log=store.logs[dateStr]?.[exId];
+  const progressEl=el.querySelector('[data-progress]');
+  const prEl=el.querySelector('[data-pr]');
+  const steadyEl=el.querySelector('[data-steady]');
+  if(progressEl)progressEl.innerHTML=computeProgressHtml(exId,log,dateStr);
+  if(prEl){
+    const prHtml=getPRBadgesHtml(exId,log,dateStr);
+    prEl.innerHTML=prHtml?`<div class="pr-row">${prHtml}</div>`:'';
+  }
+  if(steadyEl){
+    const steady=checkSteadyAllSets(exId,log,dateStr);
+    steadyEl.innerHTML=steady?`<div class="pr-row"><span class="pr-badge pr-max" title="Все подходы одинаковые — пора увеличить вес или повторы">🎯 ${steady.count}×${steady.r}</span></div>`:'';
+  }
+}
+function updateDayMeta(){
+  const el=document.getElementById('day-meta');
+  if(!el)return;
+  const dateStr=fmt(currentDate);
+  const dayLog=store.logs[dateStr]||{};
+  const isToday=dateStr===fmt(todayDate());
+  const html=renderDayMetaHtml(dayLog,isToday);
+  el.innerHTML=html;
+  el.style.display=html?'flex':'none';
+}
+function getLastEntry(exId){
+  const logs=store.logs;
+  const dates=Object.keys(logs).sort().reverse();
+  for(const d of dates){
+    const e=logs[d]&&logs[d][exId];
+    if(e&&e.done)return {date:d,...e};
+  }
+  return null;
+}
+function formatSets(log){
+  if(!log) return 'нет данных';
+  if(!log.sets || !log.sets.length) return 'нет данных';
+  const parts=log.sets.filter(s=>s&&(s.w||s.r));
+  if(!parts.length) return 'нет данных';
+  const groups=[];
+  parts.forEach(s=>{
+    const w=String(s.w||'?').trim();
+    const r=String(s.r||'?').trim();
+    const last=groups[groups.length-1];
+    if(last&&last.w===w){last.reps.push(r)}
+    else{groups.push({w,reps:[r]})}
+  });
+  return groups.map(g=>`${g.w}кг(${g.reps.join('+')})`).join('+');
+}
+function checkTonnagePR(dateStr){
+  const logs=store.logs;
+  const t=dayTonnage(logs[dateStr]||{}).tonnage;
+  if(t<=0)return null;
+  let maxBefore=0;
+  Object.keys(logs).filter(d=>d<dateStr).forEach(d=>{
+    const dt=dayTonnage(logs[d]||{}).tonnage;
+    if(dt>maxBefore)maxBefore=dt;
+  });
+  if(maxBefore>0 && t<=maxBefore)return null;
+  return {tonnage:t,prev:maxBefore};
+}
+function renderDayTonnageHtml(dateStr,dayLog){
+  const {tonnage,sets}=dayTonnage(dayLog);
+  if(tonnage===0&&sets===0)return '';
+  const pr=checkTonnagePR(dateStr);
+  let html='<div class="day-tonnage">';
+  html+=`💯 ${tonnage>0?tonnage+' кг · ':''}${sets} подх.`;
+  if(pr){
+    const title=pr.prev>0?`Рекорд по дневному тоннажу (предыдущий: ${pr.prev} кг)`:'Первый рекорд тоннажа';
+    html+=` <span class="pr-badge pr-tonnage" title="${title}">🏆 рекорд</span>`;
+  }
+  html+='</div>';
+  return html;
+}
+function dayTonnage(dayLog){
+  let tonnage=0,sets=0;
+  Object.entries(dayLog).forEach(([id,e])=>{
+    if(id.startsWith('_')||!e||!e.done)return;
+    (e.sets||[]).forEach(s=>{
+      if(!s)return;
+      const w=parseFloat(s.w)||0,r=parseFloat(s.r)||0;
+      if(r>0){sets++;if(w>0)tonnage+=w*r;}
+    });
+  });
+  return {tonnage:Math.round(tonnage),sets};
+}
+
+let currentDate=todayDate();
+let view='today';
+let selectedDate=todayDate();
+let calendarMonth=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
+let statsExerciseId=null;
+let searchQuery='';
+let collapsedBlocks = new Set();
+let expandedMuscleGroups = new Set();
+
+function toggleMuscleGroup(key){
+  const body = document.getElementById('mg-body-' + key);
+  if(!body) return;
+  const header = body.previousElementSibling;
+
+  if(expandedMuscleGroups.has(key)){
+    // сворачивание: фиксируем фактическую высоту → reflow → 0 (чтобы анимация была плавной)
+    const h = body.scrollHeight;
+    body.style.maxHeight = h + 'px';
+    void body.offsetHeight;
+    body.style.maxHeight = '0px';
+    expandedMuscleGroups.delete(key);
+    if(header) header.classList.remove('expanded');
+  } else {
+    // разворачивание: 0 → фактическая высота
+    body.style.maxHeight = body.scrollHeight + 'px';
+    expandedMuscleGroups.add(key);
+    if(header) header.classList.add('expanded');
+  }
+}
+
+// Максимальный эффективный вес по каждой мышце: max(вес_упражнения × доля мышцы)
+function getMaxWeightByMuscle(){
+  const logs = store.logs;
+  const result = {};
+  Object.keys(logs).forEach(d => {
+    const dayLog = logs[d];
+    if(!dayLog) return;
+    Object.entries(dayLog).forEach(([id, e]) => {
+      if(id.startsWith('_') || !e || !e.done || !EX[id] || EX[id].app) return;
+      const muscles = getMusclesFromEx(EX[id]);
+      if(!muscles.length) return;
+      let maxW = 0;
+      (e.sets||[]).forEach(s => {
+        if(!s) return;
+        const w = parseFloat(s.w)||0;
+        if(w > maxW) maxW = w;
+      });
+      if(maxW <= 0) return;
+      muscles.forEach(({id: mid, share}) => {
+        const effW = maxW * share;
+        if(!result[mid] || effW > result[mid]) result[mid] = effW;
+      });
+    });
+  });
+  return result;
+}
+
+function toggleBlockCollapse(blockId){
+  if(collapsedBlocks.has(blockId)) collapsedBlocks.delete(blockId);
+  else collapsedBlocks.add(blockId);
+  render();
+}
+
+/* ---------- Training view ---------- */
+function renderExercise(exId,log){
+  const ex=EX[exId];
+  if(!ex)return '';
+  const dateStr=fmt(currentDate);
+  const done=log?.done?'done':'',checked=log?.done?'checked':'';
+  const last=getLastEntryBefore(exId,dateStr);
+  const musStr = muscleSummary(ex.muscles);
+  const musclesHtml = musStr ? `<div class="ex-last" style="color:#7a7a7a">${escapeHtml(musStr)}</div>` : '';
+  const markersHtml = renderMarkerChipsOnly(exId);
+  const head=`<div class="ex-head">
+      <input type="checkbox" ${checked} onchange="toggleDone('${exId}',this.checked)">
+      <strong>${escapeHtml(ex.name)}</strong>
+      <span class="meta">${ex.app?'по приложению':getExSets(exId)+'×'+getTargetReps(exId,dateStr)}</span>
+    </div>`;
+  if(ex.app){
+    return `<div class="ex ${done}">
+      ${head}
+      ${markersHtml}
+      <div class="ex-app"><span>${log?.done?'✓ Подтверждено':'Отметь галочку, если сделал'}</span></div>
+      <div class="ex-last">Последний раз: ${last?last.date:'нет данных'}</div>
+      ${musclesHtml}
+    </div>`;
+  }
+  const sets=getExSets(exId),logSets=log?.sets||[];
+  let rows='';
+  for(let i=0;i<sets;i++){
+    const s=logSets[i]||{};
+    rows+=`<div class="set-row">
+      <span class="set-num">${i+1}</span>
+      <input type="text" inputmode="decimal" placeholder="вес (кг)" value="${s.w||''}" oninput="onSetInput('${exId}',${i},'w',this)">
+      <input type="text" inputmode="numeric" placeholder="повторения" value="${s.r||''}" oninput="onSetInput('${exId}',${i},'r',this)">
+    </div>`;
+  }
+  const progressHtml=computeProgressHtml(exId,log,dateStr);
+  const prHtml=getPRBadgesHtml(exId,log,dateStr);
+  const steady=checkSteadyAllSets(exId,log,dateStr);
+  return `<div class="ex ${done}" data-ex-id="${exId}">
+    ${head}
+    ${markersHtml}
+    <div class="ex-last">Прошлый раз: ${formatSets(last)}</div>
+    ${musclesHtml}
+    <div data-progress>${progressHtml}</div>
+    <div data-pr>${prHtml?`<div class="pr-row">${prHtml}</div>`:''}</div>
+    <div data-steady>${steady?`<div class="pr-row"><span class="pr-badge pr-max" title="Все подходы одинаковые — пора увеличить вес или повторы">🎯 ${steady.count}×${steady.r}</span></div>`:''}</div>
+    ${rows}
+  </div>`;
+}
+function renderTabs(){
+  return `<div class="tabs">
+    <button class="${view==='today'?'active':''}" onclick="setView('today')">Тренировка</button>
+    <button class="${view==='history'?'active':''}" onclick="setView('history')">История</button>
+    <button class="${view==='custom'?'active':''}" onclick="setView('custom')">Свои</button>
+    <button class="${view==='search'?'active':''}" onclick="setView('search')">Поиск</button>
+    <button class="${view==='stats'||view==='stats-ex'?'active':''}" onclick="setView('stats')">Стата</button>
+    <button class="${view==='trainer'?'active':''}" onclick="setView('trainer')">Тренер</button>
+  </div>`;
+}
+
+function renderBlockGroup(g, dayLog){
+  const isCollapsed = collapsedBlocks.has(g.blockId);
+  let html = `<div class="block-header" onclick="toggleBlockCollapse('${g.blockId}')">
+    <span class="blk-toggle">${isCollapsed ? '▸' : '▾'}</span>
+    <span class="blk-icon">📦</span>
+    ${escapeHtml(g.name)}
+    <span class="blk-count">${g.exercises.length} упр.</span>
+  </div>`;
+  if(!isCollapsed){
+    g.exercises.forEach(exId => { html += renderExercise(exId, dayLog[exId]); });
+  }
+  return html;
+}
+
+function renderToday(){
+  const dow=currentDate.getDay();
+  const plan=getPlan(currentDate);
+  const dayLog=store.logs[fmt(currentDate)]||{};
+  const skipped=!!dayLog._skip;
+  const isToday=fmt(currentDate)===fmt(todayDate());
+  let html=renderTabs();
+  html+=`<div class="header">
+    <button onclick="shiftDay(-1)">←</button>
+    <span>${DAYS[dow]}, ${fmt(currentDate)}</span>
+    <button onclick="shiftDay(1)">→</button>
+  </div>`;
+  if(plan.info.length)html+=`<div class="info">${plan.info.join(' · ')}</div>`;
+  const dayMetaHtml=renderDayMetaHtml(dayLog,isToday);
+  html+=`<div id="day-meta" class="meta-row" style="display:${dayMetaHtml?'flex':'none'}">${dayMetaHtml}</div>`;
+  if(skipped){
+    html+=`<div class="skip-banner">
+      <span>🚫 Пропуск: ${escapeHtml(dayLog._skip.reason||'без причины')}</span>
+      <button class="mini-btn" onclick="unskipDay()">Отменить</button>
+    </div>`;
+  }else{
+    html+=`<div class="skip-row"><button class="mini-btn" onclick="showSkipUI()">Пропустить день</button></div>`;
+    html+=`<div id="skipForm" style="display:none" class="ex">
+      <strong style="font-size:13px">Причина:</strong>
+      <div class="skip-reasons">
+        <button onclick="quickSkip('болезнь')">болезнь</button>
+        <button onclick="quickSkip('нет времени')">нет времени</button>
+        <button onclick="quickSkip('отдых')">отдых</button>
+        <button onclick="quickSkip('травма')">травма</button>
+        <button onclick="customSkip()">другое…</button>
+      </div>
+    </div>`;
+  }
+  if(!skipped){
+    if(plan.main.length){
+      html+=`<h2>Основные</h2>`;
+      if(plan.groups && plan.groups.length){
+        plan.groups.forEach(g => {
+          if(g.type === 'exercise'){
+            html+=renderExercise(g.id, dayLog[g.id]);
+          } else if(g.type === 'block'){
+            html += renderBlockGroup(g, dayLog);
+          }
+        });
+      } else {
+        plan.main.forEach(id => html+=renderExercise(id, dayLog[id]));
+      }
+    }
+    if(plan.cancelled && plan.cancelled.length){
+      html+=`<h2>Отменено</h2>`;
+      plan.cancelled.forEach(c=>{
+        const ex=EX[c.id];
+        if(!ex) return;
+        const reasonText = c.blockName ? `${c.reason} (${c.blockName})` : (c.reason||'без причины');
+        html+=`<div class="ex ex-cancelled">
+          <div class="ex-head">
+            <span style="color:#c66;font-size:14px;line-height:1">⊘</span>
+            <strong style="text-decoration:line-through;color:#999">${escapeHtml(ex.name)}</strong>
+            <span class="meta" style="color:#c66">отменено</span>
+          </div>
+          <div class="ex-last" style="color:#aa8;margin-bottom:0">Причина: ${escapeHtml(reasonText)}</div>
+        </div>`;
+      });
+    }
+    if(plan.after.length){html+=`<h2>Потом</h2>`;plan.after.forEach(id=>html+=renderExercise(id,dayLog[id]))}
+    if(!plan.main.length && !plan.after.length && !(plan.cancelled && plan.cancelled.length)){
+      html+=`<div class="ex" style="color:#777">
+        На этот день упражнений нет.
+        <button class="mini-btn" style="margin-top:8px" onclick="setView('custom')">Настроить план</button>
+      </div>`;
+    }
+  }
+  html+=`<h2>Заметка</h2>
+  <textarea class="form-input" rows="2" placeholder="Как прошло, самочувствие…" oninput="setDayNote(this.value)">${escapeHtml(dayLog._note||'')}</textarea>`;
+  document.getElementById('app').innerHTML=html;
+}
+
+/* ---------- History view ---------- */
+function getHistoryStartDate(){
+  const logs=store.logs;
+  const dates=Object.keys(logs).filter(d=>{
+    const day=logs[d];
+    if(!day||!Object.keys(day).length)return false;
+    if(day._skip)return true;
+    return Object.entries(day).some(([k,v])=>!k.startsWith('_')&&v&&v.done);
+  }).sort();
+  return dates[0]||null;
+}
+function getDayStatus(dateStr){
+  const date = new Date(dateStr+'T00:00:00');
+  const today = todayDate();
+  const todayStr = fmt(today);
+  const isFuture = date > today;
+  const isToday = dateStr === todayStr;
+  if(isFuture) return {state:'future',isToday:false,isFuture:true,date};
+  const start = getHistoryStartDate();
+  if(!isToday && (!start || dateStr < start)){
+    return {state:'before',isToday:false,isFuture:false,date};
+  }
+  const dayLog = store.logs[dateStr] || {};
+  if(dayLog._skip) return {state:'skip',reason:dayLog._skip.reason||'',isToday,isFuture:false,dayLog,date};
+  const plan = getPlan(date);
+  const expected = [...plan.main, ...plan.after].filter(id=>EX[id]);
+  const cancelled = plan.cancelled || [];
+  const doneSet = new Set();
+  Object.entries(dayLog).forEach(([id,e])=>{
+    if(id.startsWith('_')) return;
+    if(e && e.done && EX[id]) doneSet.add(id);
+  });
+  const doneInPlan = expected.filter(id => doneSet.has(id));
+  const missed = expected.filter(id => !doneSet.has(id));
+  const cancelledIds = new Set(cancelled.map(c => c.id));
+  const offPlan = [...doneSet].filter(id => !expected.includes(id) && !cancelledIds.has(id));
+
+  let state;
+  if(expected.length === 0){
+    if(offPlan.length > 0) state = 'offplan';
+    else if(cancelled.length > 0) state = 'cancelled';
+    else state = 'empty';
+  }
+  else if(doneInPlan.length === expected.length){state='done';}
+  else if(doneInPlan.length > 0){state='part';}
+  else{state = isToday ? 'today-none' : 'full-miss';}
+  if(isToday && state === 'part') state = 'today-part';
+
+  return {state, isToday, isFuture:false, dayLog, date, plan, expected, cancelled, doneInPlan, missed, offPlan};
+}
+function renderDayCard(dateStr){
+  const status=getDayStatus(dateStr);
+  const d=new Date(dateStr+'T00:00:00');
+  const header=`<div class="day-card-header">
+    <span>${DAYS[d.getDay()]}, ${dateStr}</span>
+    ${status.state==='future'||status.state==='before'
+      ?''
+      :`<button class="mini-btn" onclick="editDay('${dateStr}')">✎ Редактировать</button>`}
+  </div>`;
+  if(status.state==='before')
+    return `<div class="day-card">${header}<div class="ex" style="color:#666">До начала ведения истории</div></div>`;
+  if(status.state==='future'){
+    const plan=getPlan(d);
+    const expected=[...plan.main,...plan.after].filter(id=>EX[id]);
+    return `<div class="day-card">${header}
+      <div class="ex" style="color:#888">Будущий день · запланировано ${expected.length} упр.</div>
+    </div>`;
+  }
+  const dayLog=status.dayLog||{};
+  let body='';
+  if(status.state==='skip'){
+    body+=`<div class="skip-banner">
+      <span>🚫 Пропуск: ${escapeHtml(status.reason||'без причины')}</span>
+      <button class="mini-btn" onclick="unskipHistoryDay('${dateStr}')">Отменить</button>
+    </div>`;
+    return `<div class="day-card">${header}${body}</div>`;
+  }
+  body+=renderDayTonnageHtml(dateStr,dayLog);
+  if(dayLog._note){
+    body+=`<div class="ex" style="color:#aaa;font-size:13px;white-space:pre-wrap">📝 ${escapeHtml(dayLog._note)}</div>`;
+  }
+  const plan=status.plan||getPlan(d);
+  if(plan.info&&plan.info.length){ body+=`<div class="info">${plan.info.join(' · ')}</div>`; }
+  const expected=status.expected||[];
+  const missed=status.missed||[];
+  const doneInPlan=status.doneInPlan||[];
+  const offPlan=status.offPlan||[];
+  if(expected.length===0&&offPlan.length===0&&!dayLog._note){
+    body+=`<div class="ex" style="color:#666">Нет запланированных упражнений и активности</div>`;
+  }
+  if(doneInPlan.length){
+    body+=`<h2>Сделано (${doneInPlan.length}/${expected.length})</h2>`;
+    doneInPlan.forEach(id=>{
+      const ex=EX[id];
+      const val=ex.app?'✓':formatSets(dayLog[id]);
+      const badges=getExerciseBadges(id,dayLog[id],dateStr);
+      body+=`<div class="ex">
+        <div class="hist-row">
+          <strong style="color:#9f9;cursor:pointer" onclick="openExerciseStats('${id}')">✓ ${escapeHtml(ex.name)}</strong>
+          <span class="ex-last" style="margin-left:auto">${val}</span>
+          <button class="del-btn" title="Удалить запись" onclick="deleteHistoryEntry('${id}','${dateStr}')">✕</button>
+        </div>
+        ${badges?`<div class="pr-row" style="margin-top:4px;margin-bottom:0">${badges}</div>`:''}
+      </div>`;
+    });
+  }
+  const cancelled = status.cancelled || [];
+  if(cancelled.length){
+    body+=`<h2>Отменено (${cancelled.length})</h2>`;
+    cancelled.forEach(c=>{
+      const ex = EX[c.id];
+      if(!ex) return;
+      const reasonText = c.blockName ? `${c.reason} (${c.blockName})` : (c.reason||'без причины');
+      body+=`<div class="ex ex-cancelled">
+        <div class="ex-head">
+          <span style="color:#c66;font-size:14px;line-height:1">⊘</span>
+          <strong style="text-decoration:line-through;color:#999">${escapeHtml(ex.name)}</strong>
+          <span class="meta" style="color:#c66">отменено</span>
+        </div>
+        <div class="ex-last" style="color:#aa8;margin-bottom:0">Причина: ${escapeHtml(reasonText)}</div>
+      </div>`;
+    });
+  }
+  if(missed.length){
+    const isT=status.isToday;
+    body+=`<h2>${isT?'Не сделано (пока)':'Пропущено'} (${missed.length})</h2>`;
+    missed.forEach(id=>{
+      const ex=EX[id];
+      body+=`<div class="ex" style="color:${isT?'#888':'#c66'}"><strong>${isT?'○':'✗'} ${escapeHtml(ex.name)}</strong></div>`;
+    });
+  }
+  if(offPlan.length){
+    body+=`<h2>Вне плана (${offPlan.length})</h2>`;
+    offPlan.forEach(id=>{
+      const ex=EX[id];
+      const val=ex.app?'✓':formatSets(dayLog[id]);
+      const badges=getExerciseBadges(id,dayLog[id],dateStr);
+      body+=`<div class="ex">
+        <div class="hist-row">
+          <strong>+ ${escapeHtml(ex.name)}</strong>
+          <span class="ex-last" style="margin-left:auto">${val}</span>
+          <button class="del-btn" title="Удалить запись" onclick="deleteHistoryEntry('${id}','${dateStr}')">✕</button>
+        </div>
+        ${badges?`<div class="pr-row" style="margin-top:4px;margin-bottom:0">${badges}</div>`:''}
+      </div>`;
+    });
+  }
+  return `<div class="day-card">${header}${body}</div>`;
+}
+function renderHistory(){
+  const y=calendarMonth.getFullYear();
+  const m=calendarMonth.getMonth();
+  let html=renderTabs();
+  html+=`<div class="header">
+    <span>История</span>
+    <button class="mini-btn" onclick="goHistoryToday()">Сегодня</button>
+    <span><i class="lg-dot" style="background:#4a3a1a"></i>🔩 рекорд веса</span>
+    <span><i class="lg-dot" style="background:#1a3a4a"></i>💪 рекорд повторов</span>
+  </div>`;
+  html+=`<div class="cal-nav">
+    <button onclick="shiftMonth(-1)">‹</button>
+    <span>${MONTH_NAMES[m]} ${y}</span>
+    <button onclick="shiftMonth(1)">›</button>
+  </div>`;
+  html+=`<div class="cal-grid">`;
+  ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(d=>{html+=`<div class="cal-dow">${d}</div>`});
+  const first=new Date(y,m,1);
+  const offset=(first.getDay()+6)%7;
+  for(let i=0;i<offset;i++)html+=`<div class="cal-day empty-cell"></div>`;
+  const dim=new Date(y,m+1,0).getDate();
+  const selStr=fmt(selectedDate);
+for(let day=1;day<=dim;day++){
+  const dateStr=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const status=getDayStatus(dateStr);
+  const classes=['cal-day','state-'+status.state];
+  if(status.isToday)classes.push('today');
+  if(dateStr===selStr)classes.push('selected');
+  const clickable=status.isToday||(status.state!=='future'&&status.state!=='before');
+  if(clickable)classes.push('clickable');
+  const onclick=clickable?`onclick="selectDate('${dateStr}')"`:'';
+  const isSkip=status.state==='skip';
+  const num=isSkip?'🚫':day;
+
+  let tonHtml='';
+  if(!isSkip && status.state!=='future' && status.state!=='before'){
+    const tonPR=checkTonnagePR(dateStr);
+    if(tonPR){
+      const title=tonPR.prev>0?`Рекорд тоннажа: ${tonPR.tonnage} кг (прошлый: ${tonPR.prev} кг)`:`Первый рекорд тоннажа: ${tonPR.tonnage} кг`;
+      tonHtml=`<span class="cal-tonnage-pr" title="${title}">🏆</span>`;
+    }
+  }
+
+  let cancelMark='';
+  if(status.cancelled && status.cancelled.length){
+    cancelMark=`<span class="cal-cancelled-mark" title="${status.cancelled.length} отменено">⊘</span>`;
+  }
+
+  let prsHtml='';
+  if(!isSkip && (status.state==='done'||status.state==='part'||status.state==='offplan'||status.state==='today-part'||status.state==='today-none'||status.state==='full-miss')){
+    const prs=getDayPRCounts(dateStr);
+    const steadyCount=getDaySteadyCount(dateStr);
+    if(prs.weight||prs.reps||steadyCount){
+      prsHtml='<div class="cal-day-prs">';
+      if(prs.weight)prsHtml+=`<span class="cal-pr-weight" title="Рекорды по весу">🔩${prs.weight>1?prs.weight:''}</span>`;
+      if(prs.reps)prsHtml+=`<span class="cal-pr-reps" title="Рекорды по повторениям">💪${prs.reps>1?prs.reps:''}</span>`;
+      if(steadyCount)prsHtml+=`<span class="cal-pr-steady" title="Достигнут максимум на максимальном весе">🎯${steadyCount>1?steadyCount:''}</span>`;
+      prsHtml+='</div>';
+    }
+  }
+  html+=`<div class="${classes.join(' ')}" ${onclick}>${tonHtml}<span class="cal-day-num">${num}</span>${prsHtml}${cancelMark}</div>`;
+}
+  html+=`</div>`;
+  html+=`<div class="legend">
+    <span><i class="lg-dot" style="background:#1e4d1e"></i>сделано</span>
+    <span><i class="lg-dot" style="background:#4a2020"></i>частично</span>
+    <span><i class="lg-dot" style="background:#8a1a1a"></i>пропуск</span>
+    <span><i class="lg-dot" style="background:#333"></i>отдых</span>
+    <span><i class="lg-dot" style="background:#1a1a1a;border:1px solid #333"></i>пусто</span>
+    <span><i class="lg-dot" style="background:transparent;border:1px solid #e8c44d"></i>сегодня</span>
+  </div>`;
+  html+=renderDayCard(selStr);
+  document.getElementById('app').innerHTML=html;
+}
+function selectDate(dateStr){ selectedDate=new Date(dateStr+'T00:00:00'); render(); }
+function shiftMonth(delta){ calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+delta,1); render(); }
+function goHistoryToday(){ selectedDate=todayDate(); calendarMonth=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1); render(); }
+function editDay(dateStr){ currentDate=new Date(dateStr+'T00:00:00'); currentDate.setHours(0,0,0,0); view='today'; render(); }
+function unskipHistoryDay(dateStr){
+  if(!confirm('Отменить пропуск этого дня?'))return;
+  const logs=store.logs;
+  if(logs[dateStr]&&logs[dateStr]._skip){
+    delete logs[dateStr]._skip;
+    if(!Object.keys(logs[dateStr]).length)delete logs[dateStr];
+    store.logs=logs;
+  }
+  render();
+}
+
+/* ---------- Search view ---------- */
+function exerciseMatchesQuery(id, ex, q){
+  if(!q) return true;
+  const ql = q.toLowerCase();
+  if(ex.name.toLowerCase().includes(ql)) return true;
+  const markers = getExerciseMarkers(id);
+  if(markers.some(m => m.toLowerCase().includes(ql))) return true;
+  const msum = muscleSummary(ex.muscles) || '';
+  if(msum.toLowerCase().includes(ql)) return true;
+  return false;
+}
+function renderSearch(){
+  let html=renderTabs();
+  html+=`<div class="header"><span>Поиск упражнения</span></div>`;
+  html+=`<input type="text" id="searchInput" class="form-input" placeholder="Название, метка или мышца…" value="${escapeHtml(searchQuery)}" oninput="setSearchQuery(this.value)">`;
+  html+=`<div id="searchResults"></div>`;
+  document.getElementById('app').innerHTML=html;
+  renderSearchResults();
+}
+function renderSearchResults(){
+  const el=document.getElementById('searchResults');
+  if(!el)return;
+  const q=searchQuery.toLowerCase().trim();
+  if(!q){ el.innerHTML=`<div class="ex" style="color:#777">Введите название упражнения, метку или мышцу</div>`; return; }
+  const matches=sortedExerciseEntries().filter(([id,ex]) => exerciseMatchesQuery(id, ex, q));
+  if(!matches.length){ el.innerHTML=`<div class="ex" style="color:#777">Ничего не найдено</div>`; return; }
+  let html='';
+  matches.forEach(([id,ex])=>{
+    const logs=store.logs;
+    const entries=[];
+    Object.keys(logs).sort().reverse().forEach(d=>{
+      const e=logs[d]&&logs[d][id];
+      if(e&&e.done)entries.push({date:d,...e});
+    });
+    html+=`<div class="ex ex-link" onclick="openExerciseStats('${id}')">`;
+    html+=`<div class="hist-row" style="margin-bottom:2px">
+      <strong style="flex:1">${escapeHtml(ex.name)}</strong>
+    </div>`;
+    html+=`<div onclick="event.stopPropagation()">${renderMarkerCells(id, {q: q, marginTop: false})}</div>`;
+    const msum = muscleSummary(ex.muscles);
+    if(msum){ html+=`<div class="ex-last" style="color:#666">${escapeHtml(msum)}</div>`; }
+    if(!entries.length){
+      html+=`<div class="ex-last">нет записей</div>`;
+    }else{
+      html+=`<div class="ex-last" style="color:#aaa">Записей: ${entries.length} · последняя: ${entries[0].date}</div>`;
+      entries.slice(0,20).forEach(e=>{
+        const val=ex.app?'✓':formatSets(e);
+        const badges=getExerciseBadges(id,e,e.date);
+          html+=`<div class="hist-row">
+          <span class="ex-last">${e.date}: ${val}</span>
+          ${badges?`<span>${badges}</span>`:''}
+        </div>`;
+      });
+      if(entries.length>20)html+=`<div class="ex-last" style="color:#666">… и ещё ${entries.length-20}</div>`;
+    }
+    html+=`</div>`;
+  });
+  el.innerHTML=html;
+}
+function setSearchQuery(v){ searchQuery=v; renderSearchResults(); }
+
+/* ---------- Custom view ---------- */
+let editingCustomId=null;
+
+function updateCustomForm(){
+  const typeEl=document.querySelector('input[name="cType"]:checked');
+  const setsBlock=document.getElementById('cSetsBlock');
+  if(typeEl&&setsBlock)setsBlock.style.display=typeEl.value==='app'?'none':'block';
+  const schedEl=document.querySelector('input[name="cSched"]:checked');
+  const daysBlock=document.getElementById('cDaysBlock');
+  const intervalBlock=document.getElementById('cIntervalBlock');
+  if(schedEl){
+    if(daysBlock)daysBlock.style.display=schedEl.value==='days'?'block':'none';
+    if(intervalBlock)intervalBlock.style.display=schedEl.value==='interval'?'block':'none';
+  }
+}
+function editCustom(id){editingCustomId=id;render()}
+function cancelEditCustom(){editingCustomId=null;render()}
+function renderCustomEditForm(c){
+  const startDate=c.schedule?.startDate||fmt(todayDate());
+  const schedType=c.schedule?.type||'none';
+  const days=c.schedule?.days||[];
+  const interval=c.schedule?.interval||3;
+  const toggle=`var d=document.getElementById('editDaysBlock'),i=document.getElementById('editIntervalBlock');`;
+  return `<div class="ex" style="border-color:#3a5a3a;background:#152515">
+    <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Редактирование</div>
+    <input type="text" id="editName" class="form-input" value="${escapeHtml(c.name)}" placeholder="Название">
+    <div class="form-row">
+      <label><input type="radio" name="editType" value="sets" ${c.app?'':'checked'} onchange="document.getElementById('editSetsBlock').style.display='block'"> Подходы</label>
+      <label><input type="radio" name="editType" value="app" ${c.app?'checked':''} onchange="document.getElementById('editSetsBlock').style.display='none'"> По приложению</label>
+    </div>
+    <div id="editSetsBlock" style="display:${c.app?'none':'block'}">
+      <input type="number" id="editSets" class="form-input" value="${c.sets||4}" min="1" placeholder="Подходы">
+      <input type="text" id="editReps" class="form-input" value="${escapeHtml(c.reps||'12-15')}" placeholder="Повторения">
+    </div>
+    <div style="font-size:12px;color:#888;margin:8px 0 4px">Мышцы:</div>
+    ${renderMusclePicker(c.muscles||[],'editMuscle')}
+    <div style="font-size:13px;color:#ccc;margin:10px 0 6px">Расписание:</div>
+    <div class="form-row">
+      <label><input type="radio" name="editSched" value="none" ${schedType==='none'?'checked':''} onchange="${toggle}d.style.display='none';i.style.display='none'"> Без</label>
+      <label><input type="radio" name="editSched" value="days" ${schedType==='days'?'checked':''} onchange="${toggle}d.style.display='block';i.style.display='none'"> Дни</label>
+      <label><input type="radio" name="editSched" value="interval" ${schedType==='interval'?'checked':''} onchange="${toggle}d.style.display='none';i.style.display='block'"> Раз в N</label>
+      <label><input type="radio" name="editSched" value="even" ${schedType==='even'?'checked':''} onchange="${toggle}d.style.display='none';i.style.display='none'"> Чётные</label>
+      <label><input type="radio" name="editSched" value="odd" ${schedType==='odd'?'checked':''} onchange="${toggle}d.style.display='none';i.style.display='none'"> Нечётные</label>
+      <label><input type="radio" name="editSched" value="everyday" ${schedType==='everyday'?'checked':''} onchange="${toggle}d.style.display='none';i.style.display='none'"> Каждый</label>
+    </div>
+    <div id="editDaysBlock" style="display:${schedType==='days'?'block':'none'}">${WEEK_ORDER.map(d=>`<label class="day-chk"><input type="checkbox" class="edit-day" value="${d}" ${days.includes(d)?'checked':''}> ${DAYS[d]}</label>`).join('')}</div>
+    <div id="editIntervalBlock" style="display:${schedType==='interval'?'block':'none'}">
+      <input type="number" id="editInterval" class="form-input" value="${interval}" min="1" placeholder="Раз в N дней">
+    </div>
+    <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
+    <input type="date" id="editStart" class="form-input" value="${startDate}">
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="mini-btn" style="flex:1" onclick="cancelEditCustom()">Отмена</button>
+      <button class="mini-btn" style="flex:2;background:#2a5a2a;border-color:#3a7a3a" onclick="saveEditCustom('${c.id}')">Сохранить</button>
+    </div>
+  </div>`;
+}
+function saveEditCustom(id){
+  const c=customStore.list.find(x=>x.id===id);
+  if(!c)return;
+  const name=document.getElementById('editName').value.trim();
+  if(!name){alert('Введите название');return}
+  const app=document.querySelector('input[name="editType"]:checked').value==='app';
+  const sets=parseInt(document.getElementById('editSets').value)||4;
+  const reps=document.getElementById('editReps').value.trim()||'12-15';
+  const loads=getMuscleLoads('editMuscle');
+  const muscles=computePercents(loads);
+  const schedType=document.querySelector('input[name="editSched"]:checked').value;
+  const startDate=document.getElementById('editStart').value||fmt(todayDate());
+  let schedule={type:'none'};
+  if(schedType==='days'){
+    const days=[...document.querySelectorAll('.edit-day:checked')].map(el=>parseInt(el.value));
+    if(!days.length){alert('Выберите хотя бы один день');return}
+    schedule={type:'days',days,startDate};
+  }else if(schedType==='interval'){
+    schedule={type:'interval',interval:parseInt(document.getElementById('editInterval').value)||3,startDate};
+  }else if(schedType==='even'||schedType==='odd'||schedType==='everyday'){
+    schedule={type:schedType,startDate};
+  }
+  customStore.list=customStore.list.map(x=>x.id===id?{...x,name,app,sets,reps,muscles,loads,schedule}:x);
+  syncCustomEx();
+  editingCustomId=null;
+  render();
+}
+function deleteCustom(id){
+  if(!confirm('Удалить упражнение?'))return;
+  customStore.list=customStore.list.map(c=>c.id===id?{...c,deleted:true}:c);
+  setExerciseMarkers(id, []);
+  render();
+}
+
+/* ---------- Common ---------- */
+function deleteHistoryEntry(exId,date){
+  const name=EX[exId]?.name||exId;
+  if(!confirm(`Удалить запись «${name}» за ${date}?`))return;
+  const logs=store.logs;
+  if(logs[date]&&logs[date][exId]){
+    delete logs[date][exId];
+    const rest=Object.keys(logs[date]).filter(k=>!k.startsWith('_'));
+    if(!rest.length&&!logs[date]._skip&&!logs[date]._note)delete logs[date];
+    store.logs=logs;
+  }
+  render();
+}
+function showSkipUI(){
+  const el=document.getElementById('skipForm');
+  if(!el)return;
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+function quickSkip(reason){
+  const d=fmt(currentDate),logs=store.logs;
+  logs[d]=logs[d]||{};
+  logs[d]._skip={reason};
+  store.logs=logs;
+  render();
+}
+function customSkip(){
+  const reason=prompt('Причина пропуска:','');
+  if(reason===null)return;
+  quickSkip(reason.trim()||'без причины');
+}
+function unskipDay(){
+  const d=fmt(currentDate),logs=store.logs;
+  if(logs[d]&&logs[d]._skip){
+    delete logs[d]._skip;
+    const rest=Object.keys(logs[d]);
+    if(!rest.length)delete logs[d];
+    store.logs=logs;
+  }
+  render();
+}
+function goToday(){currentDate=todayDate();render()}
+function setDayNote(value){
+  const d=fmt(currentDate),logs=store.logs;
+  logs[d]=logs[d]||{};
+  if(value)logs[d]._note=value;
+  else delete logs[d]._note;
+  if(!Object.keys(logs[d]).length)delete logs[d];
+  store.logs=logs;
+}
+
+/* ---------- Stats ---------- */
+function weekStart(d){
+  const x=new Date(d); x.setHours(0,0,0,0);
+  const dow=(x.getDay()+6)%7;
+  x.setDate(x.getDate()-dow);
+  return x;
+}
+function getWeeklyVolume(weeksBack=8){
+  const logs=store.logs;
+  const today=todayDate();
+  const curWeek=weekStart(today);
+  const weeks=[];
+  for(let i=weeksBack-1;i>=0;i--){
+    const start=new Date(curWeek);
+    start.setDate(start.getDate()-i*7);
+    weeks.push(start);
+  }
+  return weeks.map(start=>{
+    let tonnage=0,sets=0;
+    const startStr=fmt(start);
+    const end=new Date(start);end.setDate(end.getDate()+7);
+    const endStr=fmt(end);
+    Object.keys(logs).forEach(d=>{
+      if(d>=startStr && d<endStr){
+        const t=dayTonnage(logs[d]);
+        tonnage+=t.tonnage;
+        sets+=t.sets;
+      }
+    });
+    const label=String(start.getDate()).padStart(2,'0')+'.'+String(start.getMonth()+1).padStart(2,'0');
+    return { label, value:tonnage, title:`Неделя с ${label}: ${tonnage} кг · ${sets} подх.` };
+  });
+}
+function getStreak(){
+  const today=todayDate();
+  const todayStr=fmt(today);
+  const start=getHistoryStartDate();
+  if(!start)return {current:0,record:0};
+  let current=0;
+  let d=new Date(today);
+  let dStr=fmt(d);
+  while(dStr>=start){
+    const st=getDayStatus(dStr);
+    if(st.state==='before')break;
+    if(st.state==='skip'||st.state==='full-miss')break;
+    if(st.state==='done'||st.state==='part'||st.state==='today-part')current++;
+    d.setDate(d.getDate()-1);
+    dStr=fmt(d);
+  }
+  let record=0,cur=0;
+  let curD=new Date(start+'T00:00:00');
+  let curStr=fmt(curD);
+  while(curStr<=todayStr){
+    const st=getDayStatus(curStr);
+    if(st.state==='done'||st.state==='part'||st.state==='today-part'){
+      cur++;
+      if(cur>record)record=cur;
+    }else if(st.state==='skip'||st.state==='full-miss'){
+      cur=0;
+    }
+    curD.setDate(curD.getDate()+1);
+    curStr=fmt(curD);
+  }
+  return {current,record};
+}
+function getMonthlyCompletion(){
+  const today=todayDate();
+  const y=today.getFullYear(),m=today.getMonth();
+  const dim=today.getDate();
+  let total=0,done=0;
+  for(let day=1;day<=dim;day++){
+    const dStr=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const st=getDayStatus(dStr);
+    if(st.state==='before'||st.state==='skip')continue;
+    const plan=st.plan||getPlan(new Date(dStr+'T00:00:00'));
+    const expected=[...plan.main,...plan.after].filter(id=>EX[id]);
+    total+=expected.length;
+    if(st.doneInPlan)done+=st.doneInPlan.length;
+  }
+  return {total,done,pct:total>0?Math.round(done/total*100):0};
+}
+function countExercisePRs(exId){
+  const logs=store.logs;
+  let w=0,r=0,s=0;
+  if(!EX[exId]||EX[exId].app)return {w,r,s};
+  Object.keys(logs).sort().forEach(d=>{
+    const e=logs[d][exId];
+    if(!e||!e.done)return;
+    const pr=checkPRs(exId,e,d);
+    if(pr.weightPR)w++;
+    if(pr.repsPR)r++;
+    if(checkSteadyAllSets(exId,e,d))s++;
+  });
+  return {w,r,s};
+}
+function renderBars(items,opts={}){
+  if(!items.length)return `<div class="ex" style="color:#666">Нет данных</div>`;
+  const max=Math.max(...items.map(i=>i.value),1);
+  const color=opts.color||'linear-gradient(180deg,#4a8,#2a5)';
+  let html='<div class="bars">';
+  items.forEach(it=>{
+    const h=Math.max(2,(it.value/max)*120);
+    const label=it.label||'';
+    const value=it.value>0?(opts.fmt?opts.fmt(it.value):it.value):'';
+    const title=it.title||`${label}: ${it.value}`;
+    html+=`<div class="bar-col" title="${escapeHtml(title)}">
+      <div class="bar-val">${value}</div>
+      <div class="bar" style="height:${h}px;background:${color}"></div>
+      <div class="bar-label">${label}</div>
+    </div>`;
+  });
+  html+='</div>';
+  return html;
+}
+function renderStats(){
+  let html=renderTabs();
+  html+=`<div class="header"><span>Статистика</span></div>`;
+  const streak=getStreak();
+  const monthly=getMonthlyCompletion();
+  const weekly=getWeeklyVolume(8);
+  const totalTonnage=weekly.reduce((s,w)=>s+w.value,0);
+  html+=`<div class="stats-summary">
+    <div class="stat-card"><div class="stat-val">${streak.current}</div><div class="stat-lbl">дней подряд</div></div>
+    <div class="stat-card"><div class="stat-val">${streak.record}</div><div class="stat-lbl">рекорд стрика</div></div>
+    <div class="stat-card"><div class="stat-val">${monthly.pct}%</div><div class="stat-lbl">за месяц (${monthly.done}/${monthly.total})</div></div>
+    <div class="stat-card"><div class="stat-val">${totalTonnage} кг</div><div class="stat-lbl">тоннаж за 8 нед.</div></div>
+  </div>`;
+  html+=`<h2>Объём по неделям</h2>`;
+  html+=renderBars(weekly,{fmt:v=>v>999?Math.round(v/100)/10+'к':v});
+  html+=`<h2>Упражнения</h2>`;
+  const logs=store.logs;
+  const exStats=Object.entries(EX).map(([id,ex])=>{
+    let sessions=0,totalSets=0;
+    Object.keys(logs).forEach(d=>{
+      const e=logs[d][id];
+      if(e&&e.done){
+        sessions++;
+        totalSets+=(e.sets||[]).filter(s=>s&&parseFloat(s.r)>0).length;
+      }
+    });
+    return {id,ex,sessions,totalSets};
+  }).filter(x=>x.sessions>0).sort((a,b)=>b.sessions-a.sessions);
+  if(!exStats.length){
+    html+=`<div class="ex" style="color:#666">Пока нет тренировок</div>`;
+  }else{
+    exStats.forEach(s=>{
+      html+=`<div class="ex ex-link" onclick="openExerciseStats('${s.id}')">
+        <div class="hist-row">
+          <strong>${escapeHtml(s.ex.name)}</strong>
+          <span class="ex-last" style="margin-left:auto">${s.sessions} сессий · ${s.totalSets} подх.</span>
+          <span style="color:#666">›</span>
+        </div>
+      </div>`;
+    });
+  }
+  html+=renderInstallSection();
+  html+=renderDataSection();
+  document.getElementById('app').innerHTML=html;
+}
+function openExerciseStats(exId){ statsExerciseId=exId; view='stats-ex'; render(); }
+function renderExerciseStats(){
+  const exId=statsExerciseId;
+  const ex=EX[exId];
+  if(!ex){view='stats';render();return}
+  let html=renderTabs();
+  html+=`<div class="header">
+    <button onclick="setView('stats')">← Назад</button>
+    <span style="font-size:13px;text-align:right">${escapeHtml(ex.name)}</span>
+  </div>`;
+  const logs=store.logs;
+  const sessions=Object.keys(logs).sort().filter(d=>logs[d][exId]&&logs[d][exId].done).map(d=>({date:d,log:logs[d][exId]}));
+  const msum = muscleSummary(ex.muscles);
+  if(msum){ html+=`<div class="ex"><div class="ex-last" style="color:#999">Мышцы: ${escapeHtml(msum)}</div></div>`; }
+  html+=`<div class="ex">${renderMarkerCells(exId, {marginTop: false})}</div>`;
+  if(!sessions.length){
+    html+=`<div class="ex" style="color:#666">Нет записей для этого упражнения</div>`;
+    document.getElementById('app').innerHTML=html;
+    return;
+  }
+  if(ex.app){
+    html+=`<div class="ex"><strong>По приложению</strong><div class="ex-last">Сессий: ${sessions.length} · последняя: ${sessions[sessions.length-1].date}</div></div>`;
+    html+=`<h2>Все записи</h2>`;
+    sessions.slice().reverse().forEach(s=>{
+      html+=`<div class="ex"><div class="hist-row"><strong>${s.date}</strong><span class="ex-last" style="margin-left:auto">✓</span></div></div>`;
+    });
+    document.getElementById('app').innerHTML=html;
+    return;
+  }
+  let maxW=0,maxR=0,totalTonnage=0,totalSets=0;
+  sessions.forEach(s=>{
+    (s.log.sets||[]).forEach(set=>{
+      if(!set)return;
+      const w=parseFloat(set.w)||0,r=parseFloat(set.r)||0;
+      if(w>maxW)maxW=w;
+      if(r>maxR)maxR=r;
+      if(r>0){totalSets++;if(w>0)totalTonnage+=w*r;}
+    });
+  });
+  const prs=countExercisePRs(exId);
+  html+=`<div class="stats-summary">
+    <div class="stat-card"><div class="stat-val">${maxW} кг</div><div class="stat-lbl">макс. вес</div></div>
+    <div class="stat-card"><div class="stat-val">${maxR}</div><div class="stat-lbl">макс. повторов</div></div>
+    <div class="stat-card"><div class="stat-val">${sessions.length}</div><div class="stat-lbl">сессий</div></div>
+    <div class="stat-card"><div class="stat-val">${Math.round(totalTonnage)} кг</div><div class="stat-lbl">тоннаж за всё время</div></div>
+  </div>`;
+  html+=`<div class="ex"><div class="pr-row" style="margin-bottom:0">
+    <span class="pr-badge pr-weight">🔩 ${prs.w}</span>
+    <span class="pr-badge pr-reps">💪 ${prs.r}</span>
+    <span class="pr-badge pr-max">🎯 ${prs.s}</span>
+  </div></div>`;
+  const recent=sessions.slice(-20);
+  html+=`<h2>Макс. вес по сессиям</h2>`;
+  html+=renderBars(recent.map(s=>({
+    label:s.date.slice(5),
+    value:getExerciseStats(s.log).maxW,
+    title:`${s.date}: ${getExerciseStats(s.log).maxW} кг`,
+  })),{color:'linear-gradient(180deg,#ca6,#a84)'});
+  html+=`<h2>Тоннаж по сессиям</h2>`;
+  html+=renderBars(recent.map(s=>{
+    const st=getExerciseStats(s.log);
+    return { label:s.date.slice(5), value:st.totalVol, title:`${s.date}: ${Math.round(st.totalVol)} кг` };
+  }),{fmt:v=>v>999?Math.round(v/100)/10+'к':v,color:'linear-gradient(180deg,#4a8,#2a5)'});
+  html+=`<h2>Все записи</h2>`;
+  sessions.slice().reverse().slice(0,30).forEach(s=>{
+    const val=formatSets(s.log);
+    const badges=getExerciseBadges(exId,s.log,s.date);
+    html+=`<div class="ex">
+      <div class="hist-row">
+        <strong>${s.date}</strong>
+        <span class="ex-last" style="margin-left:auto">${val}</span>
+      </div>
+      ${badges?`<div class="pr-row" style="margin-top:4px;margin-bottom:0">${badges}</div>`:''}
+    </div>`;
+  });
+  document.getElementById('app').innerHTML=html;
+}
+
+/* ---------- Data backup ---------- */
+function exportData(){
+  let exerciseMarkers = {};
+  try{ exerciseMarkers = JSON.parse(localStorage.getItem('exerciseMarkers')||'{}'); }catch(e){}
+  const data={
+    version:1,
+    exportedAt:new Date().toISOString(),
+    logs:store.logs,
+    customEx:customStore.list,
+    ownPlan:ownPlanStore.get(),
+    planConfigured:localStorage.getItem('planConfigured')==='1',
+    exerciseMarkers:exerciseMarkers,
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const d=new Date();
+  const fname=`trainer-backup-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.json`;
+  a.href=url;
+  a.download=fname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  localStorage.setItem('lastBackupDate',fmt(todayDate()));
+  render();
+}
+function importData(){
+  const input=document.getElementById('import-file');
+  if(!input)return;
+  input.value='';
+  input.click();
+}
+function handleImportFile(ev){
+  const file=ev.target.files&&ev.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      if(!data||typeof data!=='object')throw new Error('файл не JSON-объект');
+      if(!data.logs||typeof data.logs!=='object')throw new Error('в файле нет поля logs');
+      const logsCount=Object.keys(data.logs).length;
+      const customCount=Array.isArray(data.customEx)?data.customEx.length:0;
+      if(!confirm(`Импорт заменит все текущие данные.\n\nВ файле:\n• ${logsCount} дн. логов\n• ${customCount} своих упражнений\n\nПродолжить?`))return;
+      store.logs=data.logs;
+      if(Array.isArray(data.customEx)){
+        customStore.list=data.customEx;
+        syncCustomEx();
+      }
+      if(data.ownPlan){ ownPlanStore.set(data.ownPlan); }
+      if(data.planConfigured){ localStorage.setItem('planConfigured','1'); }
+      if(data.exerciseMarkers && typeof data.exerciseMarkers === 'object'){
+        localStorage.setItem('exerciseMarkers', JSON.stringify(data.exerciseMarkers));
+      }
+      alert('Данные загружены');
+      render();
+    }catch(err){
+      alert('Ошибка чтения файла: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+function resetAll(){
+  if(!confirm('Удалить ВСЕ данные (тренировки и свои упражнения)?'))return;
+  if(!confirm('Точно? Отменить будет невозможно.'))return;
+  localStorage.removeItem('logs');
+  localStorage.removeItem('customEx');
+  localStorage.removeItem('lastBackupDate');
+  localStorage.removeItem('ownPlan');
+  localStorage.removeItem('planConfigured');
+  localStorage.removeItem('exerciseMarkers');
+  localStorage.removeItem('defaultMarkersSeeded_v1');
+  location.reload();
+}
+function renderInstallSection(){
+  if(!deferredPrompt)return '';
+  return `<h2>Приложение</h2>
+  <div class="ex">
+    <div class="ex-last">Установи на главный экран — открывается как обычное приложение, работает офлайн</div>
+    <button class="mini-btn" style="margin-top:8px;background:#2a4a5a;border-color:#3a6a7a" onclick="installPWA()">📲 Установить</button>
+  </div>`;
+}
+function installPWA(){
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(()=>{deferredPrompt=null;render();});
+}
+function renderDataSection(){
+  const last=localStorage.getItem('lastBackupDate');
+  let lastLine;
+  let warn='';
+  if(last){
+    const days=Math.floor((todayDate()-new Date(last+'T00:00:00'))/86400000);
+    lastLine=`Последний бэкап: ${last} (${days===0?'сегодня':days+' дн. назад'})`;
+    if(days>=14)warn=`<div class="ex-last" style="color:#e8a860">⚠️ Пора сделать новый бэкап</div>`;
+  }else{
+    lastLine='Последний бэкап: никогда';
+    warn=`<div class="ex-last" style="color:#e8a860">⚠️ Бэкап ещё не делался</div>`;
+  }
+  return `<h2>Данные</h2>
+  <div class="ex">
+    <div class="ex-last">${lastLine}</div>
+    ${warn}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <button class="mini-btn" style="background:#2a5a2a;border-color:#3a7a3a" onclick="exportData()">💾 Скачать</button>
+      <button class="mini-btn" onclick="importData()">📂 Загрузить</button>
+      <button class="mini-btn" style="background:#5a2a2a;border-color:#7a3a3a" onclick="resetAll()">🗑 Сбросить</button>
+    </div>
+    <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImportFile(event)">
+  </div>`;
+}
+
+/* ---------- Тренер ---------- */
+function renderTrainer(){
+  const { loads, days } = computeAllMuscleLoads();
+  const maxWeights = getMaxWeightByMuscle();
+
+  const planMuscles = new Set();
+  const allPlanExIds = new Set();
+  const own = ownPlanStore.get();
+  
+  if(own && own.enabled){
+    (own.items || []).forEach(it => {
+      allPlanExIds.add(it.id);
+      const ex = EX[it.id];
+      if(ex) getMusclesFromEx(ex).forEach(({ id }) => planMuscles.add(id));
+    });
+    (own.blocks || []).forEach(block => {
+      getBlockExercises(block, own.blocks).forEach(exId => {
+        allPlanExIds.add(exId);
+        if(EX[exId]) getMusclesFromEx(EX[exId]).forEach(({ id }) => planMuscles.add(id));
+      });
+    });
+  }
+
+  let html = renderTabs();
+  html += `<div class="header"><span>Тренер</span></div>`;
+
+  if(!days){
+    html += `<div class="ex" style="color:#888;font-size:13px">
+      Тренер начнёт анализировать, как только появятся первые выполненные упражнения с подходами.
+    </div>`;
+    html += renderTrainerAbout();
+    document.getElementById('app').innerHTML = html;
+    return;
+  }
+
+  const ready=[], moderate=[], high=[], rest=[];
+  Object.entries(loads).forEach(([m, l]) => {
+    if(!(m in MUSCLE_BY_ID)) return;
+    if(l <= LOAD_GREEN) ready.push(m);
+    else if(l <= LOAD_YELLOW) moderate.push(m);
+    else if(l <= LOAD_ORANGE) high.push(m);
+    else rest.push(m);
+  });
+
+  const groupDefs = [
+    {key:'ready',    label:'✅ Готовы к работе',    color:'#6ab06a', muscles: ready},
+    {key:'moderate', label:'🟡 Умеренная усталость', color:'#e8c44d', muscles: moderate},
+    {key:'high',     label:'🟠 Высокая усталость',   color:'#e8a860', muscles: high},
+    {key:'rest',     label:'🔴 Нужен отдых',         color:'#e85a5a', muscles: rest},
+  ];
+  groupDefs.forEach(g => g.muscles.sort((a,b) => (loads[b]||0) - (loads[a]||0)));
+
+  html += `<div class="info">Данных за ${days} дн. Нажмите на группу, чтобы раскрыть список мышц.</div>`;
+
+  groupDefs.forEach(group => {
+    const isExpanded = expandedMuscleGroups.has(group.key);
+    const n = group.muscles.length;
+    const countLabel = n === 0 ? 'пусто' : (n === 1 ? '1 мышца' : (n < 5 ? `${n} мышцы` : `${n} мышц`));
+
+    html += `<div class="muscle-group">
+      <div class="muscle-group-header ${isExpanded?'expanded':''}"
+           style="border-left-color:${group.color}"
+           onclick="toggleMuscleGroup('${group.key}')">
+        <span class="mg-arrow">▸</span>
+        <span>${group.label}</span>
+        <span class="mg-count">${countLabel}</span>
+      </div>
+      <div class="muscle-group-body" id="mg-body-${group.key}"
+           style="max-height:${isExpanded?'5000px':'0'}">
+        ${n === 0
+          ? `<div class="muscle-item" style="justify-content:center;color:#666;font-size:12px">Нет мышц в этой группе</div>`
+          : group.muscles.map(mid => {
+              const load = loads[mid] || 0;
+              const pct = Math.round(load * 100);
+              const color = getLoadColor(load);
+              const name = MUSCLE_BY_ID[mid]?.name || mid;
+              const maxW = maxWeights[mid];
+              const weightStr = maxW ? (Math.round(maxW * 10) / 10) + ' кг' : '—';
+              const inPlan = planMuscles.has(mid);
+              return `<div class="muscle-item">
+                <div class="mi-info">
+                  <span class="mi-name">${escapeHtml(name)}${!inPlan?' <span style="color:#e8a860;font-size:10.5px">(не в плане)</span>':''}</span>
+                  <span class="mi-weight">макс. вес: ${weightStr}</span>
+                  <div class="mi-bar"><div class="mi-bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
+                </div>
+                <span class="mi-pct" style="color:${color}">${pct}%</span>
+              </div>`;
+            }).join('')
+        }
+      </div>
+    </div>`;
+  });
+
+  html += `<h2>Рекомендации</h2>`;
+  const recs = [];
+  if(rest.length){
+    const names = rest.slice(0,6).map(m => MUSCLE_BY_ID[m]?.name || m).join(', ');
+    recs.push(`🔴 Нужен отдых: ${names}${rest.length > 6 ? ' и др.' : ''}`);
+  }
+  if(ready.length){
+    const names = ready.slice(0,6).map(m => MUSCLE_BY_ID[m]?.name || m).join(', ');
+    recs.push(`🟢 Готовы к нагрузке: ${names}${ready.length > 6 ? ' и др.' : ''}`);
+  }
+  const pairs = [['biceps','triceps'],['pectoralis_major','lats'],['fcr','finger_extensors'],['quads','hamstrings']];
+  pairs.forEach(([a,b]) => {
+    if(!(a in loads) || !(b in loads)) return;
+    const diff = Math.abs(loads[a] - loads[b]);
+    if(diff > 0.30){
+      const big = loads[a] > loads[b] ? a : b;
+      const small = loads[a] > loads[b] ? b : a;
+      recs.push(`⚖️ Дисбаланс: ${MUSCLE_BY_ID[big].name} нагружен сильнее, чем ${MUSCLE_BY_ID[small].name} — добавь работу на ${MUSCLE_BY_ID[small].name.toLowerCase()}`);
+    }
+  });
+  
+  const notInPlan = [];
+  MUSCLES.forEach(cat => cat.groups.forEach(g => {
+    if(g.id in MUSCLE_COEF && !planMuscles.has(g.id)) notInPlan.push(g);
+  }));
+
+  if(notInPlan.length){
+    recs.push(`📋 Не задействованы в плане: ${notInPlan.map(g => g.name).join(', ')}`);
+  }
+  if(!recs.length) recs.push('Пока всё сбалансировано — продолжай в том же духе.');
+
+  recs.forEach(r => {
+    html += `<div class="ex" style="font-size:13px;line-height:1.5">${r}</div>`;
+  });
+
+  // ==========================================
+  // БЛОК: Подбор упражнений для легкого дня
+  // ==========================================
+  if (notInPlan.length) {
+    // 1. Считаем загруженность дней по плану
+    const dayCounts = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0};
+    if (own && own.enabled) {
+      (own.items || []).forEach(it => {
+        const sched = it.schedule || {};
+        if (sched.type === 'days') sched.days.forEach(d => dayCounts[d]++);
+        else if (sched.type === 'everyday') [0,1,2,3,4,5,6].forEach(d => dayCounts[d]++);
+        else if (sched.type === 'interval') [0,1,2,3,4,5,6].forEach(d => dayCounts[d] += 7 / (sched.interval || 7));
+        else if (sched.type === 'even') [0,2,4,6].forEach(d => dayCounts[d] += 1.5);
+        else if (sched.type === 'odd') [1,3,5].forEach(d => dayCounts[d] += 1.5);
+      });
+    }
+    // Находим самый легкий день
+    const daysSorted = Object.entries(dayCounts).sort((a,b) => a[1] - b[1]);
+    const lightestDayIdx = parseInt(daysSorted[0][0]);
+    const lightestDayName = DAYS[lightestDayIdx];
+
+    let suggestionHtml = `<h2>💡 Подсказка: что добавить в план</h2>`;
+    suggestionHtml += `<div class="ex" style="font-size:12.5px;color:#aaa;line-height:1.55;margin-bottom:10px">
+      Для незадействованных мышц лучше всего подойдут следующие упражнения. 
+      <strong>Рекомендуем добавить их в ${lightestDayName}</strong> — это день с наименьшей загруженностью в вашем текущем плане.
+    </div>`;
+
+    let hasSuggestions = false;
+    notInPlan.forEach(g => {
+      // Собираем все упражнения для этой мышцы (>=30%), которых нет в плане
+      const validExs = Object.entries(EX)
+        .map(([id, ex]) => ({ id, ex, share: (ex.muscles && ex.muscles[g.id]) || 0 }))
+        .filter(item => item.share >= 30 && !allPlanExIds.has(item.id))
+        .sort((a,b) => b.share - a.share);
+
+      const suggestions = [];
+
+      // Вариант 1: Самое эффективное упражнение (независимо от инвентаря)
+      const bestOverall = validExs[0];
+      if (bestOverall) {
+        suggestions.push(bestOverall);
+      }
+
+      // Вариант 2: Самое эффективное упражнение БЕЗ тренажера/резинки
+      const bestNoEq = validExs.find(item => {
+        const markers = getExerciseMarkers(item.id);
+        return !markers.includes('Тренажер') && !markers.includes('Резинка');
+      });
+
+      // Добавляем второй вариант, только если он отличается от первого
+      if (bestNoEq && (!bestOverall || bestNoEq.id !== bestOverall.id)) {
+        suggestions.push(bestNoEq);
+      }
+
+      if (suggestions.length) {
+        hasSuggestions = true;
+        suggestionHtml += `<div class="ex" style="font-size:13px;margin-bottom:6px">
+          <strong style="color:#ccc">${escapeHtml(g.name)}:</strong><br>
+          ${suggestions.map(e => {
+            const markers = getExerciseMarkers(e.id);
+            const isEq = markers.includes('Тренажер') || markers.includes('Резинка');
+            const note = isEq ? ' <span style="color:#e8a860;font-size:10px">(с инвентарем)</span>' : ' <span style="color:#6ab06a;font-size:10px">(свободный вес / тело)</span>';
+            return `• ${escapeHtml(e.ex.name)} <span style="color:#6ab06a">(${e.share}%)</span>${note}`;
+          }).join('<br>')}
+        </div>`;
+      }
+    });
+
+    if (hasSuggestions) {
+      html += suggestionHtml;
+    }
+  }
+  // ==========================================
+
+  html += renderTrainerAbout();
+  document.getElementById('app').innerHTML = html;
+}
+
+function renderTrainerAbout(){
+  return `<h2>О системе</h2>
+  <div class="ex" style="font-size:12.5px;color:#aaa;line-height:1.55">
+    <p style="margin:0 0 8px"><strong style="color:#ccc">Загруженность</strong> — условная «усталость» мышцы в процентах. После тренировки она растёт, в дни отдыха снижается. Если тренировался два дня подряд — день тренировки не считается днём отдыха, восстановление к нему не применяется.</p>
+    <p style="margin:0 0 8px"><strong style="color:#ccc">Формула начисления:</strong><br>
+        <code>increase = weight_ratio × tonnage_ratio × ${LOAD_FACTOR}</code><br>
+        <span style="color:#888;font-size:11.5px">(доля участия мышцы уже учтена в эффективной нагрузке, по которой считается рекорд)</span><br>
+        где отношения берутся к личным рекордам <strong>этой мышцы</strong>:
+    эффективный вес = вес_упражнения × доля_участия, и сравнивается он с рекордом именно мышцы, а не упражнения.
+    Поэтому новое упражнение не даёт «автоматический рекорд» — мышца должна получить больше, чем когда-либо получала.</p>
+    <p style="margin:0 0 8px"><strong style="color:#ccc">Восстановление в день отдыха:</strong><br>
+    <code>load = max(0, load × recovery_rate − daily_subtraction)</code></p>
+    <p style="margin:0 0 8px"><strong style="color:#ccc">Порог значимости:</strong> если тоннаж сессии меньше ${Math.round(LOAD_THRESHOLD*100)}% от рекорда — нагрузка не начисляется.</p>
+    <p style="margin:0 0 8px"><strong style="color:#ccc">Количество подходов</strong> входит в формулу через тоннаж: <code>tonnage = Σ(weight × reps)</code>. Если рекорд мышцы 800 кг (4×10×20), а сегодня сделал 3×10×20 = 600 кг, то <code>tRatio = 0.75</code> — стимул на 25% меньше. Один подход вместо четырёх при прочих равных даёт <code>tRatio = 0.25 &lt; ${LOAD_THRESHOLD}</code> — нагрузка не начисляется. Поэтому делать всю запланированную работу выгоднее, чем «отсидеться».</p>
+    <p style="margin:0"><strong style="color:#ccc">Цвета:</strong><br>
+    🟢 0–${Math.round(LOAD_GREEN*100)}% — восстановлена, можно тяжёлую работу<br>
+    🟡 ${Math.round(LOAD_GREEN*100)}–${Math.round(LOAD_YELLOW*100)}% — умеренная усталость<br>
+    🟠 ${Math.round(LOAD_YELLOW*100)}–${Math.round(LOAD_ORANGE*100)}% — только лёгкая сессия<br>
+    🔴 &gt;${Math.round(LOAD_ORANGE*100)}% — нужен отдых</p>
+  </div>`;
+}
+
+/* ---------- Онбординг / конструктор плана ---------- */
+let onbPlan = {items: [], blocks: []};
+let onbAdding = false;
+let onbAddType = 'existing';
+let onbAddSchedType = 'days';
+let onbEditingIdx = null;
+let onbAddingBlock = false;
+let blockEditPath = [];
+let prevView = null;
+let addExistingSelectedId = '';
+let editingChildIdx = null;
+
+function needsOnboarding(){
+  if(localStorage.getItem('planConfigured')) return false;
+  return Object.keys(store.logs).length === 0;
+}
+
+function loadOnbPlanFromStore(){
+  const own = ownPlanStore.get();
+  let items = (own && own.items) ? JSON.parse(JSON.stringify(own.items)).filter(it => EX[it.id]) : [];
+  let blocks = (own && own.blocks) ? JSON.parse(JSON.stringify(own.blocks)) : [];
+  if(items.length === 0 && blocks.length === 0){
+    items = customStore.list
+      .filter(c => !c.deleted && c.schedule && c.schedule.type !== 'none')
+      .map(c => ({ id: c.id, schedule: { ...c.schedule }, disabled: null }));
+  }
+  onbPlan = { items, blocks };
+  onbEditingIdx = null;
+  onbAdding = false;
+  onbAddingBlock = false;
+  editingChildIdx = null;
+  const validPath = [];
+  for (const id of blockEditPath) {
+    if (blocks.some(b => b.id === id)) validPath.push(id);
+    else break;
+  }
+  blockEditPath = validPath;
+}
+function saveOnbPlanToStore(){
+  ownPlanStore.set({ enabled: true, items: onbPlan.items, blocks: onbPlan.blocks || [] });
+  localStorage.setItem('planConfigured', '1');
+}
+
+function isCustomDirty(){
+  const stored = ownPlanStore.get();
+  const currItemsStr = JSON.stringify(onbPlan.items || []);
+  const currBlocksStr = JSON.stringify(onbPlan.blocks || []);
+  if(!stored) return (onbPlan.items||[]).length > 0 || (onbPlan.blocks||[]).length > 0;
+  const storedItemsStr = JSON.stringify(stored.items || []);
+  const storedBlocksStr = JSON.stringify(stored.blocks || []);
+  return storedItemsStr !== currItemsStr || storedBlocksStr !== currBlocksStr;
+}
+
+function hasPendingAddData(){
+  if(!onbAdding) return false;
+  if(onbAddType === 'existing'){
+    return !!addExistingSelectedId;
+  }else{
+    const nameEl = document.getElementById('addNewName');
+    if(nameEl && nameEl.value.trim()) return true;
+    const anyMuscle = document.querySelector('.addNewMuscle-chk:checked');
+    return !!anyMuscle;
+  }
+}
+
+/* ---------- Block helpers ---------- */
+function getCurrentBlock() {
+  if (!blockEditPath.length) return null;
+  const id = blockEditPath[blockEditPath.length - 1];
+  return (onbPlan.blocks || []).find(b => b.id === id) || null;
+}
+
+function isTopLevelBlockLocal(blockId){
+  return !(onbPlan.blocks || []).some(b =>
+    b.id !== blockId && (b.children || []).some(c => c.type === 'block' && c.id === blockId)
+  );
+}
+
+function getTopLevelBlocksLocal() {
+  const all = onbPlan.blocks || [];
+  const referenced = new Set();
+  all.forEach(b => {
+    (b.children || []).forEach(c => {
+      if (c.type === 'block') referenced.add(c.id);
+    });
+  });
+  return all.filter(b => !referenced.has(b.id));
+}
+
+function enterBlock(blockId) {
+  blockEditPath.push(blockId);
+  editingChildIdx = null;
+  render();
+}
+
+function goToBreadcrumb(index) {
+  blockEditPath = blockEditPath.slice(0, index);
+  editingChildIdx = null;
+  render();
+}
+
+function blockNameExists(name, excludeId){
+  return (onbPlan.blocks || []).some(b => b.id !== excludeId && b.name === name);
+}
+
+function createBlockInCurrent() {
+  let n = 1;
+  let name;
+  do {
+    name = 'Блок ' + n;
+    n++;
+  } while (blockNameExists(name));
+  const newBlock = {
+    id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name,
+    schedule: { type: 'none' },
+    disabled: null,
+    children: []
+  };
+  if (!onbPlan.blocks) onbPlan.blocks = [];
+  onbPlan.blocks.push(newBlock);
+  if (blockEditPath.length) {
+    const current = getCurrentBlock();
+    if (current) {
+      current.children = current.children || [];
+      current.children.push({ type: 'block', id: newBlock.id, activeWithParent: true });
+    }
+  }
+  enterBlock(newBlock.id);
+}
+
+function deleteBlockById(blockId) {
+  const block = (onbPlan.blocks || []).find(b => b.id === blockId);
+  if (!block) return;
+  if (!confirm(`Удалить блок «${block.name}»?`)) return;
+  const toDelete = new Set([blockId]);
+  const collect = (id) => {
+    const b = (onbPlan.blocks || []).find(x => x.id === id);
+    if (!b) return;
+    (b.children || []).forEach(c => {
+      if (c.type === 'block') {
+        toDelete.add(c.id);
+        collect(c.id);
+      }
+    });
+  };
+  collect(blockId);
+  (onbPlan.blocks || []).forEach(b => {
+    b.children = (b.children || []).filter(c => !(c.type === 'block' && toDelete.has(c.id)));
+  });
+  const remainingRefs = new Set();
+  (onbPlan.blocks || []).forEach(b => {
+    if (toDelete.has(b.id)) return;
+    (b.children || []).forEach(c => {
+      if (c.type === 'block') remainingRefs.add(c.id);
+    });
+  });
+  onbPlan.blocks = (onbPlan.blocks || []).filter(b => {
+    if (!toDelete.has(b.id)) return true;
+    return remainingRefs.has(b.id);
+  });
+  const idx = blockEditPath.findIndex(id => toDelete.has(id));
+  if (idx >= 0) {
+    blockEditPath = blockEditPath.slice(0, idx);
+  }
+  editingChildIdx = null;
+  render();
+}
+
+function removeChildAt(idx) {
+  const block = getCurrentBlock();
+  if (!block) return;
+  block.children = (block.children || []).filter((_, i) => i !== idx);
+  editingChildIdx = null;
+  render();
+}
+
+function getEligibleBlocksForCurrent() {
+  const currentBlock = getCurrentBlock();
+  if (!currentBlock) return [];
+  const ancestors = new Set(blockEditPath);
+  const allBlocks = onbPlan.blocks || [];
+  return allBlocks.filter(b => {
+    if (ancestors.has(b.id)) return false;
+    const descendants = getBlockDescendantIds(allBlocks, b.id);
+    if (descendants.includes(currentBlock.id)) return false;
+    return true;
+  });
+}
+
+function showAddExistingBlock() {
+  onbAddingBlock = true;
+  render();
+}
+function cancelAddExistingBlock() {
+  onbAddingBlock = false;
+  render();
+}
+function addExistingBlockToCurrent(blockId) {
+  const current = getCurrentBlock();
+  if (!current) return;
+  if (!current.children) current.children = [];
+  current.children.push({ type: 'block', id: blockId, activeWithParent: true });
+  onbAddingBlock = false;
+  render();
+}
+
+function renameCurrentBlock(value) {
+  const block = getCurrentBlock();
+  if (!block) return;
+  block.name = value;
+  const warnEl = document.getElementById('blkNameWarn');
+  if (warnEl) {
+    const dup = value.trim() && blockNameExists(value.trim(), block.id);
+    warnEl.style.display = dup ? 'block' : 'none';
+  }
+}
+
+function updateCurrentBlockSchedule() {
+  const block = getCurrentBlock();
+  if (!block) return;
+  const schedType = document.querySelector('input[name="blkSched"]:checked').value;
+  const startDate = document.getElementById('blkStart').value || fmt(todayDate());
+  const isTop = isTopLevelBlockLocal(block.id);
+  let schedule;
+  if (schedType === 'delayAfterParent' && isTop) {
+    schedule = { type: 'none', startDate };
+  } else if (schedType === 'days') {
+    const days = [...document.querySelectorAll('.blk-day:checked')].map(el => parseInt(el.value));
+    schedule = { type: 'days', days, startDate };
+  } else if (schedType === 'interval') {
+    const interval = parseInt(document.getElementById('blkIntervalVal').value) || 3;
+    schedule = { type: 'interval', interval, startDate };
+  } else if (schedType === 'delayAfterParent') {
+    const delayDays = parseInt(document.getElementById('blkDelayVal').value) || 2;
+    schedule = { type: 'delayAfterParent', delayDays, startDate };
+  } else {
+    schedule = { type: schedType, startDate };
+  }
+  block.schedule = schedule;
+  render();
+}
+
+/* ---------- Child schedule editor ---------- */
+function renderChildScheduleEditor(child, prefix, isBlock) {
+  const schedule = isBlock
+    ? (child.scheduleOverride || { type: 'none' })
+    : (child.schedule || { type: 'none' });
+  const activeWithParent = child.activeWithParent !== false;
+  const days = schedule.days || [];
+  const interval = schedule.interval || 3;
+  const delayDays = schedule.delayDays || 2;
+  const schedType = schedule.type || 'none';
+
+  const scheduleOptions = [
+    ['none', 'Без'],
+    ['days', 'Дни'],
+    ['interval', 'Раз в N'],
+    ['even', 'Чётные'],
+    ['odd', 'Нечётные'],
+    ['everyday', 'Каждый'],
+    ['delayAfterParent', 'Через N после родителя']
+  ];
+
+  return `
+    <label class="day-chk" style="margin:0 0 8px">
+      <input type="checkbox" class="${prefix}-awp" ${activeWithParent ? 'checked' : ''}>
+      Активен вместе с материнским
+    </label>
+    <div style="font-size:12px;color:#888;margin:4px 0">Расписание:</div>
+    <div class="form-row" style="gap:8px">
+      ${scheduleOptions.map(([val, lbl]) =>
+        `<label><input type="radio" name="${prefix}-sched" value="${val}" ${schedType === val ? 'checked' : ''} onchange="updateChildSchedUI('${prefix}','${val}')"> ${lbl}</label>`
+      ).join('')}
+    </div>
+    <div id="${prefix}-days" style="display:${schedType === 'days' ? 'block' : 'none'}">
+      ${WEEK_ORDER.map(d => `<label class="day-chk"><input type="checkbox" class="${prefix}-day" value="${d}" ${days.includes(d) ? 'checked' : ''}> ${DAYS[d]}</label>`).join('')}
+    </div>
+    <div id="${prefix}-interval" style="display:${schedType === 'interval' ? 'block' : 'none'};margin-top:6px">
+      <input type="number" class="${prefix}-interval-val" value="${interval}" min="1" placeholder="Раз в N дней" style="width:100%;background:#111;border:1px solid #333;color:#e8e8e8;padding:6px 9px;border-radius:6px;font-size:13px">
+    </div>
+    <div id="${prefix}-delay" style="display:${schedType === 'delayAfterParent' ? 'block' : 'none'};margin-top:6px">
+      <input type="number" class="${prefix}-delay-val" value="${delayDays}" min="1" placeholder="Через N дней после активации родителя" style="width:100%;background:#111;border:1px solid #333;color:#e8e8e8;padding:6px 9px;border-radius:6px;font-size:13px">
+    </div>
+  `;
+}
+
+function updateChildSchedUI(prefix, type) {
+  const d = document.getElementById(prefix + '-days');
+  const i = document.getElementById(prefix + '-interval');
+  const dl = document.getElementById(prefix + '-delay');
+  if (d) d.style.display = type === 'days' ? 'block' : 'none';
+  if (i) i.style.display = type === 'interval' ? 'block' : 'none';
+  if (dl) dl.style.display = type === 'delayAfterParent' ? 'block' : 'none';
+}
+
+function readChildSchedule(prefix) {
+  const typeEl = document.querySelector(`input[name="${prefix}-sched"]:checked`);
+  const type = typeEl ? typeEl.value : 'none';
+  const awpEl = document.querySelector(`.${prefix}-awp`);
+  const activeWithParent = awpEl ? awpEl.checked : true;
+  let schedule = { type };
+  if (type === 'days') {
+    schedule.days = [...document.querySelectorAll(`.${prefix}-day:checked`)].map(el => parseInt(el.value));
+  } else if (type === 'interval') {
+    const el = document.querySelector(`.${prefix}-interval-val`);
+    schedule.interval = parseInt(el && el.value) || 3;
+  } else if (type === 'delayAfterParent') {
+    const el = document.querySelector(`.${prefix}-delay-val`);
+    schedule.delayDays = parseInt(el && el.value) || 2;
+  }
+  return { schedule, activeWithParent };
+}
+
+/* ---------- Child edit handlers ---------- */
+function onEditChild(idx) { editingChildIdx = idx; render(); }
+function onCancelChildEdit() { editingChildIdx = null; render(); }
+function onSaveChildEdit(idx) {
+  const block = getCurrentBlock();
+  if (!block) return;
+  const child = block.children[idx];
+  if (!child) return;
+  const prefix = 'ce' + idx;
+  const { schedule, activeWithParent } = readChildSchedule(prefix);
+  child.activeWithParent = activeWithParent;
+  if (child.type === 'exercise') {
+    child.schedule = schedule;
+  } else {
+    child.scheduleOverride = (schedule.type === 'none') ? null : schedule;
+  }
+  editingChildIdx = null;
+  render();
+}
+
+function renderChildEditForm(child, idx) {
+  const isBlock = child.type === 'block';
+  const name = isBlock
+    ? ((onbPlan.blocks || []).find(b => b.id === child.id)?.name || 'блок')
+    : (EX[child.id]?.name || 'упражнение');
+  return `<div class="child-settings">
+    <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Настройки: ${escapeHtml(name)}</div>
+    ${renderChildScheduleEditor(child, 'ce' + idx, isBlock)}
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="mini-btn" style="flex:1" onclick="onCancelChildEdit()">Отмена</button>
+      <button class="mini-btn" style="flex:2;background:#2a5a2a;border-color:#3a7a3a" onclick="onSaveChildEdit(${idx})">Сохранить</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- Add exercise logic ---------- */
+function attemptAddExercise(){
+  let id, newEx = null;
+  let overrideSets = null;
+  let newMarkers = [];
+
+  if(onbAddType === 'existing'){
+    id = addExistingSelectedId;
+    if(!id){alert('Выберите упражнение из списка');return false;}
+    const setsEl = document.getElementById('addExistingSets');
+    const setsVal = setsEl ? parseInt(setsEl.value) : NaN;
+    if(Number.isFinite(setsVal) && setsVal > 0) overrideSets = setsVal;
+  }else{
+    const nameEl = document.getElementById('addNewName');
+    if(!nameEl){return false;}
+    const name = nameEl.value.trim();
+    if(!name){alert('Введите название');return false;}
+
+    const loads = getMuscleLoads('addNewMuscle');
+    if(Object.keys(loads).length === 0){
+      alert('Выберите хотя бы одну мышцу');
+      return false;
+    }
+    const muscles = computePercents(loads);
+
+    const app = document.querySelector('input[name="addNewType"]:checked').value === 'app';
+    const setsEl = document.getElementById('addNewSets');
+    const repsEl = document.getElementById('addNewReps');
+    const sets = setsEl ? (parseInt(setsEl.value)||4) : 4;
+    const reps = repsEl ? (repsEl.value.trim()||'12-15') : '12-15';
+    const markersEl = document.getElementById('addNewMarkers');
+    newMarkers = parseMarkers(markersEl ? markersEl.value : '');
+    id = 'c' + Date.now().toString(36);
+    newEx = { id, name, app, sets, reps, muscles, loads, schedule: { type: 'none' } };
+  }
+
+  if (blockEditPath.length) {
+    const block = getCurrentBlock();
+    if (!block) return false;
+    const dup = (block.children || []).some(c => c.type === 'exercise' && c.id === id);
+    if (dup) { alert('Это упражнение уже есть в блоке'); return false; }
+  } else {
+    if (onbPlan.items.some(it => it.id === id)) {
+      alert('Это упражнение уже есть в плане'); return false;
+    }
+  }
+
+  if (newEx) {
+    const list = customStore.list;
+    list.push(newEx);
+    customStore.list = list;
+    syncCustomEx();
+    if (newMarkers.length) setExerciseMarkers(id, newMarkers);
+  }
+
+  if (blockEditPath.length) {
+    const block = getCurrentBlock();
+    if (block) {
+      block.children = block.children || [];
+      const child = { type: 'exercise', id, activeWithParent: true, schedule: { type: 'none' } };
+      if (overrideSets) child.sets = overrideSets;
+      try {
+        const { schedule, activeWithParent } = readChildSchedule('addChildSched');
+        child.schedule = schedule;
+        child.activeWithParent = activeWithParent;
+      } catch(e) {}
+      block.children.push(child);
+    }
+  } else {
+    const startEl = document.getElementById('addStart');
+    const startDate = (startEl && startEl.value) || fmt(todayDate());
+    let schedule;
+    if (onbAddSchedType === 'days') {
+      const days = [...document.querySelectorAll('.add-day:checked')].map(el => parseInt(el.value));
+      if (!days.length) { alert('Выберите хотя бы один день'); return false; }
+      schedule = { type: 'days', days, startDate };
+    } else if (onbAddSchedType === 'interval') {
+      const intEl = document.getElementById('addInterval');
+      schedule = { type: 'interval', interval: parseInt(intEl && intEl.value) || 3, startDate };
+    } else {
+      schedule = { type: onbAddSchedType, startDate };
+    }
+    const newItem = { id, schedule, disabled: null };
+    if (overrideSets) newItem.sets = overrideSets;
+    onbPlan.items.push(newItem);
+  }
+
+  return true;
+}
+
+function onbShowAdd(){
+  onbAdding = true;
+  onbEditingIdx = null;
+  onbAddingBlock = false;
+  editingChildIdx = null;
+  onbAddType = 'existing';
+  onbAddSchedType = 'days';
+  addExistingSelectedId = '';
+  render();
+  setTimeout(() => {
+    const s = document.getElementById('addExistingSearch');
+    if(s) s.focus();
+  }, 50);
+}
+function onbCancelAdd(){onbAdding = false;render()}
+function onbSetAddType(t){
+  onbAddType = t;
+  document.getElementById('addExistingBlock').style.display = t === 'existing' ? 'block' : 'none';
+  document.getElementById('addNewBlock').style.display = t === 'new' ? 'block' : 'none';
+  if(t === 'existing'){
+    updateAddExistingPreview();
+  }
+}
+function onbSetSched(t){
+  onbAddSchedType = t;
+  document.getElementById('addDaysBlock').style.display = t === 'days' ? 'block' : 'none';
+  document.getElementById('addIntervalBlock').style.display = t === 'interval' ? 'block' : 'none';
+}
+
+function getExSearchInfo(exId, ex){
+  const muscleNames = [];
+  const sectionSet = new Set();
+  Object.keys(ex.muscles || {}).forEach(mid => {
+    const m = MUSCLE_BY_ID[mid];
+    if(m) muscleNames.push(m.name);
+    const sec = MUSCLE_SECTION[mid];
+    if(sec) sectionSet.add(sec.name);
+  });
+  const markers = exId ? getExerciseMarkers(exId) : [];
+  return { muscleNames, sectionNames: [...sectionSet], markers };
+}
+
+function matchExercise(exId, ex, q){
+  const info = getExSearchInfo(exId, ex);
+  if(!q) return { ok: true, byName: false, byMuscle: false, bySection: false, byMarker: false, info };
+  const ql = q.toLowerCase();
+  const byName = ex.name.toLowerCase().includes(ql);
+  const byMuscle = info.muscleNames.some(m => m.toLowerCase().includes(ql));
+  const bySection = info.sectionNames.some(s => s.toLowerCase().includes(ql));
+  const byMarker = info.markers.some(m => m.toLowerCase().includes(ql));
+  return { ok: byName || byMuscle || bySection || byMarker, byName, byMuscle, bySection, byMarker, info };
+}
+
+function highlightMatch(text, q, color){
+  if(!q) return escapeHtml(text);
+  const ql = q.toLowerCase();
+  const lower = text.toLowerCase();
+  let result = '';
+  let i = 0;
+  while(true){
+    const idx = lower.indexOf(ql, i);
+    if(idx < 0){ result += escapeHtml(text.slice(i)); break; }
+    result += escapeHtml(text.slice(i, idx));
+    result += `<span style="background:${color}33;color:${color};border-radius:2px;padding:0 1px">${escapeHtml(text.slice(idx, idx + ql.length))}</span>`;
+    i = idx + ql.length;
+  }
+  return result;
+}
+
+function renderAddExistingRow(id, name, isSel, q, match){
+  const bg = isSel ? '#1a3a1a' : '#141414';
+  const bd = isSel ? '#4a7a4a' : '#262626';
+  const fg = isSel ? '#9f9' : '#ddd';
+  const nameHtml = (match && match.byName) ? highlightMatch(name, q, '#f0c860') : escapeHtml(name);
+
+  let infoLine = '';
+  if(match && match.info){
+    const { muscleNames, sectionNames, markers } = match.info;
+    const ql = q ? q.toLowerCase() : '';
+    const parts = [];
+    if(muscleNames.length){
+      parts.push(muscleNames.map(mn => {
+        if(ql && match.byMuscle && mn.toLowerCase().includes(ql)){
+          return `<span style="background:#7cc0e833;color:#7cc0e8;border-radius:2px;padding:0 2px">${escapeHtml(mn)}</span>`;
+        }
+        return escapeHtml(mn);
+      }).join(', '));
+    }
+    if(sectionNames.length){
+      const secHtml = sectionNames.map(sn => {
+        if(ql && match.bySection && sn.toLowerCase().includes(ql)){
+          return `<span style="background:#c090e033;color:#c090e0;border-radius:2px;padding:0 2px">${escapeHtml(sn)}</span>`;
+        }
+        return escapeHtml(sn);
+      }).join(', ');
+      parts.push(`<span style="color:#555">·</span> ${secHtml}`);
+    }
+    if(parts.length){
+      infoLine += `<div style="font-size:10.5px;color:#6a6a6a;margin-top:3px;line-height:1.35">${parts.join(' ')}</div>`;
+    }
+    if(markers && markers.length){
+      infoLine += `<div style="margin-top:3px">${markersChipsHtml(markers, q)}</div>`;
+    }
+  }
+
+  return `<div onclick="selectAddExisting('${id}')" data-id="${id}"
+    style="padding:8px 11px;background:${bg};border:1px solid ${bd};border-radius:5px;margin-bottom:4px;cursor:pointer;font-size:13px;line-height:1.3;color:${fg}">
+    <div><span class="check-mark" style="display:${isSel ? 'inline' : 'none'}">✓ </span>${nameHtml}</div>
+    ${infoLine}
+  </div>`;
+}
+
+function updateAddExistingPreview(){
+  const el = document.getElementById('addExistingPreview');
+  if(!el) return;
+  const ex = addExistingSelectedId ? EX[addExistingSelectedId] : null;
+  const summary = ex ? muscleSummary(ex.muscles) : '';
+  const markers = addExistingSelectedId ? getExerciseMarkers(addExistingSelectedId) : [];
+  let html = '';
+  if(summary) html += '✓ ' + escapeHtml(summary);
+  if(markers.length){
+    if(html) html += '<br>';
+    html += markersChipsHtml(markers);
+  }
+  el.innerHTML = html;
+  el.style.color = ex ? '#6ab06a' : '#888';
+}
+
+function filterAddExistingList(){
+  const search = document.getElementById('addExistingSearch');
+  const list   = document.getElementById('addExistingList');
+  const count  = document.getElementById('addExistingCount');
+  if(!search || !list) return;
+
+  const q = search.value.trim();
+  const results = [];
+  sortedExerciseEntries().forEach(([id, ex]) => {
+    const m = matchExercise(id, ex, q);
+    if(m.ok) results.push({ id, ex, match: m });
+  });
+
+  if(count){
+    if(!q) count.textContent = `Всего упражнений: ${results.length}`;
+    else if(!results.length) count.textContent = 'Ничего не найдено';
+    else if(results.length === 1) count.textContent = '1 совпадение';
+    else count.textContent = `Найдено: ${results.length}`;
+  }
+
+  if(!results.length){
+    list.innerHTML = '<div style="padding:14px;color:#666;font-size:13px;text-align:center">Ничего не найдено</div>';
+    addExistingSelectedId = '';
+    updateAddExistingPreview();
+    return;
+  }
+
+  if(results.length === 1){
+    addExistingSelectedId = results[0].id;
+  } else if(addExistingSelectedId && !results.some(r => r.id === addExistingSelectedId)){
+    addExistingSelectedId = '';
+  }
+
+  list.innerHTML = results.map(r =>
+    renderAddExistingRow(r.id, r.ex.name, r.id === addExistingSelectedId, q, r.match)
+  ).join('');
+
+  updateAddExistingPreview();
+}
+
+function selectAddExisting(id){
+  addExistingSelectedId = id;
+  const list = document.getElementById('addExistingList');
+  if(list){
+    list.querySelectorAll('div[data-id]').forEach(row => {
+      const rowId = row.dataset.id;
+      const isSel = rowId === id;
+      row.style.background = isSel ? '#1a3a1a' : '#141414';
+      row.style.borderColor = isSel ? '#4a7a4a' : '#262626';
+      row.style.color = isSel ? '#9f9' : '#ddd';
+      const check = row.querySelector('.check-mark');
+      if(check) check.style.display = isSel ? 'inline' : 'none';
+    });
+  }
+  updateAddExistingPreview();
+}
+
+function onbRemoveItem(idx){
+  const item = onbPlan.items[idx];
+  const ex = item ? EX[item.id] : null;
+  const name = ex ? ex.name : 'упражнение';
+  if(!confirm(`Удалить «${name}» из плана?`)) return;
+  onbPlan.items.splice(idx, 1);
+  onbEditingIdx = null;
+  render();
+}
+function onbShowEdit(idx){
+  onbEditingIdx = idx;
+  onbAdding = false;
+  onbAddingBlock = false;
+  editingChildIdx = null;
+  render();
+}
+function onbCancelEdit(){
+  onbEditingIdx = null;
+  render();
+}
+function onbSaveEdit(idx){
+  const item = onbPlan.items[idx];
+  if(!item) return;
+
+  const schedType = document.querySelector('input[name="peSched"]:checked').value;
+  const startDate = document.getElementById('peStart').value || fmt(todayDate());
+  let schedule;
+  if(schedType === 'days'){
+    const days = [...document.querySelectorAll('.pe-day:checked')].map(el => parseInt(el.value));
+    if(!days.length){alert('Выберите хотя бы один день');return}
+    schedule = { type:'days', days, startDate };
+  }else if(schedType === 'interval'){
+    schedule = { type:'interval', interval: parseInt(document.getElementById('peIntervalVal').value)||3, startDate };
+  }else{
+    schedule = { type:schedType, startDate };
+  }
+
+  const wasDisabled = !!isCurrentlyDisabled(item);
+  const willBeDisabled = document.getElementById('peDisChk').checked;
+  const reason = document.getElementById('peDisReason').value.trim();
+  const until = document.getElementById('peDisUntil').value || null;
+  const today = fmt(todayDate());
+  const yesterday = fmt(new Date(todayDate().getTime() - 86400000));
+
+  let disabled = item.disabled ? JSON.parse(JSON.stringify(item.disabled)) : null;
+
+  if(willBeDisabled && !wasDisabled){
+    if(!reason){alert('Укажите причину отключения');return}
+    if(until && until < today){alert('Дата должна быть не раньше сегодня');return}
+    const entry = { reason, from: today, until: until };
+    if(!disabled) disabled = [];
+    disabled.push(entry);
+  }else if(!willBeDisabled && wasDisabled){
+    const arr = Array.isArray(disabled) ? disabled : [disabled];
+    disabled = arr.map(p => {
+      if(p.from <= today && (!p.until || p.until >= today)){
+        if(p.from > yesterday) return null;
+        return { ...p, until: yesterday };
+      }
+      return p;
+    }).filter(Boolean);
+    if(!disabled.length) disabled = null;
+  }else if(willBeDisabled && wasDisabled){
+    if(!reason){alert('Укажите причину отключения');return}
+    if(until && until < today){alert('Дата должна быть не раньше сегодня');return}
+    const arr = Array.isArray(disabled) ? disabled : [disabled];
+    disabled = arr.map(p => {
+      if(p.from <= today && (!p.until || p.until >= today)){
+        return { ...p, reason, until };
+      }
+      return p;
+    });
+  }
+
+  const setsEl = document.getElementById('peSets');
+  const setsVal = setsEl ? parseInt(setsEl.value) : NaN;
+  const newItem = { ...item, schedule, disabled };
+  if(Number.isFinite(setsVal) && setsVal > 0) newItem.sets = setsVal;
+  else delete newItem.sets;
+  onbPlan.items[idx] = newItem;
+  onbEditingIdx = null;
+  render();
+}
+
+function renderAddForm(){
+  const isBlockContext = blockEditPath.length > 0;
+  const daysChecks = WEEK_ORDER.map(d =>
+    `<label class="day-chk"><input type="checkbox" class="add-day" value="${d}"> ${DAYS[d]}</label>`
+  ).join('');
+
+  let childScheduleSection = '';
+  if(isBlockContext){
+    childScheduleSection = `
+      <div style="font-size:12px;color:#888;margin:10px 0 4px;padding-top:8px;border-top:1px solid #2a2a2a">Настройки для этого блока:</div>
+      ${renderChildScheduleEditor({type:'exercise', id:'', activeWithParent:true, schedule:{type:'none'}}, 'addChildSched', false)}
+    `;
+  }
+
+  const scheduleSection = isBlockContext ? '' : `
+    <div style="font-size:13px;color:#ccc;margin:10px 0 6px">Расписание:</div>
+    <div class="form-row">
+      <label><input type="radio" name="addSched" value="days" ${onbAddSchedType==='days'?'checked':''} onchange="onbSetSched('days')"> Дни недели</label>
+      <label><input type="radio" name="addSched" value="interval" ${onbAddSchedType==='interval'?'checked':''} onchange="onbSetSched('interval')"> Раз в N</label>
+      <label><input type="radio" name="addSched" value="even" ${onbAddSchedType==='even'?'checked':''} onchange="onbSetSched('even')"> Чётные</label>
+      <label><input type="radio" name="addSched" value="odd" ${onbAddSchedType==='odd'?'checked':''} onchange="onbSetSched('odd')"> Нечётные</label>
+      <label><input type="radio" name="addSched" value="everyday" ${onbAddSchedType==='everyday'?'checked':''} onchange="onbSetSched('everyday')"> Каждый день</label>
+    </div>
+    <div id="addDaysBlock" style="display:${onbAddSchedType==='days'?'block':'none'}">${daysChecks}</div>
+    <div id="addIntervalBlock" style="display:${onbAddSchedType==='interval'?'block':'none'}">
+      <input type="number" id="addInterval" class="form-input" value="3" min="1" placeholder="Раз в N дней">
+    </div>
+    <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
+    <input type="date" id="addStart" class="form-input" value="${fmt(todayDate())}">
+  `;
+
+  return `
+    <div class="ex" style="margin-top:10px">
+      <div class="form-row">
+        <label><input type="radio" name="addType" value="existing" ${onbAddType==='existing'?'checked':''} onchange="onbSetAddType('existing')"> Существующее</label>
+        <label><input type="radio" name="addType" value="new" ${onbAddType==='new'?'checked':''} onchange="onbSetAddType('new')"> Новое</label>
+      </div>
+      <div id="addExistingBlock" style="display:${onbAddType==='existing'?'block':'none'}">
+        <input type="text" id="addExistingSearch" class="form-input"
+               placeholder="Поиск: название, метка, мышца…" autocomplete="off"
+               oninput="filterAddExistingList()">
+        <div id="addExistingCount" style="color:#6ab0ff;font-size:12px;margin:-2px 0 6px"></div>
+        <div id="addExistingList" style="max-height:320px;overflow-y:auto;margin-bottom:8px">
+          ${sortedExerciseEntries().map(([id, ex]) => {
+            const m = matchExercise(id, ex, '');
+            return renderAddExistingRow(id, ex.name, id === addExistingSelectedId, '', m);
+          }).join('')}
+        </div>
+        <div id="addExistingPreview" class="ex-last" style="margin-top:-4px;color:#888"></div>
+        <div style="margin-top:8px">
+          <div style="font-size:12px;color:#888;margin:6px 0 4px">Количество подходов (пусто = по умолчанию):</div>
+          <input type="number" id="addExistingSets" class="form-input" min="1" max="20" placeholder="напр. 4">
+        </div>
+      </div>
+      <div id="addNewBlock" style="display:${onbAddType==='new'?'block':'none'}">
+        <input type="text" id="addNewName" class="form-input" placeholder="Название упражнения">
+        <div class="form-row">
+          <label><input type="radio" name="addNewType" value="sets" checked onchange="document.getElementById('addNewSetsBlock').style.display='block'"> Подходы</label>
+          <label><input type="radio" name="addNewType" value="app" onchange="document.getElementById('addNewSetsBlock').style.display='none'"> По приложению</label>
+        </div>
+        <div id="addNewSetsBlock">
+          <input type="number" id="addNewSets" class="form-input" value="4" min="1" placeholder="Количество подходов">
+          <input type="text" id="addNewReps" class="form-input" value="12-15" placeholder="Повторения">
+        </div>
+        <div style="font-size:12px;color:#888;margin:8px 0 4px">Метки (через запятую, необязательно):</div>
+        <input type="text" id="addNewMarkers" class="form-input" placeholder="напр. база, жим, домашние">
+        <div style="font-size:12px;color:#888;margin:8px 0 4px">Мышцы (обязательно хотя бы одна):</div>
+        ${renderMusclePicker({},'addNewMuscle')}
+      </div>
+      ${childScheduleSection}
+      ${scheduleSection}
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="mini-btn" style="flex:1" onclick="onbCancelAdd()">Отмена</button>
+        <button class="mini-btn" style="flex:2;background:#2a5a2a;border-color:#3a7a3a" onclick="onbConfirmAdd()">Добавить</button>
+      </div>
+    </div>`;
+}
+function onbConfirmAdd(){
+  if(attemptAddExercise()){
+    onbAdding = false;
+    render();
+  }
+}
+
+function renderPlanEditForm(item, idx){
+  const ex = EX[item.id];
+  if(!ex) return '';
+  const sched = item.schedule || {};
+  const schedType = sched.type || 'days';
+  const days = sched.days || [];
+  const interval = sched.interval || 3;
+  const startDate = sched.startDate || fmt(todayDate());
+  const plannedSets = (Number.isFinite(item.sets) && item.sets > 0) ? item.sets : (ex.sets || 4);
+  const currentDis = isCurrentlyDisabled(item);
+  const isDis = !!currentDis;
+  const disReason = currentDis ? (currentDis.reason || '') : '';
+  const disUntil = currentDis ? (currentDis.until || '') : '';
+  const disFrom = currentDis ? currentDis.from : '';
+  const msum = muscleSummary(ex.muscles);
+
+  const toggle = `var f=document.getElementById('peDisFields');f.style.display=this.checked?'block':'none';`;
+  const schedToggle = `var d=document.getElementById('peDays'),i=document.getElementById('peInterval');`;
+
+  return `<div class="ex" style="border-color:#3a5a3a;background:#152515;margin-top:6px;margin-bottom:8px">
+    <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Редактирование: ${escapeHtml(ex.name)}</div>
+    ${msum ? `<div class="psched" style="color:#666;margin-bottom:8px;font-size:11.5px">${escapeHtml(msum)}</div>` : ''}
+    ${renderMarkerCells(item.id, {marginTop: false})}
+
+    <div style="font-size:12px;color:#888;margin:8px 0 4px">Расписание:</div>
+    <div class="form-row">
+      <label><input type="radio" name="peSched" value="days" ${schedType==='days'?'checked':''} onchange="${schedToggle}d.style.display='block';i.style.display='none'"> Дни</label>
+      <label><input type="radio" name="peSched" value="interval" ${schedType==='interval'?'checked':''} onchange="${schedToggle}d.style.display='none';i.style.display='block'"> Раз в N</label>
+      <label><input type="radio" name="peSched" value="even" ${schedType==='even'?'checked':''} onchange="${schedToggle}d.style.display='none';i.style.display='none'"> Чётные</label>
+      <label><input type="radio" name="peSched" value="odd" ${schedType==='odd'?'checked':''} onchange="${schedToggle}d.style.display='none';i.style.display='none'"> Нечётные</label>
+      <label><input type="radio" name="peSched" value="everyday" ${schedType==='everyday'?'checked':''} onchange="${schedToggle}d.style.display='none';i.style.display='none'"> Каждый день</label>
+    </div>
+    <div id="peDays" style="display:${schedType==='days'?'block':'none'}">
+      ${WEEK_ORDER.map(d=>`<label class="day-chk"><input type="checkbox" class="pe-day" value="${d}" ${days.includes(d)?'checked':''}> ${DAYS[d]}</label>`).join('')}
+    </div>
+    <div id="peInterval" style="display:${schedType==='interval'?'block':'none'}">
+      <input type="number" id="peIntervalVal" class="form-input" value="${interval}" min="1">
+    </div>
+
+    <div style="font-size:12px;color:#888;margin:6px 0 4px">Количество подходов:</div>
+    <input type="number" id="peSets" class="form-input" min="1" max="20" value="${plannedSets}">
+    <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
+    <input type="date" id="peStart" class="form-input" value="${startDate}">
+
+    ${isDis ? `<div class="dis-info">
+      🚫 Отключено с <strong>${disFrom}</strong>${disUntil ? ` по <strong>${disUntil}</strong>` : ' (бессрочно)'}<br>
+      Причина: <strong>${escapeHtml(disReason)}</strong>
+    </div>` : ''}
+
+    <div style="font-size:13px;color:#ccc;margin:12px 0 6px;padding-top:10px;border-top:1px solid #2a2a2a">
+      <label><input type="checkbox" id="peDisChk" ${isDis?'checked':''} onchange="${toggle}"> ${isDis ? 'Управлять отключением' : 'Отключить упражнение'}</label>
+    </div>
+    <div id="peDisFields" style="display:${isDis?'block':'none'}">
+      <input type="text" id="peDisReason" class="form-input" placeholder="Причина (болезнь, травма…)" value="${escapeHtml(disReason)}">
+      <div style="font-size:12px;color:#888;margin:4px 0">Отключить до (пусто = бессрочно):</div>
+      <input type="date" id="peDisUntil" class="form-input" value="${disUntil}">
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="mini-btn" style="flex:1" onclick="onbCancelEdit()">Отмена</button>
+      <button class="mini-btn" style="flex:2;background:#2a5a2a;border-color:#3a7a3a" onclick="onbSaveEdit(${idx})">Сохранить</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- Render helpers ---------- */
+function renderBreadcrumb() {
+  if (!blockEditPath.length) return '';
+  let html = '<div class="breadcrumb">';
+  html += `<span class="bc-item" onclick="goToBreadcrumb(0)">План</span>`;
+  for (let i = 0; i < blockEditPath.length; i++) {
+    const id = blockEditPath[i];
+    const block = (onbPlan.blocks || []).find(b => b.id === id);
+    if (!block) continue;
+    html += ` <span class="bc-sep">›</span> `;
+    if (i === blockEditPath.length - 1) {
+      html += `<span class="bc-current">${escapeHtml(block.name)}</span>`;
+    } else {
+      html += `<span class="bc-item" onclick="goToBreadcrumb(${i + 1})">${escapeHtml(block.name)}</span>`;
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderPlanItems() {
+  const items = onbPlan.items;
+  if(!items.length){
+    return `<div class="ex" style="color:#777;font-size:13px">Пока пусто — добавьте первое упражнение</div>`;
+  }
+  let html = '';
+  items.forEach((item, idx) => {
+    const ex = EX[item.id];
+    if(!ex) return;
+    if(onbEditingIdx === idx){
+      html += renderPlanEditForm(item, idx);
+      return;
+    }
+    const dis = isCurrentlyDisabled(item);
+    const plannedSets = (Number.isFinite(item.sets) && item.sets > 0) ? item.sets : (ex.sets || 4);
+    const badge = dis ? `<span class="pbadge">отменено</span>` : '';
+    const msum = muscleSummary(ex.muscles);
+    const mus = msum ? `<div class="psched" style="color:#666">${escapeHtml(msum)}</div>` : '';
+    const extra = dis ? `<div class="psched" style="color:#c66">🚫 ${escapeHtml(dis.reason)}${dis.until ? ` (до ${dis.until})` : ''}</div>` : '';
+    html += `<div class="plan-item ${dis?'disabled':''}">
+      <div style="flex:1;min-width:0">
+        <div class="pname">${escapeHtml(ex.name)}${badge}</div>
+        <div class="psched">${scheduleSummary(item.schedule)} · ${plannedSets} ${plannedSets===1?'подход':(plannedSets<5?'подхода':'подходов')}</div>
+        ${mus}
+        ${renderMarkerChipsOnly(item.id)}
+        ${extra}
+      </div>
+      <button class="pdel" style="color:#6ab0ff" onclick="onbShowEdit(${idx})" title="Редактировать">✎</button>
+      <button class="pdel" onclick="onbRemoveItem(${idx})" title="Удалить">✕</button>
+    </div>`;
+  });
+  return html;
+}
+
+function renderPlanBlocks() {
+  const topBlocks = getTopLevelBlocksLocal();
+  if (!topBlocks.length) {
+    return `<div class="ex" style="color:#777;font-size:13px">Пока пусто — создайте первый блок</div>`;
+  }
+  let html = `<h2>Блоки (${topBlocks.length})</h2>`;
+  topBlocks.forEach(block => {
+    const exCount = getBlockExercises(block, onbPlan.blocks || []).length;
+    html += `<div class="plan-item">
+      <div style="flex:1;min-width:0">
+        <div class="pname">📦 ${escapeHtml(block.name)}</div>
+        <div class="psched">${scheduleSummary(block.schedule)} · ${exCount} ${exCount===1?'упражнение':(exCount<5?'упражнения':'упражнений')}</div>
+      </div>
+      <button class="pdel" style="color:#6ab0ff" onclick="enterBlock('${block.id}')" title="Открыть">✎</button>
+      <button class="pdel" onclick="deleteBlockById('${block.id}')" title="Удалить">✕</button>
+    </div>`;
+  });
+  return html;
+}
+
+function renderBlockSettings(block) {
+  const sched = block.schedule || {};
+  let schedType = sched.type || 'none';
+  const isTop = isTopLevelBlockLocal(block.id);
+  if (schedType === 'delayAfterParent' && isTop) schedType = 'none';
+  const days = sched.days || [];
+  const interval = sched.interval || 3;
+  const delayDays = sched.delayDays || 2;
+  const startDate = sched.startDate || fmt(todayDate());
+
+  return `<div class="ex" style="border-color:#3a5a3a;background:#152515;margin-bottom:10px">
+    <div style="font-size:12px;color:#888;margin-bottom:4px">Название блока:</div>
+    <input type="text" id="blkName" class="form-input" value="${escapeHtml(block.name)}" oninput="renameCurrentBlock(this.value)">
+    <div id="blkNameWarn" class="warn-text" style="display:none">Это имя уже используется другим блоком</div>
+    <div style="font-size:12px;color:#888;margin:8px 0 4px">Расписание блока:</div>
+    <div class="form-row">
+      <label><input type="radio" name="blkSched" value="none" ${schedType==='none'?'checked':''} onchange="updateCurrentBlockSchedule()"> Без</label>
+      <label><input type="radio" name="blkSched" value="days" ${schedType==='days'?'checked':''} onchange="updateCurrentBlockSchedule()"> Дни</label>
+      <label><input type="radio" name="blkSched" value="interval" ${schedType==='interval'?'checked':''} onchange="updateCurrentBlockSchedule()"> Раз в N</label>
+      <label><input type="radio" name="blkSched" value="even" ${schedType==='even'?'checked':''} onchange="updateCurrentBlockSchedule()"> Чётные</label>
+      <label><input type="radio" name="blkSched" value="odd" ${schedType==='odd'?'checked':''} onchange="updateCurrentBlockSchedule()"> Нечётные</label>
+      <label><input type="radio" name="blkSched" value="everyday" ${schedType==='everyday'?'checked':''} onchange="updateCurrentBlockSchedule()"> Каждый</label>
+      ${isTop ? '' : `<label><input type="radio" name="blkSched" value="delayAfterParent" ${schedType==='delayAfterParent'?'checked':''} onchange="updateCurrentBlockSchedule()"> Через N после родителя</label>`}
+    </div>
+    <div id="blkDays" style="display:${schedType==='days'?'block':'none'}">
+      ${WEEK_ORDER.map(d=>`<label class="day-chk"><input type="checkbox" class="blk-day" value="${d}" ${days.includes(d)?'checked':''} onchange="updateCurrentBlockSchedule()"> ${DAYS[d]}</label>`).join('')}
+    </div>
+    <div id="blkInterval" style="display:${schedType==='interval'?'block':'none'}">
+      <input type="number" id="blkIntervalVal" class="form-input" value="${interval}" min="1" onchange="updateCurrentBlockSchedule()">
+    </div>
+    ${isTop ? '' : `<div id="blkDelay" style="display:${schedType==='delayAfterParent'?'block':'none'}">
+      <input type="number" id="blkDelayVal" class="form-input" value="${delayDays}" min="1" onchange="updateCurrentBlockSchedule()" placeholder="N дней">
+    </div>`}
+    <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
+    <input type="date" id="blkStart" class="form-input" value="${startDate}" onchange="updateCurrentBlockSchedule()">
+  </div>`;
+}
+
+function renderBlockChildren(block) {
+  const children = block.children || [];
+  if (!children.length) {
+    return `<div class="ex" style="color:#777;font-size:13px">В блоке пока пусто</div>`;
+  }
+
+  let html = '';
+  children.forEach((child, idx) => {
+    if (editingChildIdx === idx) {
+      html += renderChildEditForm(child, idx);
+      return;
+    }
+    if (child.type === 'exercise' && EX[child.id]) {
+      const ex = EX[child.id];
+      const schedType = child.schedule?.type || 'none';
+      const awp = child.activeWithParent !== false;
+      let schedLabel = scheduleSummary(child.schedule);
+      if (schedType === 'none') schedLabel = awp ? 'как родитель' : 'каждый день';
+      const setsInfo = child.sets ? `${child.sets} подх.` : '';
+      html += `<div class="plan-item">
+        <div style="flex:1;min-width:0">
+          <div class="pname">${escapeHtml(ex.name)}</div>
+          <div class="psched">${awp ? '' : 'независимо · '}${schedLabel}${setsInfo ? ' · '+setsInfo : ''}</div>
+          ${renderMarkerChipsOnly(child.id)}
+        </div>
+        <button class="pdel" style="color:#6ab0ff" onclick="onEditChild(${idx})" title="Настройки">✎</button>
+        <button class="pdel" onclick="removeChildAt(${idx})" title="Удалить">✕</button>
+      </div>`;
+    } else if (child.type === 'block') {
+      const nested = (onbPlan.blocks || []).find(b => b.id === child.id);
+      if (!nested) return;
+      const awp = child.activeWithParent !== false;
+      const exCount = getBlockExercises(nested, onbPlan.blocks || []).length;
+      const sched = child.scheduleOverride || nested.schedule;
+      let schedLabel = scheduleSummary(sched);
+      if (sched.type === 'none' || !sched.type) schedLabel = awp ? 'как родитель' : 'каждый день';
+      html += `<div class="plan-item">
+        <div style="flex:1;min-width:0">
+          <div class="pname">📦 ${escapeHtml(nested.name)}</div>
+          <div class="psched">${awp ? 'активен с родителем' : 'независимо'} · ${schedLabel} · ${exCount} упр.</div>
+        </div>
+        <button class="pdel" style="color:#6ab0ff" onclick="onEditChild(${idx})" title="Настройки">✎</button>
+        <button class="pdel" style="color:#6ab0ff" onclick="enterBlock('${nested.id}')" title="Открыть">↗</button>
+        <button class="pdel" onclick="removeChildAt(${idx})" title="Удалить">✕</button>
+      </div>`;
+    }
+  });
+
+  return html;
+}
+
+function renderAddExistingBlockList() {
+  const eligible = getEligibleBlocksForCurrent();
+  let inner = '';
+  if (!eligible.length) {
+    inner = `<div style="padding:14px;color:#666;font-size:13px;text-align:center">Нет доступных блоков для добавления</div>`;
+  } else {
+    inner = eligible.map(b => `
+      <div onclick="addExistingBlockToCurrent('${b.id}')" style="padding:8px 11px;background:#141414;border:1px solid #262626;border-radius:5px;margin-bottom:4px;cursor:pointer;font-size:13px;line-height:1.3;color:#ddd">
+        <div>📦 ${escapeHtml(b.name)}</div>
+        <div style="font-size:10.5px;color:#6a6a6a;margin-top:3px">${scheduleSummary(b.schedule)}</div>
+      </div>
+    `).join('');
+  }
+  return `<div class="ex" style="margin-top:10px">
+    <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Добавить существующий блок</div>
+    <div style="max-height:320px;overflow-y:auto;margin-bottom:8px">${inner}</div>
+    <button class="mini-btn" style="width:100%" onclick="cancelAddExistingBlock()">Отмена</button>
+  </div>`;
+}
+
+function renderPlanBuilderContent(){
+  const isCustomMode = view === 'custom';
+  const title = isCustomMode ? 'Мой план' : 'Соберём ваш план';
+  const subtitle = isCustomMode ? 'Добавляйте, редактируйте и отключайте упражнения' : 'Выберите упражнения и расписание для каждого';
+  const btnText = isCustomMode ? 'Сохранить' : 'Начать';
+
+  const currentBlock = getCurrentBlock();
+  const breadcrumbHtml = renderBreadcrumb();
+
+  let contentHtml = '';
+
+  if (currentBlock) {
+    contentHtml += renderBlockSettings(currentBlock);
+    contentHtml += renderBlockChildren(currentBlock);
+  } else {
+    contentHtml += renderPlanItems();
+    contentHtml += renderPlanBlocks();
+  }
+
+  const addButtonsHtml = onbAdding || onbAddingBlock || editingChildIdx !== null ? '' : `
+    <button class="add-btn" onclick="onbShowAdd()">+ Добавить упражнение</button>
+    ${currentBlock ? `<button class="add-btn" onclick="showAddExistingBlock()">+ Добавить существующий блок</button>` : ''}
+    <button class="add-btn" onclick="createBlockInCurrent()">+ Создать блок</button>
+  `;
+
+  const addingFormHtml = onbAdding ? renderAddForm() : '';
+  const addingBlockHtml = onbAddingBlock ? renderAddExistingBlockList() : '';
+
+  const planConfigured = !!localStorage.getItem('planConfigured');
+  const formOpen = onbAdding || onbEditingIdx !== null || onbAddingBlock || editingChildIdx !== null;
+  let btnDisabled = false;
+  if(formOpen){
+    btnDisabled = true;
+  } else if(isCustomMode && planConfigured && !isCustomDirty()){
+    btnDisabled = true;
+  }
+
+  const btnAttr = btnDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed"' : '';
+  const heroHtml = currentBlock ? '' : `
+    <div class="onb-hero" style="padding-bottom:10px">
+      <div class="ico">🏋️</div>
+      <h1>${title}</h1>
+      <p>${subtitle}</p>
+    </div>`;
+
+  return `
+    ${heroHtml}
+    ${breadcrumbHtml}
+    ${contentHtml}
+    ${addButtonsHtml}
+    ${addingFormHtml}
+    ${addingBlockHtml}
+    <div class="onb-actions">
+      <button class="primary" onclick="onbSave()" ${btnAttr}>${btnText}</button>
+    </div>`;
+}
+
+function renderOnboarding(){ document.getElementById('app').innerHTML = renderPlanBuilderContent(); }
+function renderCustom(){ document.getElementById('app').innerHTML = renderTabs() + renderPlanBuilderContent(); }
+
+function validateAllBlockNames(){
+  const names = new Set();
+  for (const b of (onbPlan.blocks || [])) {
+    const trimmed = (b.name || '').trim();
+    if (!trimmed) {
+      alert('У блока пустое имя. Задайте имя.');
+      return false;
+    }
+    if (names.has(trimmed)) {
+      alert(`Дублирующееся имя блока: "${trimmed}"`);
+      return false;
+    }
+    names.add(trimmed);
+  }
+  return true;
+}
+
+function onbSave(){
+  if(!validateAllBlockNames()) return;
+
+  if(onbPlan.items.length === 0 && (onbPlan.blocks||[]).length === 0 && !localStorage.getItem('planConfigured')){
+    if(!confirm('В плане нет упражнений и блоков. Всё равно начать?')) return;
+  }
+
+  if(onbAdding && hasPendingAddData()){
+    if(confirm('Добавить новое упражнение перед сохранением?')){
+      if(!attemptAddExercise()){
+        return;
+      }
+    }
+    onbAdding = false;
+  }
+  onbAddingBlock = false;
+  editingChildIdx = null;
+
+  saveOnbPlanToStore();
+  if(view === 'custom'){
+    loadOnbPlanFromStore();
+    render();
+  }else{
+    view = 'today';
+    currentDate = todayDate();
+    render();
+  }
+}
+
+function editOwnPlan(){ setView('custom'); }
+
+function render(){
+  if(needsOnboarding() || view === 'onboarding'){
+    renderOnboarding();
+    return;
+  }
+  if(view === 'history') renderHistory();
+  else if(view === 'custom') renderCustom();
+  else if(view === 'search') renderSearch();
+  else if(view === 'stats') renderStats();
+  else if(view === 'stats-ex') renderExerciseStats();
+  else if(view === 'trainer') renderTrainer();
+  else renderToday();
+}
+
+function setView(v){
+  if(view === 'custom' && v !== 'custom'){
+    const hasPending = onbAdding || onbEditingIdx !== null || onbAddingBlock || editingChildIdx !== null;
+    const hasUnsaved = isCustomDirty();
+
+    if(hasPending || hasUnsaved){
+      if(confirm('Сохранить изменения в плане?')){
+        onbAdding = false;
+        onbEditingIdx = null;
+        onbAddingBlock = false;
+        editingChildIdx = null;
+        if (validateAllBlockNames()) saveOnbPlanToStore();
+      } else {
+        loadOnbPlanFromStore();
+      }
+    }
+  }
+
+  if(v === 'custom' && prevView !== 'custom'){
+    blockEditPath = [];
+    loadOnbPlanFromStore();
+  }
+  prevView = v;
+  view = v;
+  if(v === 'stats') statsExerciseId = null;
+  render();
+}
+function shiftDay(d){currentDate.setDate(currentDate.getDate()+d);render()}
+function toggleDone(exId,checked){
+  if(checked && EX[exId].app){
+    if(!confirm(`Подтвердить: «${EX[exId].name}» сделано?`)){render();return}
+  }
+  const d=fmt(currentDate),logs=store.logs;
+  logs[d]=logs[d]||{};logs[d][exId]=logs[d][exId]||{};
+  logs[d][exId].done=checked;
+  if(!checked){
+    const sets=logs[d][exId].sets;
+    const hasSets=sets&&sets.some(x=>x&&(x.w||x.r));
+    if(!hasSets)delete logs[d][exId];
+  }
+  if(logs[d]){
+    const nonMeta=Object.keys(logs[d]).filter(k=>!k.startsWith('_'));
+    if(!nonMeta.length&&!logs[d]._skip&&!logs[d]._note)delete logs[d];
+  }
+  store.logs=logs;render();
+}
+function onSetInput(exId,idx,field,el){
+  let v=el.value;
+  if(field==='w'){
+    v=v.replace(',', '.').replace(/[^\d.]/g,'');
+    const parts=v.split('.');
+    if(parts.length>2)v=parts[0]+'.'+parts.slice(1).join('');
+  }else{
+    v=v.replace(/,/g, '.').split('.')[0].replace(/\D/g,'');
+  }
+  if(v!==el.value)el.value=v;
+  setSet(exId,idx,field,v);
+}
+function setSet(exId,idx,field,value){
+  const d=fmt(currentDate),logs=store.logs;
+  logs[d]=logs[d]||{};logs[d][exId]=logs[d][exId]||{};
+  const arr=logs[d][exId].sets||(logs[d][exId].sets=[]);
+  arr[idx]=arr[idx]||{};
+  arr[idx][field]=value;
+  store.logs=logs;
+  updateExerciseUI(exId);
+  updateDayMeta();
+}
+function getExerciseBadges(exId,log,dateStr){
+  const pr=getPRBadgesHtml(exId,log,dateStr);
+  const steady=EX[exId]&&!EX[exId].app?checkSteadyAllSets(exId,log,dateStr):null;
+  const steadyHtml=steady?`<span class="pr-badge pr-max" title="Все подходы одинаковые и максимальные повторы за всё время">🎯 ${steady.count}×${steady.r}</span>`:'';
+  return pr+steadyHtml;
+}
+/* ---------- PWA ---------- */
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  if(view==='stats')render();
+});
+window.addEventListener('appinstalled',()=>{deferredPrompt=null;});
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(err=>console.warn('SW:',err));
+  });
+}
+
+syncCustomEx();
+loadOnbPlanFromStore();
+render();
