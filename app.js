@@ -1,4 +1,4 @@
-﻿function computePercents(loads){
+function computePercents(loads){
   const ids = Object.keys(loads||{});
   if(!ids.length) return {};
   const sum = ids.reduce((s,id)=>s+(parseFloat(loads[id])||0), 0);
@@ -2203,6 +2203,13 @@ let blockEditPath = [];
 let prevView = null;
 let addExistingSelectedId = '';
 let editingChildIdx = null;
+let wizardState = {
+  step: 0, // 0 - выбор режима, 1 - инвентарь, 2 - дни, 3 - мышцы
+  mode: null, // 'manual' или 'auto'
+  equipment: [],
+  days: [1, 3, 5], // По умолчанию Пн, Ср, Пт
+  parts: []
+};
 
 function needsOnboarding(){
   if(localStorage.getItem('planConfigured')) return false;
@@ -3289,7 +3296,221 @@ function renderPlanBuilderContent(){
     </div>`;
 }
 
-function renderOnboarding(){ document.getElementById('app').innerHTML = renderPlanBuilderContent(); }
+function renderOnboarding(){
+  if (localStorage.getItem('planConfigured') && wizardState.mode === null) {
+    wizardState.mode = 'manual';
+  }
+
+  if (wizardState.mode === 'manual') {
+    document.getElementById('app').innerHTML = renderPlanBuilderContent();
+    return;
+  }
+
+  const s = wizardState.step;
+  let html = `<div class="onb-hero">
+    <div class="ico">${s === 0 ? '⚙️' : '🤖'}</div>
+    <h1>${s === 0 ? 'Создание плана' : 'Автоматический план'}</h1>
+    <p>${s === 0 ? 'Выберите способ настройки' : 'Ответьте на вопросы, и мы составим программу'}</p>
+  </div>`;
+
+  if (s === 0) {
+    html += `<div class="onb-card" onclick="wizardSetMode('auto')" style="cursor:pointer">
+      <span class="ico">🤖</span>
+      <h3>Автоматически</h3>
+      <p>Программа сама подберет упражнения под ваш инвентарь и распределит их по дням (до 10 упражнений в день).</p>
+    </div>
+    <div class="onb-card" onclick="wizardSetMode('manual')" style="cursor:pointer">
+      <span class="ico">📝</span>
+      <h3>Вручную</h3>
+      <p>Самостоятельно добавьте упражнения, настройте блоки и расписание.</p>
+    </div>`;
+  } 
+  else if (s === 1) {
+    html += `<h2>1. Какой у вас инвентарь?</h2>
+    <div class="ex">`;
+    const eqList = ['Гантели/Штанга/Гиря', 'Тренажер', 'Резинка', 'Собственный вес'];
+    eqList.forEach(eq => {
+      const checked = wizardState.equipment.includes(eq) ? 'checked' : '';
+      html += `<label class="day-chk" style="display:flex;margin-bottom:8px;font-size:14px">
+        <input type="checkbox" ${checked} onchange="toggleWizardEq('${eq}', this.checked)"> ${eq}
+      </label>`;
+    });
+    html += `</div>`;
+  } 
+  else if (s === 2) {
+    html += `<h2>2. В какие дни вы будете тренироваться?</h2>
+    <p style="font-size:12px;color:#888;margin-top:-5px;margin-bottom:10px">Выбранные дни будут повторяться каждую неделю</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">`;
+    WEEK_ORDER.forEach(d => {
+      const isActive = wizardState.days.includes(d);
+      html += `<button class="mini-btn" style="flex:1;min-width:40px;padding:10px;font-size:13px;${isActive?'background:#2a5a2a;border-color:#4a7a4a;color:#9f9':''}" onclick="toggleWizardDay(${d})">${DAYS[d]}</button>`;
+    });
+    html += `</div>`;
+  } 
+  else if (s === 3) {
+    html += `<h2>3. Какие группы мышц тренировать?</h2>
+    <div class="ex">`;
+    MUSCLES.forEach(cat => {
+      const checked = wizardState.parts.includes(cat.id) ? 'checked' : '';
+      html += `<label class="day-chk" style="display:flex;margin-bottom:8px;font-size:14px">
+        <input type="checkbox" ${checked} onchange="toggleWizardPart('${cat.id}', this.checked)"> ${cat.name}
+      </label>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `<div class="onb-actions" style="margin-top:20px">`;
+  
+  if (s > 0) {
+    html += `<button class="secondary" onclick="wizardPrev()">Назад</button>`;
+  } else {
+    html += `<button class="secondary" onclick="wizardSetMode('manual')">Вручную</button>`;
+  }
+  
+  // Кнопка всегда кликабельна, но визуально блекнет, если ничего не выбрано
+  const isValid = checkWizardValid(s);
+  const btnStyle = isValid ? '' : 'opacity:0.5;';
+  
+  if (s < 3) {
+    html += `<button class="primary" onclick="wizardNext()" style="${btnStyle}">Далее</button>`;
+  } else {
+    html += `<button class="primary" onclick="generateAutoPlan()" style="${btnStyle}">Создать план</button>`;
+  }
+  html += `</div>`;
+  
+  document.getElementById('app').innerHTML = html;
+}
+
+function checkWizardValid(step) {
+  if (step === 1) return wizardState.equipment.length > 0;
+  if (step === 2) return wizardState.days.length > 0;
+  if (step === 3) return wizardState.parts.length > 0;
+  return true;
+}
+
+function wizardNext() {
+  if (!checkWizardValid(wizardState.step)) {
+    alert('Пожалуйста, выберите хотя бы один вариант, чтобы продолжить.');
+    return;
+  }
+  wizardState.step++; 
+  renderOnboarding(); 
+}
+
+function checkWizardValid(step) {
+  if (step === 1) return wizardState.equipment.length > 0;
+  if (step === 2) return wizardState.days.length > 0;
+  if (step === 3) return wizardState.parts.length > 0;
+  return true;
+}
+
+function wizardSetMode(mode) {
+  wizardState.mode = mode;
+  wizardState.step = 1;
+  renderOnboarding();
+}
+function toggleWizardEq(eq, checked) {
+  if (checked) { if (!wizardState.equipment.includes(eq)) wizardState.equipment.push(eq); }
+  else { wizardState.equipment = wizardState.equipment.filter(e => e !== eq); }
+  renderOnboarding();
+}
+function toggleWizardDay(d) {
+  if (wizardState.days.includes(d)) wizardState.days = wizardState.days.filter(x => x !== d);
+  else wizardState.days.push(d);
+  renderOnboarding();
+}
+function toggleWizardPart(id, checked) {
+  if (checked) { if (!wizardState.parts.includes(id)) wizardState.parts.push(id); }
+  else { wizardState.parts = wizardState.parts.filter(p => p !== id); }
+  renderOnboarding();
+}
+function wizardNext() {
+  if (!checkWizardValid(wizardState.step)) return;
+  wizardState.step++; 
+  renderOnboarding(); 
+}
+function wizardPrev() { 
+  if (wizardState.step === 1) { wizardState.mode = null; wizardState.step = 0; }
+  else { wizardState.step--; }
+  renderOnboarding(); 
+}
+function renderWizard() {
+  const s = wizardState.step;
+  let html = `<div class="onb-hero">
+    <div class="ico">🤖</div>
+    <h1>Автоматический план</h1>
+    <p>Ответьте на 3 вопроса, и мы составим программу</p>
+  </div>`;
+
+  if (s === 1) {
+    html += `<h2>1. Какой у вас инвентарь?</h2>
+    <div class="ex">`;
+    const eqList = ['Собственный вес', 'Гантели/Штанга/Гиря', 'Тренажер', 'Резинка'];
+    eqList.forEach(eq => {
+      const checked = wizardState.equipment.includes(eq) ? 'checked' : '';
+      html += `<label class="day-chk" style="display:flex;margin-bottom:8px;font-size:14px">
+        <input type="checkbox" ${checked} onchange="toggleWizardEq('${eq}', this.checked)"> ${eq}
+      </label>`;
+    });
+    html += `</div>`;
+  } 
+  else if (s === 2) {
+    html += `<h2>2. В какие дни вы будете тренироваться?</h2>
+    <div class="ex" style="display:flex;flex-wrap:wrap;gap:8px">`;
+    WEEK_ORDER.forEach(d => {
+      const checked = wizardState.days.includes(d) ? 'checked' : '';
+      const isActive = wizardState.days.includes(d) ? 'active' : '';
+      html += `<label class="onb-days" style="flex:1 0 40px;margin:0">
+        <button class="${isActive}" style="width:100%" onclick="toggleWizardDay(${d})">${DAYS[d]}</button>
+      </label>`;
+    });
+    html += `</div>`;
+  } 
+  else if (s === 3) {
+    html += `<h2>3. Какие группы мышц тренировать?</h2>
+    <div class="ex">`;
+    MUSCLES.forEach(cat => {
+      const checked = wizardState.parts.includes(cat.id) ? 'checked' : '';
+      html += `<label class="day-chk" style="display:flex;margin-bottom:8px;font-size:14px">
+        <input type="checkbox" ${checked} onchange="toggleWizardPart('${cat.id}', this.checked)"> ${cat.name}
+      </label>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `<div class="onb-actions" style="margin-top:20px">`;
+  if (s > 1) {
+    html += `<button class="secondary" onclick="wizardPrev()">Назад</button>`;
+  } else {
+    html += `<button class="secondary" onclick="skipWizard()">Вручную</button>`;
+  }
+  
+  if (s < 3) {
+    html += `<button class="primary" onclick="wizardNext()">Далее</button>`;
+  } else {
+    html += `<button class="primary" onclick="generateAutoPlan()">Создать план</button>`;
+  }
+  html += `</div>`;
+  
+  return html;
+}
+
+function toggleWizardEq(eq, checked) {
+  if (checked) { if (!wizardState.equipment.includes(eq)) wizardState.equipment.push(eq); }
+  else { wizardState.equipment = wizardState.equipment.filter(e => e !== eq); }
+}
+function toggleWizardDay(d) {
+  if (wizardState.days.includes(d)) wizardState.days = wizardState.days.filter(x => x !== d);
+  else wizardState.days.push(d);
+  renderOnboarding();
+}
+function toggleWizardPart(id, checked) {
+  if (checked) { if (!wizardState.parts.includes(id)) wizardState.parts.push(id); }
+  else { wizardState.parts = wizardState.parts.filter(p => p !== id); }
+}
+function wizardNext() { wizardState.step++; renderOnboarding(); }
+function wizardPrev() { wizardState.step--; renderOnboarding(); }
+function skipWizard() { wizardState.enabled = false; render(); }
 function renderCustom(){ document.getElementById('app').innerHTML = renderTabs() + renderPlanBuilderContent(); }
 
 function validateAllBlockNames(){
@@ -3339,7 +3560,158 @@ function onbSave(){
 }
 
 function editOwnPlan(){ setView('custom'); }
+function generateAutoPlan() {
+  if (!checkWizardValid(3)) {
+    alert('Выберите хотя бы одну группу мышц.');
+    return;
+  }
 
+  const selectedEquipment = wizardState.equipment;
+  const targetMuscles = [];
+  
+  // Собираем ID всех мышц из выбранных категорий
+  MUSCLES.forEach(cat => {
+    if (wizardState.parts.includes(cat.id)) {
+      cat.groups.forEach(g => targetMuscles.push(g.id));
+    }
+  });
+
+  let pool = [];
+  const used = new Set();
+  
+  // Для каждой мышцы ищем лучшее упражнение под инвентарь
+  targetMuscles.forEach(mId => {
+    const bestEx = Object.entries(EX)
+      .map(([id, ex]) => ({ id, ex, share: (ex.muscles && ex.muscles[mId]) || 0 }))
+      .filter(item => item.share >= 20) 
+      .filter(item => {
+        if (used.has(item.id)) return false;
+        const markers = getExerciseMarkers(item.id);
+        return markers.some(m => selectedEquipment.includes(m));
+      })
+      .sort((a,b) => b.share - a.share)[0];
+      
+    if (bestEx) {
+      pool.push(bestEx.id);
+      used.add(bestEx.id);
+    }
+  });
+
+  if (pool.length === 0) {
+    alert('Не удалось подобрать упражнения под выбранный инвентарь и группы мышц.');
+    return;
+  }
+
+  // === РАСЧЕТ СМЕЩЕНИЙ (DELAY) ДЛЯ 14-ДНЕВНОГО ЦИКЛА ===
+  const startDateObj = todayDate();
+  const startDate = fmt(startDateObj);
+  const startDow = startDateObj.getDay(); // Текущий день недели (0 - вс, 1 - пн...)
+  
+  // Сортируем выбранные дни по порядку недели
+  const sortedDays = [...wizardState.days].sort((a,b) => WEEK_ORDER.indexOf(a) - WEEK_ORDER.indexOf(b));
+  const numTrainingDays = sortedDays.length * 2; 
+  
+  const offsets = [];
+  let currentOffset = 0;
+  
+  // 1. Высчитываем задержку до ПЕРВОГО выбранного дня
+  const firstDayIdx = WEEK_ORDER.indexOf(sortedDays[0]);
+  const startDayIdx = WEEK_ORDER.indexOf(startDow);
+  
+  let firstDiff = firstDayIdx - startDayIdx;
+  if (firstDiff < 0) firstDiff += 7; // Если день на этой неделе уже прошел, ждем до следующей
+  currentOffset = firstDiff;
+  offsets.push(currentOffset);
+  
+  // 2. Высчитываем задержки для остальных дней ПЕРВОЙ недели
+  for (let i = 1; i < sortedDays.length; i++) {
+    const prevDayIdx = WEEK_ORDER.indexOf(sortedDays[i-1]);
+    const dayIdx = WEEK_ORDER.indexOf(sortedDays[i]);
+    let diff = dayIdx - prevDayIdx;
+    if (diff <= 0) diff += 7; // Переход через воскресенье
+    currentOffset += diff;
+    offsets.push(currentOffset);
+  }
+  
+  // 3. Высчитываем задержки для ВТОРОЙ недели
+  for (let i = 0; i < sortedDays.length; i++) {
+    const prevDayIdx = (i === 0) ? WEEK_ORDER.indexOf(sortedDays[sortedDays.length-1]) : WEEK_ORDER.indexOf(sortedDays[i-1]);
+    const dayIdx = WEEK_ORDER.indexOf(sortedDays[i]);
+    let diff = dayIdx - prevDayIdx;
+    if (diff <= 0) diff += 7;
+    currentOffset += diff;
+    offsets.push(currentOffset);
+  }
+
+  // === РАСПРЕДЕЛЕНИЕ УПРАЖНЕНИЙ (МАКС 10 В ДЕНЬ) ===
+  const daysExercises = Array.from({ length: numTrainingDays }, () => []);
+  let dayCounter = 0;
+  pool.forEach(exId => {
+    // Если в текущем дне уже 10 упражнений, переходим к следующему
+    if (daysExercises[dayCounter].length >= 10) {
+      dayCounter = (dayCounter + 1) % numTrainingDays;
+    }
+    daysExercises[dayCounter].push(exId);
+    dayCounter = (dayCounter + 1) % numTrainingDays;
+  });
+
+  // === ГЕНЕРАЦИЯ СТРУКТУРЫ ===
+  const rootBlockId = 'b' + Date.now().toString(36) + 'root';
+  
+  const rootBlock = {
+    id: rootBlockId,
+    name: 'Мезоцикл (14 дней)',
+    schedule: { type: 'interval', interval: 14, startDate: startDate }, // Корневой блок активен раз в 14 дней
+    disabled: null,
+    children: []
+  };
+  
+  const newBlocks = [rootBlock];
+  
+  daysExercises.forEach((exList, i) => {
+    if (exList.length === 0) return;
+    
+    const subBlockId = 'b' + Date.now().toString(36) + i;
+    // Выводим правильный день недели для названия
+    const dayName = `Тренировка ${i + 1} (${DAYS[sortedDays[i % sortedDays.length]]})`;
+    
+    const children = exList.map(exId => ({
+      type: 'exercise',
+      id: exId,
+      activeWithParent: false,
+      schedule: { type: 'none' }
+    }));
+    
+    newBlocks.push({
+      id: subBlockId,
+      name: dayName,
+      schedule: { type: 'none' },
+      disabled: null,
+      children: children
+    });
+    
+    // Привязываем к корневому блоку с правильной задержкой
+    rootBlock.children.push({
+      type: 'block',
+      id: subBlockId,
+      activeWithParent: false,
+      scheduleOverride: { 
+        type: 'delayAfterParent', 
+        delayDays: offsets[i],
+        startDate: startDate
+      }
+    });
+  });
+
+  onbPlan.blocks = newBlocks;
+  onbPlan.items = [];
+  saveOnbPlanToStore();
+  localStorage.setItem('planConfigured', '1');
+  
+  view = 'today';
+  currentDate = todayDate();
+  render();
+}
 function render(){
   if(needsOnboarding() || view === 'onboarding'){
     renderOnboarding();
