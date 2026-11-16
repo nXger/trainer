@@ -119,9 +119,6 @@ const EX = {
   lat_pulldown: { name:'Тяга верхнего блока', sets:4, reps:'12-15',
     muscles:{lats:45,teres:15,biceps:25,rhomboids:15},
     markers:['Тренажер','Волейбол'] },
-  db_row: { name:'Тяга гантели в наклоне', sets:4, reps:'12-15',
-    muscles:{lats:45,rhomboids:20,rear_delts:15,biceps:20},
-    markers:['Гантели/Штанга/Гиря'] },
   shrugs: { name:'Шраги со штангой/гантелями', sets:4, reps:'12-15',
     muscles:{traps:100},
     markers:['Гантели/Штанга/Гиря'] },
@@ -448,5 +445,20 @@ Object.assign(EX, {
     markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
   finger_hold_strap_handle: { name:'Удержание рукоятки на лямках пальцами (Finger Hold)', sets:4, reps:'30 сек',
     muscles:{fds:50,fdp:50},
-    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] }
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
+      // --- Тяги в наклоне (Свободный вес) ---
+  bent_over_row_chest: { 
+    name:'Тяга к груди в наклоне (штанга/гантели)', 
+    sets:4, reps:'12-15',
+    // Акцент на верхнюю часть спины (ромбовидные, трапеции, задние дельты)
+    muscles:{rhomboids:35, traps:25, rear_delts:20, biceps:20},
+    markers:['Гантели/Штанга/Гиря', 'Волейбол'] 
+  },
+  bent_over_row_waist: { 
+    name:'Тяга к поясу в наклоне (штанга/гантели)', 
+    sets:4, reps:'12-15',
+    // Акцент на широчайшие мышцы (как в старой db_row)
+    muscles:{lats:50, rhomboids:15, rear_delts:15, biceps:20},
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] 
+  },
 });
