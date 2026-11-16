@@ -2368,9 +2368,10 @@ function renderTrainer(){
   let html = renderTabs();
   html += `<div class="header"><span>Тренер</span></div>`;
 
-  if(!days){
+  // Если в плане ничего нет и нет тренировок — показываем заглушку
+  if (allPlanExIds.size === 0 && days === 0) {
     html += `<div class="ex" style="color:#888;font-size:13px">
-      Тренер начнёт анализировать, как только появятся первые выполненные упражнения с подходами.
+      Добавьте упражнения в план или выполните первую тренировку, чтобы тренер начал анализировать.
     </div>`;
     html += renderTrainerAbout();
     document.getElementById('app').innerHTML = html;
@@ -2378,62 +2379,70 @@ function renderTrainer(){
   }
 
   const ready=[], moderate=[], high=[], rest=[];
-  Object.entries(loads).forEach(([m, l]) => {
-    if(!(m in MUSCLE_BY_ID)) return;
-    if(l <= LOAD_GREEN) ready.push(m);
-    else if(l <= LOAD_YELLOW) moderate.push(m);
-    else if(l <= LOAD_ORANGE) high.push(m);
-    else rest.push(m);
-  });
+  if (days > 0) {
+    Object.entries(loads).forEach(([m, l]) => {
+      if(!(m in MUSCLE_BY_ID)) return;
+      if(l <= LOAD_GREEN) ready.push(m);
+      else if(l <= LOAD_YELLOW) moderate.push(m);
+      else if(l <= LOAD_ORANGE) high.push(m);
+      else rest.push(m);
+    });
+  }
 
-  const groupDefs = [
-    {key:'ready',    label:'✅ Готовы к работе',    color:'#6ab06a', muscles: ready},
-    {key:'moderate', label:'🟡 Умеренная усталость', color:'#e8c44d', muscles: moderate},
-    {key:'high',     label:'🟠 Высокая усталость',   color:'#e8a860', muscles: high},
-    {key:'rest',     label:'🔴 Нужен отдых',         color:'#e85a5a', muscles: rest},
-  ];
-  groupDefs.forEach(g => g.muscles.sort((a,b) => (loads[b]||0) - (loads[a]||0)));
-
-  html += `<div class="info">Данных за ${days} дн. Нажмите на группу, чтобы раскрыть список мышц.</div>`;
-
-  groupDefs.forEach(group => {
-    const isExpanded = expandedMuscleGroups.has(group.key);
-    const n = group.muscles.length;
-    const countLabel = n === 0 ? 'пусто' : (n === 1 ? '1 мышца' : (n < 5 ? `${n} мышцы` : `${n} мышц`));
-
-    html += `<div class="muscle-group">
-      <div class="muscle-group-header ${isExpanded?'expanded':''}"
-           style="border-left-color:${group.color}"
-           onclick="toggleMuscleGroup('${group.key}')">
-        <span class="mg-arrow">▸</span>
-        <span>${group.label}</span>
-        <span class="mg-count">${countLabel}</span>
-      </div>
-      <div class="muscle-group-body" id="mg-body-${group.key}"
-           style="max-height:${isExpanded?'5000px':'0'}">
-        ${n === 0
-          ? `<div class="muscle-item" style="justify-content:center;color:#666;font-size:12px">Нет мышц в этой группе</div>`
-          : group.muscles.map(mid => {
-              const load = loads[mid] || 0;
-              const pct = Math.round(load * 100);
-              const color = getLoadColor(load);
-              const name = MUSCLE_BY_ID[mid]?.name || mid;
-              const maxW = maxWeights[mid];
-              const weightStr = maxW ? (Math.round(maxW * 10) / 10) + ' кг' : '—';
-              const inPlan = planMuscles.has(mid);
-              return `<div class="muscle-item">
-                <div class="mi-info">
-                  <span class="mi-name">${escapeHtml(name)}${!inPlan?' <span style="color:#e8a860;font-size:10.5px">(не в плане)</span>':''}</span>
-                  <span class="mi-weight">макс. вес: ${weightStr}</span>
-                  <div class="mi-bar"><div class="mi-bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
-                </div>
-                <span class="mi-pct" style="color:${color}">${pct}%</span>
-              </div>`;
-            }).join('')
-        }
-      </div>
+  if (days === 0) {
+    html += `<div class="ex" style="color:#e8a860;font-size:13px;margin-bottom:12px;background:#2a1a1a;border-color:#4a2020;">
+      ⚠️ Пока нет данных о выполненных упражнениях. Ниже — анализ вашего плана и рекомендации.
     </div>`;
-  });
+  } else {
+    const groupDefs = [
+      {key:'ready',    label:'✅ Готовы к работе',    color:'#6ab06a', muscles: ready},
+      {key:'moderate', label:'🟡 Умеренная усталость', color:'#e8c44d', muscles: moderate},
+      {key:'high',     label:'🟠 Высокая усталость',   color:'#e8a860', muscles: high},
+      {key:'rest',     label:'🔴 Нужен отдых',         color:'#e85a5a', muscles: rest},
+    ];
+    groupDefs.forEach(g => g.muscles.sort((a,b) => (loads[b]||0) - (loads[a]||0)));
+
+    html += `<div class="info">Данных за ${days} дн. Нажмите на группу, чтобы раскрыть список мышц.</div>`;
+
+    groupDefs.forEach(group => {
+      const isExpanded = expandedMuscleGroups.has(group.key);
+      const n = group.muscles.length;
+      const countLabel = n === 0 ? 'пусто' : (n === 1 ? '1 мышца' : (n < 5 ? `${n} мышцы` : `${n} мышц`));
+
+      html += `<div class="muscle-group">
+        <div class="muscle-group-header ${isExpanded?'expanded':''}"
+             style="border-left-color:${group.color}"
+             onclick="toggleMuscleGroup('${group.key}')">
+          <span class="mg-arrow">▸</span>
+          <span>${group.label}</span>
+          <span class="mg-count">${countLabel}</span>
+        </div>
+        <div class="muscle-group-body" id="mg-body-${group.key}"
+             style="max-height:${isExpanded?'5000px':'0'}">
+          ${n === 0
+            ? `<div class="muscle-item" style="justify-content:center;color:#666;font-size:12px">Нет мышц в этой группе</div>`
+            : group.muscles.map(mid => {
+                const load = loads[mid] || 0;
+                const pct = Math.round(load * 100);
+                const color = getLoadColor(load);
+                const name = MUSCLE_BY_ID[mid]?.name || mid;
+                const maxW = maxWeights[mid];
+                const weightStr = maxW ? (Math.round(maxW * 10) / 10) + ' кг' : '—';
+                const inPlan = planMuscles.has(mid);
+                return `<div class="muscle-item">
+                  <div class="mi-info">
+                    <span class="mi-name">${escapeHtml(name)}${!inPlan?' <span style="color:#e8a860;font-size:10.5px">(не в плане)</span>':''}</span>
+                    <span class="mi-weight">макс. вес: ${weightStr}</span>
+                    <div class="mi-bar"><div class="mi-bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
+                  </div>
+                  <span class="mi-pct" style="color:${color}">${pct}%</span>
+                </div>`;
+              }).join('')
+          }
+        </div>
+      </div>`;
+    });
+  }
 
   html += `<h2>Рекомендации</h2>`;
   const recs = [];
@@ -2474,18 +2483,22 @@ function renderTrainer(){
   // БЛОК: Подбор упражнений для легкого дня
   // ==========================================
   if (notInPlan.length) {
-    // 1. Считаем загруженность дней по плану
+    // Считаем загруженность дней по плану (включая блоки)
     const dayCounts = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0};
     if (own && own.enabled) {
-      (own.items || []).forEach(it => {
-        const sched = it.schedule || {};
+      const addSched = (sched) => {
+        if (!sched) return;
         if (sched.type === 'days') sched.days.forEach(d => dayCounts[d]++);
         else if (sched.type === 'everyday') [0,1,2,3,4,5,6].forEach(d => dayCounts[d]++);
         else if (sched.type === 'interval') [0,1,2,3,4,5,6].forEach(d => dayCounts[d] += 7 / (sched.interval || 7));
         else if (sched.type === 'even') [0,2,4,6].forEach(d => dayCounts[d] += 1.5);
         else if (sched.type === 'odd') [1,3,5].forEach(d => dayCounts[d] += 1.5);
-      });
+      };
+
+      (own.items || []).forEach(it => addSched(it.schedule));
+      (own.blocks || []).forEach(block => addSched(block.schedule));
     }
+    
     // Находим самый легкий день
     const daysSorted = Object.entries(dayCounts).sort((a,b) => a[1] - b[1]);
     const lightestDayIdx = parseInt(daysSorted[0][0]);
@@ -2542,7 +2555,6 @@ function renderTrainer(){
       html += suggestionHtml;
     }
   }
-  // ==========================================
 
   html += renderTrainerAbout();
   document.getElementById('app').innerHTML = html;
