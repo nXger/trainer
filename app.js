@@ -336,9 +336,29 @@ function getPlanItem(exId){
   if(!own || !own.enabled) return null;
   return (own.items || []).find(it => it.id === exId) || null;
 }
+function findBlockChild(exId, blocks){
+  // Упражнение всегда лежит прямым потомком какого-то блока (даже вложенного),
+  // поэтому достаточно пройти по children всех блоков.
+  for(const b of (blocks || [])){
+    for(const c of (b.children || [])){
+      if(c.type === 'exercise' && c.id === exId) return c;
+    }
+  }
+  return null;
+}
+
 function getExSets(exId){
-  const item = getPlanItem(exId);
-  if(item && Number.isFinite(item.sets) && item.sets > 0) return item.sets;
+  const own = ownPlanStore.get();
+  if(own && own.enabled){
+    // 1. Standalone-упражнение в плане
+    const item = (own.items || []).find(it => it.id === exId);
+    if(item && Number.isFinite(item.sets) && item.sets > 0) return item.sets;
+
+    // 2. Упражнение внутри блока (в т.ч. вложенного) — берём его override
+    const child = findBlockChild(exId, own.blocks || []);
+    if(child && Number.isFinite(child.sets) && child.sets > 0) return child.sets;
+  }
+  // 3. Дефолт из exercises.js
   return EX[exId]?.sets || 4;
 }
 
@@ -602,8 +622,8 @@ function isChildEntryActive(childRef, date, parentBlock, parentActive, blocks) {
   return isScheduleActive(schedule, date);
 }
 
-function processBlockTree(block, date, blocks, output, visited, ancestorDisabled, disableReason, blockActive) {
-  if (!block || visited.has(block.id)) return;
+function processBlockTree(block, date, blocks, visited, ancestorDisabled, disableReason, blockActive) {
+  if (!block || visited.has(block.id)) return null;
   visited.add(block.id);
 
   const dateStr = fmt(date);
@@ -611,25 +631,45 @@ function processBlockTree(block, date, blocks, output, visited, ancestorDisabled
   const myDisabled = ancestorDisabled || !!blockDis;
   const myReason = blockDis ? blockDis.reason : disableReason;
 
+  const node = {
+    type: 'block',
+    blockId: block.id,
+    name: block.name,
+    items: [],
+    cancelled: [],
+    flatExercises: [],
+    exCount: 0
+  };
+
   (block.children || []).forEach(child => {
     const childActive = isChildEntryActive(child, date, block, blockActive, blocks);
 
     if (child.type === 'exercise') {
       if (childActive) {
         if (myDisabled) {
-          output.cancelled.push({ id: child.id, reason: myReason || 'disabled', blockName: block.name });
+          node.cancelled.push({ id: child.id, reason: myReason || 'disabled', blockName: block.name });
         } else {
-          output.exercises.push(child.id);
+          node.items.push({ type: 'exercise', id: child.id });
+          node.flatExercises.push(child.id);
+          node.exCount++;
         }
       }
     } else if (child.type === 'block') {
       const nested = getBlockById(blocks, child.id);
       if (!nested) return;
       if (childActive) {
-        processBlockTree(nested, date, blocks, output, visited, myDisabled, myReason, true);
+        const childNode = processBlockTree(nested, date, blocks, visited, myDisabled, myReason, true);
+        if (childNode && (childNode.items.length > 0 || childNode.cancelled.length > 0)) {
+          node.items.push({ type: 'block', node: childNode });
+          node.flatExercises.push(...childNode.flatExercises);
+          node.exCount += childNode.exCount;
+        }
       }
     }
   });
+
+  if (node.exCount === 0 && node.cancelled.length === 0) return null;
+  return node;
 }
 
 function getTopLevelBlocks(){
@@ -673,22 +713,60 @@ function getPlan(date){
     const topBlocks = getTopLevelBlocks();
     topBlocks.forEach(block => {
       const blockActive = isScheduleActive(block.schedule, date);
-      const blockOut = { exercises: [], cancelled: [] };
-      processBlockTree(block, date, allBlocks, blockOut, new Set(), false, null, blockActive);
+      const blockOut = processBlockTree(block, date, allBlocks, new Set(), false, null, blockActive);
+      
+      if (blockOut) {
+        // Рекурсивная фильтрация: убираем то, что уже есть в main или cancelled
+        const filterNode = (n) => {
+          const newItems = [];
+          const newCancelled = n.cancelled.filter(c => !seen.has(c.id) && !cancelledSeen.has(c.id));
+          
+          n.items.forEach(it => {
+            if (it.type === 'exercise') {
+              if (!seen.has(it.id) && EX[it.id]) {
+                newItems.push(it);
+              }
+            } else if (it.type === 'block') {
+              const filteredChild = filterNode(it.node);
+              if (filteredChild) {
+                newItems.push({ type: 'block', node: filteredChild });
+              }
+            }
+          });
 
-      const newExs = blockOut.exercises.filter(id => !seen.has(id) && EX[id]);
-      const newCancelled = blockOut.cancelled.filter(c => !seen.has(c.id) && !cancelledSeen.has(c.id));
+          if (newItems.length === 0 && newCancelled.length === 0) return null;
 
-      if(newExs.length){
-        newExs.forEach(id => { seen.add(id); main.push(id); });
-        groups.push({
-          type: 'block',
-          blockId: block.id,
-          name: block.name,
-          exercises: newExs
-        });
+          let exCount = 0;
+          const flatExs = [];
+          newItems.forEach(it => {
+            if (it.type === 'exercise') { exCount++; flatExs.push(it.id); }
+            else { exCount += it.node.exCount; flatExs.push(...it.node.flatExercises); }
+          });
+
+          return {
+            ...n,
+            items: newItems,
+            cancelled: newCancelled,
+            exCount,
+            flatExercises: flatExs
+          };
+        };
+
+        const filteredBlock = filterNode(blockOut);
+
+        if (filteredBlock) {
+          filteredBlock.flatExercises.forEach(id => { seen.add(id); main.push(id); });
+          filteredBlock.cancelled.forEach(c => { cancelledSeen.add(c.id); cancelled.push(c); });
+          
+          groups.push({
+            type: 'block',
+            blockId: block.id,
+            name: block.name,
+            exercises: filteredBlock.flatExercises,
+            tree: filteredBlock // Передаем дерево
+          });
+        }
       }
-      newCancelled.forEach(c => { cancelledSeen.add(c.id); cancelled.push(c); });
     });
   }
 
@@ -699,6 +777,14 @@ function getPlan(date){
       seen.add(c.id);
       groups.push({ type: 'exercise', id: c.id });
     }
+  });
+   const dayLog = store.logs[dateStr] || {};
+  Object.entries(dayLog).forEach(([id, e]) => {
+    if (id.startsWith('_') || !e || !e.adHoc) return;
+    if (seen.has(id)) return; // Если оно уже есть в плане, не дублируем
+    main.push(id);
+    seen.add(id);
+    groups.push({ type: 'adhoc', id: id });
   });
 
   return { info: [], main, groups, cancelled, after: [] };
@@ -817,7 +903,11 @@ function getTargetReps(exId,dateStr){
 function checkSteadyAllSets(exId,log,dateStr){
   const ex=EX[exId];
   if(!ex||ex.app)return null;
-  const plannedSets = getExSets(exId);
+  
+  const plannedSets = (log && Number.isFinite(log._customSets) && log._customSets > 0)
+    ? log._customSets
+    : getExSets(exId);
+    
   const filled=(log?.sets||[]).filter(s=>s&&parseFloat(s.r)>0);
   if(filled.length<plannedSets||filled.length<2)return null;
   const w0=parseFloat(filled[0].w)||0;
@@ -1025,22 +1115,28 @@ function toggleBlockCollapse(blockId){
 }
 
 /* ---------- Training view ---------- */
-function renderExercise(exId,log){
+function renderExercise(exId, log, depth = 0){
   const ex=EX[exId];
-  if(!ex)return '';
+  if(!ex) return '';
   const dateStr=fmt(currentDate);
-  const done=log?.done?'done':'',checked=log?.done?'checked':'';
+  const done=log?.done?'done':'', checked=log?.done?'checked':'';
   const last=getLastEntryBefore(exId,dateStr);
   const musStr = muscleSummary(ex.muscles);
   const musclesHtml = musStr ? `<div class="ex-last" style="color:#7a7a7a">${escapeHtml(musStr)}</div>` : '';
   const markersHtml = renderMarkerChipsOnly(exId);
+  const indentStyle = depth > 0 ? `margin-left:${depth * 16}px;` : '';
+
+  const sets = (log && Number.isFinite(log._customSets) && log._customSets > 0)
+    ? log._customSets
+    : getExSets(exId);
+
   const head=`<div class="ex-head">
       <input type="checkbox" ${checked} onchange="toggleDone('${exId}',this.checked)">
       <strong>${escapeHtml(ex.name)}</strong>
-      <span class="meta">${ex.app?'по приложению':getExSets(exId)+'×'+getTargetReps(exId,dateStr)}</span>
+      <span class="meta">${ex.app?'по приложению':sets+'×'+getTargetReps(exId,dateStr)}</span>
     </div>`;
   if(ex.app){
-    return `<div class="ex ${done}">
+    return `<div class="ex ${done}" data-ex-id="${exId}" style="${indentStyle}">
       ${head}
       ${markersHtml}
       <div class="ex-app"><span>${log?.done?'✓ Подтверждено':'Отметь галочку, если сделал'}</span></div>
@@ -1048,7 +1144,8 @@ function renderExercise(exId,log){
       ${musclesHtml}
     </div>`;
   }
-  const sets=getExSets(exId),logSets=log?.sets||[];
+
+  const logSets=log?.sets||[];
   let rows='';
   for(let i=0;i<sets;i++){
     const s=logSets[i]||{};
@@ -1058,10 +1155,17 @@ function renderExercise(exId,log){
       <input type="text" inputmode="numeric" placeholder="повторения" value="${s.r||''}" oninput="onSetInput('${exId}',${i},'r',this)">
     </div>`;
   }
+
+  const setsCtrl = `<div style="display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:12px;color:#888">
+    <button class="mini-btn" style="padding:1px 8px;font-size:14px;line-height:1;min-width:26px" onclick="changeSets('${exId}',-1)" title="Меньше подходов">−</button>
+    <span>Подходов: <strong style="color:#e8e8e8">${sets}</strong></span>
+    <button class="mini-btn" style="padding:1px 8px;font-size:14px;line-height:1;min-width:26px" onclick="changeSets('${exId}',1)" title="Больше подходов">+</button>
+  </div>`;
+
   const progressHtml=computeProgressHtml(exId,log,dateStr);
   const prHtml=getPRBadgesHtml(exId,log,dateStr);
   const steady=checkSteadyAllSets(exId,log,dateStr);
-  return `<div class="ex ${done}" data-ex-id="${exId}">
+  return `<div class="ex ${done}" data-ex-id="${exId}" style="${indentStyle}">
     ${head}
     ${markersHtml}
     <div class="ex-last">Прошлый раз: ${formatSets(last)}</div>
@@ -1069,6 +1173,7 @@ function renderExercise(exId,log){
     <div data-progress>${progressHtml}</div>
     <div data-pr>${prHtml?`<div class="pr-row">${prHtml}</div>`:''}</div>
     <div data-steady>${steady?`<div class="pr-row"><span class="pr-badge pr-max" title="Все подходы одинаковые — пора увеличить вес или повторы">🎯 ${steady.count}×${steady.r}</span></div>`:''}</div>
+    ${setsCtrl}
     ${rows}
   </div>`;
 }
@@ -1083,20 +1188,127 @@ function renderTabs(){
   </div>`;
 }
 
-function renderBlockGroup(g, dayLog){
-  const isCollapsed = collapsedBlocks.has(g.blockId);
-  let html = `<div class="block-header" onclick="toggleBlockCollapse('${g.blockId}')">
+function renderBlockGroup(node, dayLog, depth = 0){
+  const isCollapsed = collapsedBlocks.has(node.blockId);
+  const indentStyle = depth > 0 ? `margin-left:${depth * 16}px;` : '';
+  
+  let html = `<div class="block-header" onclick="toggleBlockCollapse('${node.blockId}')" style="${indentStyle}">
     <span class="blk-toggle">${isCollapsed ? '▸' : '▾'}</span>
     <span class="blk-icon">📦</span>
-    ${escapeHtml(g.name)}
-    <span class="blk-count">${g.exercises.length} упр.</span>
+    ${escapeHtml(node.name)}
+    <span class="blk-count">${node.exCount} упр.</span>
   </div>`;
+  
   if(!isCollapsed){
-    g.exercises.forEach(exId => { html += renderExercise(exId, dayLog[exId]); });
+    node.items.forEach(item => {
+      if (item.type === 'exercise') {
+        html += renderExercise(item.id, dayLog[item.id], depth + 1);
+      } else if (item.type === 'block') {
+        html += renderBlockGroup(item.node, dayLog, depth + 1);
+      }
+    });
   }
   return html;
 }
+function openAdHocPicker() {
+  let modal = document.getElementById('adhoc-modal');
+  if (!modal) {
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="adhoc-modal" style="display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:flex-end;justify-content:center" onclick="if(event.target===this)closeAdHocPicker()">
+        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px 12px 0 0;width:100%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom)">
+          <div style="padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center">
+            <strong style="font-size:15px">Добавить на сегодня</strong>
+            <button onclick="closeAdHocPicker()" style="background:transparent;border:none;color:#888;font-size:22px;cursor:pointer;line-height:1">×</button>
+          </div>
+          <div style="padding:0 16px 8px">
+            <input type="text" id="adhoc-search" class="form-input" placeholder="Поиск упражнения..." oninput="renderAdHocList()" style="margin-bottom:8px">
+          </div>
+          <div id="adhoc-list" style="flex:1;overflow-y:auto;padding:0 16px 16px"></div>
+        </div>
+      </div>
+    `);
+    modal = document.getElementById('adhoc-modal');
+  }
+  modal.style.display = 'flex';
+  document.getElementById('adhoc-search').value = '';
+  renderAdHocList();
+}
 
+function closeAdHocPicker() {
+  const modal = document.getElementById('adhoc-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderAdHocList() {
+  const q = document.getElementById('adhoc-search').value.toLowerCase().trim();
+  const list = document.getElementById('adhoc-list');
+  const dateStr = fmt(currentDate);
+  const dayLog = store.logs[dateStr] || {};
+
+  const matches = sortedExerciseEntries().filter(([id, ex]) => {
+    // Скрываем те, что уже есть в сегодняшнем дне
+    if (dayLog[id]) return false;
+    
+    if (!q) return true;
+    if (ex.name.toLowerCase().includes(q)) return true;
+    const markers = getExerciseMarkers(id);
+    if (markers.some(m => m.toLowerCase().includes(q))) return true;
+    const msum = muscleSummary(ex.muscles) || '';
+    if (msum.toLowerCase().includes(q)) return true;
+    return false;
+  });
+
+  if (!matches.length) {
+    list.innerHTML = '<div style="padding:14px;color:#666;text-align:center">Ничего не найдено</div>';
+    return;
+  }
+
+  list.innerHTML = matches.map(([id, ex]) => {
+    const msum = muscleSummary(ex.muscles);
+    return `<div onclick="addAdHocExercise('${id}')" style="padding:10px 12px;background:#141414;border:1px solid #262626;border-radius:6px;margin-bottom:6px;cursor:pointer;font-size:13.5px;color:#ddd">
+      <div>${escapeHtml(ex.name)}</div>
+      ${msum ? `<div style="font-size:11px;color:#666;margin-top:3px">${escapeHtml(msum)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function addAdHocExercise(id) {
+  const dateStr = fmt(currentDate);
+  const logs = store.logs;
+  logs[dateStr] = logs[dateStr] || {};
+  
+  if (!logs[dateStr][id]) {
+    logs[dateStr][id] = {};
+  }
+  logs[dateStr][id].adHoc = true;
+  store.logs = logs;
+  
+  closeAdHocPicker();
+  render();
+}
+
+function removeAdHocExercise(id) {
+  if (!confirm('Убрать это упражнение из сегодняшней тренировки?')) return;
+  const dateStr = fmt(currentDate);
+  const logs = store.logs;
+  if (logs[dateStr] && logs[dateStr][id]) {
+    delete logs[dateStr][id];
+    if (!Object.keys(logs[dateStr]).length) delete logs[dateStr];
+    store.logs = logs;
+  }
+  render();
+}
+
+function renderAdHocExercise(exId, log) {
+  return `<div style="position:relative; border:1px dashed #4a7a4a; border-radius:8px; padding:2px; margin-bottom:8px; background:#1a2a1a">
+    <div style="position:absolute;top:6px;right:6px;z-index:10">
+      <button class="del-btn" style="font-size:16px;padding:4px" onclick="removeAdHocExercise('${exId}')" title="Убрать из сегодняшней тренировки">✕</button>
+    </div>
+    <div style="padding:6px 6px 0 6px">
+      ${renderExercise(exId, log)}
+    </div>
+  </div>`;
+}
 function renderToday(){
   const dow=currentDate.getDay();
   const plan=getPlan(currentDate);
@@ -1133,12 +1345,14 @@ function renderToday(){
   if(!skipped){
     if(plan.main.length){
       html+=`<h2>Основные</h2>`;
-      if(plan.groups && plan.groups.length){
+                  if(plan.groups && plan.groups.length){
         plan.groups.forEach(g => {
           if(g.type === 'exercise'){
             html+=renderExercise(g.id, dayLog[g.id]);
           } else if(g.type === 'block'){
-            html += renderBlockGroup(g, dayLog);
+            html += renderBlockGroup(g.tree, dayLog);
+          } else if(g.type === 'adhoc'){
+            html += renderAdHocExercise(g.id, dayLog[g.id]);
           }
         });
       } else {
@@ -1169,6 +1383,8 @@ function renderToday(){
       </div>`;
     }
   }
+    html+=`<h2>Дополнительно</h2>`;
+  html+=`<button class="add-btn" onclick="openAdHocPicker()">+ Добавить упражнение на сегодня</button>`;
   html+=`<h2>Заметка</h2>
   <textarea class="form-input" rows="2" placeholder="Как прошло, самочувствие…" oninput="setDayNote(this.value)">${escapeHtml(dayLog._note||'')}</textarea>`;
   document.getElementById('app').innerHTML=html;
@@ -2333,7 +2549,9 @@ function createBlockInCurrent() {
 function deleteBlockById(blockId) {
   const block = (onbPlan.blocks || []).find(b => b.id === blockId);
   if (!block) return;
-  if (!confirm(`Удалить блок «${block.name}»?`)) return;
+  const childCount = (block.children || []).length;
+  const extra = childCount > 0 ? `\nВместе с содержимым (${childCount} элементов).` : '';
+  if (!confirm(`Удалить блок «${block.name}»?${extra}`)) return;
   const toDelete = new Set([blockId]);
   const collect = (id) => {
     const b = (onbPlan.blocks || []).find(x => x.id === id);
@@ -2371,6 +2589,19 @@ function deleteBlockById(blockId) {
 function removeChildAt(idx) {
   const block = getCurrentBlock();
   if (!block) return;
+  const child = block.children[idx];
+  if (!child) return;
+
+  let name = 'упражнение';
+  if (child.type === 'exercise') {
+    name = EX[child.id]?.name ? `«${EX[child.id].name}»` : 'упражнение';
+  } else if (child.type === 'block') {
+    const nested = (onbPlan.blocks || []).find(b => b.id === child.id);
+    name = nested ? `блок «${nested.name}»` : 'блок';
+  }
+
+  if (!confirm(`Удалить ${name} из блока?`)) return;
+
   block.children = (block.children || []).filter((_, i) => i !== idx);
   editingChildIdx = null;
   render();
@@ -3495,22 +3726,6 @@ function renderWizard() {
   return html;
 }
 
-function toggleWizardEq(eq, checked) {
-  if (checked) { if (!wizardState.equipment.includes(eq)) wizardState.equipment.push(eq); }
-  else { wizardState.equipment = wizardState.equipment.filter(e => e !== eq); }
-}
-function toggleWizardDay(d) {
-  if (wizardState.days.includes(d)) wizardState.days = wizardState.days.filter(x => x !== d);
-  else wizardState.days.push(d);
-  renderOnboarding();
-}
-function toggleWizardPart(id, checked) {
-  if (checked) { if (!wizardState.parts.includes(id)) wizardState.parts.push(id); }
-  else { wizardState.parts = wizardState.parts.filter(p => p !== id); }
-}
-function wizardNext() { wizardState.step++; renderOnboarding(); }
-function wizardPrev() { wizardState.step--; renderOnboarding(); }
-function skipWizard() { wizardState.enabled = false; render(); }
 function renderCustom(){ document.getElementById('app').innerHTML = renderTabs() + renderPlanBuilderContent(); }
 
 function validateAllBlockNames(){
@@ -3783,6 +3998,36 @@ function onSetInput(exId,idx,field,el){
   }
   if(v!==el.value)el.value=v;
   setSet(exId,idx,field,v);
+}
+function changeSets(exId, delta) {
+  const dateStr = fmt(currentDate);
+  const logs = store.logs;
+  logs[dateStr] = logs[dateStr] || {};
+  logs[dateStr][exId] = logs[dateStr][exId] || {};
+  const log = logs[dateStr][exId];
+
+  const current = (Number.isFinite(log._customSets) && log._customSets > 0)
+    ? log._customSets
+    : getExSets(exId);
+
+  const next = current + delta;
+  if (next < 1 || next > 20) return;
+
+  if (delta < 0) {
+    const sets = log.sets || [];
+    const removingIdx = current - 1;
+    const setToRemove = sets[removingIdx];
+    const hasData = setToRemove && (setToRemove.w || setToRemove.r);
+    const msg = hasData
+      ? `Уменьшить подходы с ${current} до ${next}?\nДанные подхода #${current} (${setToRemove.w||'—'} кг × ${setToRemove.r||'—'}) будут удалены.`
+      : `Уменьшить подходы с ${current} до ${next}?`;
+    if (!confirm(msg)) return;
+    if (sets.length > removingIdx) sets.splice(removingIdx, 1);
+  }
+
+  log._customSets = next;
+  store.logs = logs;
+  render();
 }
 function setSet(exId,idx,field,value){
   const d=fmt(currentDate),logs=store.logs;
