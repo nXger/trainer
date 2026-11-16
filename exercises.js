@@ -432,7 +432,6 @@ Object.assign(EX, {
   weighted_breathing: { name:'Дыхание с блином на груди', sets:4, reps:'10-15',
     muscles:{intercostals:100},
     markers:['Гантели/Штанга/Гиря'] },
-    {
   cable_wrist_curl: { name:'Заворот кисти на блоке', sets:4, reps:'12-15',
     muscles:{fcr:35,fcu:35,fds:15,fdp:15},
     markers:['Тренажер', 'Армрестлинг'] }
