@@ -3082,14 +3082,16 @@ function attemptAddExercise(){
     const name = nameEl.value.trim();
     if(!name){alert('Введите название');return false;}
 
+    const app = document.querySelector('input[name="addNewType"]:checked').value === 'app';
+    
     const loads = getMuscleLoads('addNewMuscle');
-    if(Object.keys(loads).length === 0){
+    // Если это НЕ приложение, требуем хотя бы одну мышцу
+    if(!app && Object.keys(loads).length === 0){
       alert('Выберите хотя бы одну мышцу');
       return false;
     }
     const muscles = computePercents(loads);
 
-    const app = document.querySelector('input[name="addNewType"]:checked').value === 'app';
     const setsEl = document.getElementById('addNewSets');
     const repsEl = document.getElementById('addNewReps');
     const sets = setsEl ? (parseInt(setsEl.value)||4) : 4;
@@ -3422,7 +3424,17 @@ function onbSaveEdit(idx){
   onbEditingIdx = null;
   render();
 }
-
+function updateAddNewMuscleLabel() {
+  const typeEl = document.querySelector('input[name="addNewType"]:checked');
+  const labelEl = document.getElementById('addNewMusclesLabel');
+  if (typeEl && labelEl) {
+    if (typeEl.value === 'app') {
+      labelEl.textContent = 'Мышцы (необязательно для приложений):';
+    } else {
+      labelEl.textContent = 'Мышцы (обязательно хотя бы одна):';
+    }
+  }
+}
 function renderAddForm(){
   const isBlockContext = blockEditPath.length > 0;
   const daysChecks = WEEK_ORDER.map(d =>
@@ -3480,8 +3492,8 @@ function renderAddForm(){
       <div id="addNewBlock" style="display:${onbAddType==='new'?'block':'none'}">
         <input type="text" id="addNewName" class="form-input" placeholder="Название упражнения">
         <div class="form-row">
-          <label><input type="radio" name="addNewType" value="sets" checked onchange="document.getElementById('addNewSetsBlock').style.display='block'"> Подходы</label>
-          <label><input type="radio" name="addNewType" value="app" onchange="document.getElementById('addNewSetsBlock').style.display='none'"> По приложению</label>
+          <label><input type="radio" name="addNewType" value="sets" checked onchange="document.getElementById('addNewSetsBlock').style.display='block'; updateAddNewMuscleLabel()"> Подходы</label>
+          <label><input type="radio" name="addNewType" value="app" onchange="document.getElementById('addNewSetsBlock').style.display='none'; updateAddNewMuscleLabel()"> По приложению</label>
         </div>
         <div id="addNewSetsBlock">
           <input type="number" id="addNewSets" class="form-input" value="4" min="1" placeholder="Количество подходов">
@@ -3489,7 +3501,7 @@ function renderAddForm(){
         </div>
         <div style="font-size:12px;color:#888;margin:8px 0 4px">Метки (через запятую, необязательно):</div>
         <input type="text" id="addNewMarkers" class="form-input" placeholder="напр. база, жим, домашние">
-        <div style="font-size:12px;color:#888;margin:8px 0 4px">Мышцы (обязательно хотя бы одна):</div>
+        <div id="addNewMusclesLabel" style="font-size:12px;color:#888;margin:8px 0 4px">Мышцы (обязательно хотя бы одна):</div>
         ${renderMusclePicker({},'addNewMuscle')}
       </div>
       ${childScheduleSection}
