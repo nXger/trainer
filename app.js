@@ -2894,6 +2894,25 @@ function onSaveChildEdit(idx) {
   
   if (!saveDisableState(child, prefix)) return;
   
+  // Сохраняем количество подходов
+  if (child.type === 'exercise') {
+    const setsEl = document.getElementById(prefix + 'Sets');
+    if (setsEl) {
+      const raw = setsEl.value.trim();
+      if (raw === '') {
+        delete child.sets; // вернуть дефолт
+      } else {
+        const val = parseInt(raw, 10);
+        if (Number.isFinite(val) && val >= 1 && val <= 20) {
+          child.sets = val;
+        } else {
+          alert('Количество подходов должно быть от 1 до 20');
+          return;
+        }
+      }
+    }
+  }
+  
   child.activeWithParent = activeWithParent;
   if (child.type === 'exercise') {
     child.schedule = schedule;
@@ -2973,12 +2992,26 @@ function renderChildEditForm(child, idx) {
   const name = isBlock
     ? ((onbPlan.blocks || []).find(b => b.id === child.id)?.name || 'блок')
     : (EX[child.id]?.name || 'упражнение');
+
+  let setsInput = '';
+  if (!isBlock) {
+    const ex = EX[child.id];
+    const defaultSets = ex ? (ex.sets || 4) : 4;
+    const currentSets = (Number.isFinite(child.sets) && child.sets > 0) ? child.sets : defaultSets;
+    setsInput = `
+      <div style="font-size:12px;color:#888;margin:10px 0 4px">
+        Количество подходов (по умолчанию ${defaultSets}, пусто = дефолт):
+      </div>
+      <input type="number" id="ce${idx}Sets" class="form-input" min="1" max="20"
+             value="${currentSets}" placeholder="${defaultSets}">
+    `;
+  }
+
   return `<div class="child-settings">
     <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Настройки: ${escapeHtml(name)}</div>
     ${renderChildScheduleEditor(child, 'ce' + idx, isBlock)}
-    
+    ${setsInput}
     ${renderDisableSection('ce' + idx, child, isBlock)}
-    
     <div style="display:flex;gap:8px;margin-top:10px">
       <button class="mini-btn" style="flex:1" onclick="onCancelChildEdit()">Отмена</button>
       <button class="mini-btn" style="flex:2;background:#2a5a2a;border-color:#3a7a3a" onclick="onSaveChildEdit(${idx})">Сохранить</button>
@@ -3630,7 +3663,11 @@ function renderBlockChildren(block) {
       const awp = child.activeWithParent !== false;
       let schedLabel = scheduleSummary(child.schedule);
       if (schedType === 'none') schedLabel = awp ? 'как родитель' : 'каждый день';
-      const setsInfo = child.sets ? `${child.sets} подх.` : '';
+      
+      // Вычисляем количество подходов (ручное или по умолчанию)
+      const defaultSets = ex.sets || 4;
+      const effectiveSets = (Number.isFinite(child.sets) && child.sets > 0) ? child.sets : defaultSets;
+      const setsInfo = `${effectiveSets} подх.`;
       
       const dis = isCurrentlyDisabled(child);
       const badge = dis ? `<span class="pbadge">отменено</span>` : '';
@@ -3638,7 +3675,7 @@ function renderBlockChildren(block) {
       html += `<div class="plan-item ${dis ? 'disabled' : ''}">
         <div style="flex:1;min-width:0">
           <div class="pname">${escapeHtml(ex.name)}${badge}</div>
-          <div class="psched">${awp ? '' : 'независимо · '}${schedLabel}${setsInfo ? ' · '+setsInfo : ''}</div>
+          <div class="psched">${awp ? '' : 'независимо · '}${schedLabel} · ${setsInfo}</div>
           ${renderMarkerChipsOnly(child.id)}
           ${dis ? `<div class="psched" style="color:#c66">🚫 ${escapeHtml(dis.reason)}${dis.until ? ` (до ${dis.until})` : ''}</div>` : ''}
         </div>
