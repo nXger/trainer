@@ -643,11 +643,14 @@ function processBlockTree(block, date, blocks, visited, ancestorDisabled, disabl
 
   (block.children || []).forEach(child => {
     const childActive = isChildEntryActive(child, date, block, blockActive, blocks);
+    const childDis = isDisabledOn(child, dateStr);
+    const childDisabled = myDisabled || !!childDis;
+    const childReason = childDis ? childDis.reason : myReason;
 
     if (child.type === 'exercise') {
       if (childActive) {
-        if (myDisabled) {
-          node.cancelled.push({ id: child.id, reason: myReason || 'disabled', blockName: block.name });
+        if (childDisabled) {
+          node.cancelled.push({ id: child.id, reason: childReason || 'disabled', blockName: block.name });
         } else {
           node.items.push({ type: 'exercise', id: child.id });
           node.flatExercises.push(child.id);
@@ -658,7 +661,7 @@ function processBlockTree(block, date, blocks, visited, ancestorDisabled, disabl
       const nested = getBlockById(blocks, child.id);
       if (!nested) return;
       if (childActive) {
-        const childNode = processBlockTree(nested, date, blocks, visited, myDisabled, myReason, true);
+        const childNode = processBlockTree(nested, date, blocks, visited, childDisabled, childReason, true);
         if (childNode && (childNode.items.length > 0 || childNode.cancelled.length > 0)) {
           node.items.push({ type: 'block', node: childNode });
           node.flatExercises.push(...childNode.flatExercises);
@@ -692,6 +695,8 @@ function getPlan(date){
   const cancelled = [];
   const seen = new Set();
   const cancelledSeen = new Set();
+  const dayLog = store.logs[dateStr] || {};
+  const skippedBlocks = dayLog._skippedBlocks || {};
 
   if(own && own.enabled){
     const allBlocks = own.blocks || [];
@@ -701,7 +706,10 @@ function getPlan(date){
       if(!isScheduleActive(item.schedule, date)) return;
       const dis = isDisabledOn(item, dateStr);
       if(dis){
-        cancelled.push({ id: item.id, reason: dis.reason });
+        cancelled.push({ id: item.id, reason: dis.reason, type: 'disabled' });
+        cancelledSeen.add(item.id);
+      } else if(dayLog[item.id] && dayLog[item.id]._skipped) {
+        cancelled.push({ id: item.id, reason: dayLog[item.id]._skipped.reason || 'пропущено', type: 'skipped' });
         cancelledSeen.add(item.id);
       } else {
         main.push(item.id);
@@ -712,21 +720,48 @@ function getPlan(date){
 
     const topBlocks = getTopLevelBlocks();
     topBlocks.forEach(block => {
+      if(skippedBlocks[block.id]){
+        groups.push({
+          type: 'block',
+          blockId: block.id,
+          name: block.name,
+          skipped: skippedBlocks[block.id],
+          tree: null
+        });
+        getBlockExercises(block, allBlocks).forEach(id => seen.add(id));
+        return;
+      }
+
       const blockActive = isScheduleActive(block.schedule, date);
       const blockOut = processBlockTree(block, date, allBlocks, new Set(), false, null, blockActive);
-      
+
       if (blockOut) {
-        // Рекурсивная фильтрация: убираем то, что уже есть в main или cancelled
         const filterNode = (n) => {
           const newItems = [];
           const newCancelled = n.cancelled.filter(c => !seen.has(c.id) && !cancelledSeen.has(c.id));
-          
+          newCancelled.forEach(c => cancelledSeen.add(c.id));
+
           n.items.forEach(it => {
             if (it.type === 'exercise') {
-              if (!seen.has(it.id) && EX[it.id]) {
+              if (dayLog[it.id] && dayLog[it.id]._skipped) {
+                if(!cancelledSeen.has(it.id)){
+                  cancelled.push({ id: it.id, reason: dayLog[it.id]._skipped.reason || 'пропущено', blockName: block.name, type: 'skipped' });
+                  cancelledSeen.add(it.id);
+                }
+              } else if (!seen.has(it.id) && EX[it.id]) {
                 newItems.push(it);
               }
             } else if (it.type === 'block') {
+              if (skippedBlocks[it.node.blockId]) {
+                it.node.flatExercises.forEach(exId => {
+                  if(!cancelledSeen.has(exId) && !seen.has(exId)){
+                    cancelled.push({ id: exId, reason: skippedBlocks[it.node.blockId].reason || 'блок пропущен', blockName: it.node.name, type: 'skipped' });
+                    cancelledSeen.add(exId);
+                    seen.add(exId);
+                  }
+                });
+                return;
+              }
               const filteredChild = filterNode(it.node);
               if (filteredChild) {
                 newItems.push({ type: 'block', node: filteredChild });
@@ -743,28 +778,23 @@ function getPlan(date){
             else { exCount += it.node.exCount; flatExs.push(...it.node.flatExercises); }
           });
 
-          return {
-            ...n,
-            items: newItems,
-            cancelled: newCancelled,
-            exCount,
-            flatExercises: flatExs
-          };
+          return { ...n, items: newItems, cancelled: newCancelled, exCount, flatExercises: flatExs };
         };
 
         const filteredBlock = filterNode(blockOut);
 
-        if (filteredBlock) {
+        if (filteredBlock && filteredBlock.exCount > 0) {
           filteredBlock.flatExercises.forEach(id => { seen.add(id); main.push(id); });
           filteredBlock.cancelled.forEach(c => { cancelledSeen.add(c.id); cancelled.push(c); });
-          
           groups.push({
             type: 'block',
             blockId: block.id,
             name: block.name,
             exercises: filteredBlock.flatExercises,
-            tree: filteredBlock // Передаем дерево
+            tree: filteredBlock
           });
+        } else if (filteredBlock) {
+          filteredBlock.cancelled.forEach(c => { cancelledSeen.add(c.id); cancelled.push(c); });
         }
       }
     });
@@ -773,18 +803,28 @@ function getPlan(date){
   customStore.list.forEach(c => {
     if(c.deleted || seen.has(c.id) || cancelledSeen.has(c.id)) return;
     if(isCustomActive(c, date) && !main.includes(c.id)){
-      main.push(c.id);
-      seen.add(c.id);
-      groups.push({ type: 'exercise', id: c.id });
+      if(dayLog[c.id] && dayLog[c.id]._skipped){
+        cancelled.push({ id: c.id, reason: dayLog[c.id]._skipped.reason || 'пропущено', type: 'skipped' });
+        cancelledSeen.add(c.id);
+      } else {
+        main.push(c.id);
+        seen.add(c.id);
+        groups.push({ type: 'exercise', id: c.id });
+      }
     }
   });
-   const dayLog = store.logs[dateStr] || {};
+
   Object.entries(dayLog).forEach(([id, e]) => {
     if (id.startsWith('_') || !e || !e.adHoc) return;
-    if (seen.has(id)) return; // Если оно уже есть в плане, не дублируем
-    main.push(id);
-    seen.add(id);
-    groups.push({ type: 'adhoc', id: id });
+    if (seen.has(id)) return;
+    if (e._skipped) {
+      cancelled.push({ id, reason: e._skipped.reason || 'пропущено', type: 'skipped' });
+      cancelledSeen.add(id);
+    } else {
+      main.push(id);
+      seen.add(id);
+      groups.push({ type: 'adhoc', id: id });
+    }
   });
 
   return { info: [], main, groups, cancelled, after: [] };
@@ -1119,7 +1159,8 @@ function renderExercise(exId, log, depth = 0){
   const ex=EX[exId];
   if(!ex) return '';
   const dateStr=fmt(currentDate);
-  const done=log?.done?'done':'', checked=log?.done?'checked':'';
+  const isSkipped = log && log._skipped;
+  const done=(log?.done && !isSkipped)?'done':'', checked=(log?.done && !isSkipped)?'checked':'';
   const last=getLastEntryBefore(exId,dateStr);
   const musStr = muscleSummary(ex.muscles);
   const musclesHtml = musStr ? `<div class="ex-last" style="color:#7a7a7a">${escapeHtml(musStr)}</div>` : '';
@@ -1130,11 +1171,24 @@ function renderExercise(exId, log, depth = 0){
     ? log._customSets
     : getExSets(exId);
 
+  const skipBtn = isSkipped
+    ? `<button class="mini-btn" style="padding:2px 7px;font-size:11px;background:#2a4a2a;border-color:#3a6a3a;color:#9f9" onclick="event.stopPropagation();unskipExerciseToday('${exId}')" title="Вернуть">↺</button>`
+    : `<button class="mini-btn" style="padding:2px 7px;font-size:11px;background:transparent;border-color:#444;color:#888" onclick="event.stopPropagation();skipExerciseToday('${exId}')" title="Пропустить на сегодня">⊘</button>`;
+
   const head=`<div class="ex-head">
       <input type="checkbox" ${checked} onchange="toggleDone('${exId}',this.checked)">
       <strong>${escapeHtml(ex.name)}</strong>
       <span class="meta">${ex.app?'по приложению':sets+'×'+getTargetReps(exId,dateStr)}</span>
+      ${skipBtn}
     </div>`;
+
+  if (isSkipped) {
+    return `<div class="ex ex-cancelled" data-ex-id="${exId}" style="${indentStyle}">
+      ${head}
+      <div class="ex-last" style="color:#c66;margin-bottom:0">🚫 Пропущено: ${escapeHtml(log._skipped.reason)}</div>
+    </div>`;
+  }
+
   if(ex.app){
     return `<div class="ex ${done}" data-ex-id="${exId}" style="${indentStyle}">
       ${head}
@@ -1191,14 +1245,18 @@ function renderTabs(){
 function renderBlockGroup(node, dayLog, depth = 0){
   const isCollapsed = collapsedBlocks.has(node.blockId);
   const indentStyle = depth > 0 ? `margin-left:${depth * 16}px;` : '';
-  
+  const skipBtn = `<button class="mini-btn" style="padding:2px 6px;font-size:10px;background:transparent;border-color:#444;color:#888" onclick="event.stopPropagation();skipBlockToday('${node.blockId}', '${escapeHtml(node.name).replace(/'/g, "\\'")}')" title="Пропустить блок на сегодня">⊘</button>`;
+
   let html = `<div class="block-header" onclick="toggleBlockCollapse('${node.blockId}')" style="${indentStyle}">
     <span class="blk-toggle">${isCollapsed ? '▸' : '▾'}</span>
     <span class="blk-icon">📦</span>
     ${escapeHtml(node.name)}
-    <span class="blk-count">${node.exCount} упр.</span>
+    <span style="margin-left:auto;display:flex;align-items:center;gap:6px">
+      ${skipBtn}
+      <span class="blk-count">${node.exCount} упр.</span>
+    </span>
   </div>`;
-  
+
   if(!isCollapsed){
     node.items.forEach(item => {
       if (item.type === 'exercise') {
@@ -1346,32 +1404,48 @@ function renderToday(){
     if(plan.main.length){
       html+=`<h2>Основные</h2>`;
                   if(plan.groups && plan.groups.length){
-        plan.groups.forEach(g => {
-          if(g.type === 'exercise'){
-            html+=renderExercise(g.id, dayLog[g.id]);
-          } else if(g.type === 'block'){
-            html += renderBlockGroup(g.tree, dayLog);
-          } else if(g.type === 'adhoc'){
-            html += renderAdHocExercise(g.id, dayLog[g.id]);
-          }
-        });
+       plan.groups.forEach(g => {
+  if(g.type === 'exercise'){
+    html+=renderExercise(g.id, dayLog[g.id]);
+      } else if(g.type === 'block'){
+      if (g.skipped) {
+        const safeName = escapeHtml(g.name).replace(/'/g, "\\'");
+        html += `<div class="block-header" style="opacity:0.6;background:#2a1a1a;border-color:#4a2020;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+          <span class="blk-icon">📦</span>
+          <span style="flex:1">${escapeHtml(g.name)}</span>
+          <span style="color:#c66;font-size:11px">⊘ ${escapeHtml(g.skipped.reason)}</span>
+          <button class="mini-btn" style="padding:3px 8px;font-size:11px" onclick="skipBlockToday('${g.blockId}', '${safeName}')" title="Изменить причину">✎</button>
+          <button class="mini-btn" style="padding:3px 8px;font-size:11px" onclick="unskipBlockToday('${g.blockId}')">Вернуть</button>
+        </div>`;
+      } else {
+        html += renderBlockGroup(g.tree, dayLog);
+      }
+    }else if(g.type === 'adhoc'){
+    html += renderAdHocExercise(g.id, dayLog[g.id]);
+  }
+});
       } else {
         plan.main.forEach(id => html+=renderExercise(id, dayLog[id]));
       }
     }
-    if(plan.cancelled && plan.cancelled.length){
+        if(plan.cancelled && plan.cancelled.length){
       html+=`<h2>Отменено</h2>`;
       plan.cancelled.forEach(c=>{
         const ex=EX[c.id];
         if(!ex) return;
         const reasonText = c.blockName ? `${c.reason} (${c.blockName})` : (c.reason||'без причины');
+        const actions = c.type === 'skipped' ? `
+          <button class="mini-btn" style="padding:2px 8px;font-size:11px" onclick="skipExerciseToday('${c.id}')" title="Изменить причину">✎</button>
+          <button class="mini-btn" style="padding:2px 8px;font-size:11px;background:#2a5a2a;border-color:#3a7a3a;color:#9f9" onclick="unskipExerciseToday('${c.id}')" title="Вернуть">↺</button>
+        ` : '';
         html+=`<div class="ex ex-cancelled">
           <div class="ex-head">
             <span style="color:#c66;font-size:14px;line-height:1">⊘</span>
             <strong style="text-decoration:line-through;color:#999">${escapeHtml(ex.name)}</strong>
-            <span class="meta" style="color:#c66">отменено</span>
+            <span class="meta" style="color:#c66;margin-left:auto">отменено</span>
+            ${actions}
           </div>
-          <div class="ex-last" style="color:#aa8;margin-bottom:0">Причина: ${escapeHtml(reasonText)}</div>
+          <div class="ex-last" style="color:#aa8;margin-bottom:0">Причина: ${escapeHtml(reasonText)}${c.type === 'disabled' ? ' · <span style="color:#888">(долгосрочно, правка в «Свои»)</span>' : ''}</div>
         </div>`;
       });
     }
@@ -1817,6 +1891,61 @@ function unskipDay(){
     const rest=Object.keys(logs[d]);
     if(!rest.length)delete logs[d];
     store.logs=logs;
+  }
+  render();
+}
+function skipExerciseToday(exId) {
+  const name = EX[exId]?.name || exId;
+  const d = fmt(currentDate), logs = store.logs;
+  const existing = logs[d]?.[exId]?._skipped;
+  const isEdit = !!existing;
+  const reason = prompt(
+    isEdit ? `Изменить причину пропуска «${name}»:` : `Пропустить «${name}» на сегодня?\nПричина:`,
+    existing ? existing.reason : ''
+  );
+  if (reason === null) return;
+  logs[d] = logs[d] || {};
+  logs[d][exId] = logs[d][exId] || {};
+  logs[d][exId]._skipped = { reason: reason.trim() || 'без причины' };
+  if (logs[d][exId].done) delete logs[d][exId].done;
+  store.logs = logs;
+  render();
+}
+
+function unskipExerciseToday(exId) {
+  const d = fmt(currentDate), logs = store.logs;
+  if (logs[d] && logs[d][exId] && logs[d][exId]._skipped) {
+    delete logs[d][exId]._skipped;
+    if (!Object.keys(logs[d][exId]).length) delete logs[d][exId];
+    if (!Object.keys(logs[d]).length) delete logs[d];
+    store.logs = logs;
+  }
+  render();
+}
+
+function skipBlockToday(blockId, blockName) {
+  const d = fmt(currentDate), logs = store.logs;
+  const existing = logs[d]?._skippedBlocks?.[blockId];
+  const isEdit = !!existing;
+  const reason = prompt(
+    isEdit ? `Изменить причину пропуска блока «${blockName}»:` : `Пропустить блок «${blockName}» на сегодня?\nПричина:`,
+    existing ? existing.reason : ''
+  );
+  if (reason === null) return;
+  logs[d] = logs[d] || {};
+  logs[d]._skippedBlocks = logs[d]._skippedBlocks || {};
+  logs[d]._skippedBlocks[blockId] = { reason: reason.trim() || 'без причины' };
+  store.logs = logs;
+  render();
+}
+
+function unskipBlockToday(blockId) {
+  const d = fmt(currentDate), logs = store.logs;
+  if (logs[d] && logs[d]._skippedBlocks && logs[d]._skippedBlocks[blockId]) {
+    delete logs[d]._skippedBlocks[blockId];
+    if (!Object.keys(logs[d]._skippedBlocks).length) delete logs[d]._skippedBlocks;
+    if (!Object.keys(logs[d]).length) delete logs[d];
+    store.logs = logs;
   }
   render();
 }
@@ -2648,6 +2777,14 @@ function renameCurrentBlock(value) {
   }
 }
 
+function updateCurrentBlockDisable() {
+  const block = getCurrentBlock();
+  if (!block) return;
+  if (saveDisableState(block, 'blk')) {
+    render();
+  }
+}
+
 function updateCurrentBlockSchedule() {
   const block = getCurrentBlock();
   if (!block) return;
@@ -2754,6 +2891,9 @@ function onSaveChildEdit(idx) {
   if (!child) return;
   const prefix = 'ce' + idx;
   const { schedule, activeWithParent } = readChildSchedule(prefix);
+  
+  if (!saveDisableState(child, prefix)) return;
+  
   child.activeWithParent = activeWithParent;
   if (child.type === 'exercise') {
     child.schedule = schedule;
@@ -2763,7 +2903,71 @@ function onSaveChildEdit(idx) {
   editingChildIdx = null;
   render();
 }
+function renderDisableSection(prefix, item, isBlock) {
+  const currentDis = isCurrentlyDisabled(item);
+  const isDis = !!currentDis;
+  const disReason = currentDis ? (currentDis.reason || '') : '';
+  const disUntil = currentDis ? (currentDis.until || '') : '';
+  const disFrom = currentDis ? currentDis.from : '';
+  const toggle = `var f=document.getElementById('${prefix}DisFields');f.style.display=this.checked?'block':'none';`;
+  return `
+    ${isDis ? `<div class="dis-info">
+      🚫 Отключено с <strong>${disFrom}</strong>${disUntil ? ` по <strong>${disUntil}</strong>` : ' (бессрочно)'}<br>
+      Причина: <strong>${escapeHtml(disReason)}</strong>
+    </div>` : ''}
+    <div style="font-size:13px;color:#ccc;margin:12px 0 6px;padding-top:10px;border-top:1px solid #2a2a2a">
+      <label><input type="checkbox" id="${prefix}DisChk" ${isDis?'checked':''} onchange="${toggle}"> ${isDis ? 'Управлять отключением' : (isBlock ? 'Отключить блок' : 'Отключить упражнение')}</label>
+    </div>
+    <div id="${prefix}DisFields" style="display:${isDis?'block':'none'}">
+      <input type="text" id="${prefix}DisReason" class="form-input" placeholder="Причина (болезнь, травма…)" value="${escapeHtml(disReason)}">
+      <div style="font-size:12px;color:#888;margin:4px 0">Отключить до (пусто = бессрочно):</div>
+      <input type="date" id="${prefix}DisUntil" class="form-input" value="${disUntil}">
+    </div>
+  `;
+}
 
+function saveDisableState(item, prefix) {
+  const willBeDisabled = document.getElementById(`${prefix}DisChk`).checked;
+  const reason = document.getElementById(`${prefix}DisReason`).value.trim();
+  const until = document.getElementById(`${prefix}DisUntil`).value || null;
+  const today = fmt(todayDate());
+  const yesterday = fmt(new Date(todayDate().getTime() - 86400000));
+
+  const wasDisabled = !!isCurrentlyDisabled(item);
+
+  let disabled = item.disabled ? JSON.parse(JSON.stringify(item.disabled)) : null;
+
+  if(willBeDisabled && !wasDisabled){
+    if(!reason){alert('Укажите причину отключения');return false;}
+    if(until && until < today){alert('Дата должна быть не раньше сегодня');return false;}
+    const entry = { reason, from: today, until: until };
+    if(!disabled) disabled = [];
+    if(!Array.isArray(disabled)) disabled = [disabled];
+    disabled.push(entry);
+  }else if(!willBeDisabled && wasDisabled){
+    const arr = Array.isArray(disabled) ? disabled : [disabled];
+    disabled = arr.map(p => {
+      if(p.from <= today && (!p.until || p.until >= today)){
+        if(p.from > yesterday) return null;
+        return { ...p, until: yesterday };
+      }
+      return p;
+    }).filter(Boolean);
+    if(!disabled.length) disabled = null;
+  }else if(willBeDisabled && wasDisabled){
+    if(!reason){alert('Укажите причину отключения');return false;}
+    if(until && until < today){alert('Дата должна быть не раньше сегодня');return false;}
+    const arr = Array.isArray(disabled) ? disabled : [disabled];
+    disabled = arr.map(p => {
+      if(p.from <= today && (!p.until || p.until >= today)){
+        return { ...p, reason, until };
+      }
+      return p;
+    });
+  }
+  item.disabled = disabled;
+  return true;
+}
 function renderChildEditForm(child, idx) {
   const isBlock = child.type === 'block';
   const name = isBlock
@@ -2772,6 +2976,9 @@ function renderChildEditForm(child, idx) {
   return `<div class="child-settings">
     <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Настройки: ${escapeHtml(name)}</div>
     ${renderChildScheduleEditor(child, 'ce' + idx, isBlock)}
+    
+    ${renderDisableSection('ce' + idx, child, isBlock)}
+    
     <div style="display:flex;gap:8px;margin-top:10px">
       <button class="mini-btn" style="flex:1" onclick="onCancelChildEdit()">Отмена</button>
       <button class="mini-btn" style="flex:2;background:#2a5a2a;border-color:#3a7a3a" onclick="onSaveChildEdit(${idx})">Сохранить</button>
@@ -3348,11 +3555,14 @@ function renderPlanBlocks() {
   }
   let html = `<h2>Блоки (${topBlocks.length})</h2>`;
   topBlocks.forEach(block => {
+    const dis = isCurrentlyDisabled(block);
+    const badge = dis ? `<span class="pbadge">отменено</span>` : '';
     const exCount = getBlockExercises(block, onbPlan.blocks || []).length;
-    html += `<div class="plan-item">
+    html += `<div class="plan-item ${dis?'disabled':''}">
       <div style="flex:1;min-width:0">
-        <div class="pname">📦 ${escapeHtml(block.name)}</div>
+        <div class="pname">📦 ${escapeHtml(block.name)}${badge}</div>
         <div class="psched">${scheduleSummary(block.schedule)} · ${exCount} ${exCount===1?'упражнение':(exCount<5?'упражнения':'упражнений')}</div>
+        ${dis ? `<div class="psched" style="color:#c66">🚫 ${escapeHtml(dis.reason)}${dis.until ? ` (до ${dis.until})` : ''}</div>` : ''}
       </div>
       <button class="pdel" style="color:#6ab0ff" onclick="enterBlock('${block.id}')" title="Открыть">✎</button>
       <button class="pdel" onclick="deleteBlockById('${block.id}')" title="Удалить">✕</button>
@@ -3396,6 +3606,8 @@ function renderBlockSettings(block) {
     </div>`}
     <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
     <input type="date" id="blkStart" class="form-input" value="${startDate}" onchange="updateCurrentBlockSchedule()">
+    ${renderDisableSection('blk', block, true)}
+    <button class="mini-btn" style="margin-top:8px;background:#2a5a2a;border-color:#3a7a3a" onclick="updateCurrentBlockDisable()">Применить отключение</button>
   </div>`;
 }
 
@@ -3411,6 +3623,7 @@ function renderBlockChildren(block) {
       html += renderChildEditForm(child, idx);
       return;
     }
+    
     if (child.type === 'exercise' && EX[child.id]) {
       const ex = EX[child.id];
       const schedType = child.schedule?.type || 'none';
@@ -3418,27 +3631,39 @@ function renderBlockChildren(block) {
       let schedLabel = scheduleSummary(child.schedule);
       if (schedType === 'none') schedLabel = awp ? 'как родитель' : 'каждый день';
       const setsInfo = child.sets ? `${child.sets} подх.` : '';
-      html += `<div class="plan-item">
+      
+      const dis = isCurrentlyDisabled(child);
+      const badge = dis ? `<span class="pbadge">отменено</span>` : '';
+      
+      html += `<div class="plan-item ${dis ? 'disabled' : ''}">
         <div style="flex:1;min-width:0">
-          <div class="pname">${escapeHtml(ex.name)}</div>
+          <div class="pname">${escapeHtml(ex.name)}${badge}</div>
           <div class="psched">${awp ? '' : 'независимо · '}${schedLabel}${setsInfo ? ' · '+setsInfo : ''}</div>
           ${renderMarkerChipsOnly(child.id)}
+          ${dis ? `<div class="psched" style="color:#c66">🚫 ${escapeHtml(dis.reason)}${dis.until ? ` (до ${dis.until})` : ''}</div>` : ''}
         </div>
         <button class="pdel" style="color:#6ab0ff" onclick="onEditChild(${idx})" title="Настройки">✎</button>
         <button class="pdel" onclick="removeChildAt(${idx})" title="Удалить">✕</button>
       </div>`;
+      
     } else if (child.type === 'block') {
       const nested = (onbPlan.blocks || []).find(b => b.id === child.id);
       if (!nested) return;
+      
       const awp = child.activeWithParent !== false;
       const exCount = getBlockExercises(nested, onbPlan.blocks || []).length;
       const sched = child.scheduleOverride || nested.schedule;
       let schedLabel = scheduleSummary(sched);
       if (sched.type === 'none' || !sched.type) schedLabel = awp ? 'как родитель' : 'каждый день';
-      html += `<div class="plan-item">
+      
+      const dis = isCurrentlyDisabled(child);
+      const badge = dis ? `<span class="pbadge">отменено</span>` : '';
+      
+      html += `<div class="plan-item ${dis ? 'disabled' : ''}">
         <div style="flex:1;min-width:0">
-          <div class="pname">📦 ${escapeHtml(nested.name)}</div>
+          <div class="pname">📦 ${escapeHtml(nested.name)}${badge}</div>
           <div class="psched">${awp ? 'активен с родителем' : 'независимо'} · ${schedLabel} · ${exCount} упр.</div>
+          ${dis ? `<div class="psched" style="color:#c66">🚫 ${escapeHtml(dis.reason)}${dis.until ? ` (до ${dis.until})` : ''}</div>` : ''}
         </div>
         <button class="pdel" style="color:#6ab0ff" onclick="onEditChild(${idx})" title="Настройки">✎</button>
         <button class="pdel" style="color:#6ab0ff" onclick="enterBlock('${nested.id}')" title="Открыть">↗</button>
@@ -3975,15 +4200,16 @@ function toggleDone(exId,checked){
   }
   const d=fmt(currentDate),logs=store.logs;
   logs[d]=logs[d]||{};logs[d][exId]=logs[d][exId]||{};
+  if(checked && logs[d][exId]._skipped) delete logs[d][exId]._skipped;
   logs[d][exId].done=checked;
   if(!checked){
     const sets=logs[d][exId].sets;
     const hasSets=sets&&sets.some(x=>x&&(x.w||x.r));
-    if(!hasSets)delete logs[d][exId];
+    if(!hasSets && !logs[d][exId]._skipped)delete logs[d][exId];
   }
   if(logs[d]){
     const nonMeta=Object.keys(logs[d]).filter(k=>!k.startsWith('_'));
-    if(!nonMeta.length&&!logs[d]._skip&&!logs[d]._note)delete logs[d];
+    if(!nonMeta.length && !logs[d]._skip && !logs[d]._note && !logs[d]._skippedBlocks) delete logs[d];
   }
   store.logs=logs;render();
 }
