@@ -748,7 +748,6 @@ function getPlan(date){
       }
 
       const blockActive = isScheduleActive(block.schedule, date);
-      if (!blockActive) return;
 
       const blockOut = processBlockTree(block, date, allBlocks, new Set(), false, null, blockActive);
       
@@ -1122,8 +1121,10 @@ let selectedDate=todayDate();
 let calendarMonth=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
 let statsExerciseId=null;
 let searchQuery='';
-let collapsedBlocks = new Set();
+let blockCollapseState = {}; // {blockId: 'expanded'|'collapsed'}, пусто = авто
 let expandedMuscleGroups = new Set();
+let schedulePreviewBlockId = null;
+let moveState = null; // { fromType: 'item'|'child', fromIdx, fromBlockId? }
 
 function toggleMuscleGroup(key){
   const body = document.getElementById('mg-body-' + key);
@@ -1174,8 +1175,8 @@ function getMaxWeightByMuscle(){
 }
 
 function toggleBlockCollapse(blockId){
-  if(collapsedBlocks.has(blockId)) collapsedBlocks.delete(blockId);
-  else collapsedBlocks.add(blockId);
+  const current = blockCollapseState[blockId];
+  blockCollapseState[blockId] = current === 'expanded' ? 'collapsed' : 'expanded';
   render();
 }
 
@@ -1268,7 +1269,10 @@ function renderTabs(){
 }
 
 function renderBlockGroup(node, dayLog, depth = 0){
-  const isCollapsed = collapsedBlocks.has(node.blockId);
+  const doneCount = node.flatExercises.filter(id => dayLog[id] && dayLog[id].done && !dayLog[id]._skipped).length;
+  const allDone = node.exCount > 0 && doneCount === node.exCount;
+  const state = blockCollapseState[node.blockId];
+  const isCollapsed = state === 'expanded' ? false : (state === 'collapsed' ? true : allDone);
   const indentStyle = depth > 0 ? `margin-left:${depth * 16}px;` : '';
   const skipBtn = `<button class="mini-btn" style="padding:2px 6px;font-size:10px;background:transparent;border-color:#444;color:#888" onclick="event.stopPropagation();skipBlockToday('${node.blockId}', '${escapeHtml(node.name).replace(/'/g, "\\'")}')" title="Пропустить блок на сегодня">⊘</button>`;
 
@@ -1278,7 +1282,7 @@ function renderBlockGroup(node, dayLog, depth = 0){
     ${escapeHtml(node.name)}
     <span style="margin-left:auto;display:flex;align-items:center;gap:6px">
       ${skipBtn}
-      <span class="blk-count">${node.exCount} упр.</span>
+      <span class="blk-count">${doneCount}/${node.exCount}${allDone ? ' ✓' : ''}</span>
     </span>
   </div>`;
 
@@ -3340,7 +3344,120 @@ function selectAddExisting(id){
   }
   updateAddExistingPreview();
 }
+function movePlanItem(idx, dir){
+  const j = idx + dir;
+  if(j < 0 || j >= onbPlan.items.length) return;
+  const tmp = onbPlan.items[idx];
+  onbPlan.items[idx] = onbPlan.items[j];
+  onbPlan.items[j] = tmp;
+  render();
+}
 
+function moveChild(idx, dir){
+  const block = getCurrentBlock();
+  if(!block || !block.children) return;
+  const j = idx + dir;
+  if(j < 0 || j >= block.children.length) return;
+  const tmp = block.children[idx];
+  block.children[idx] = block.children[j];
+  block.children[j] = tmp;
+  render();
+}
+function startMoveItem(itemIdx){
+  moveState = { fromType: 'item', fromIdx: itemIdx };
+  renderMoveModal();
+}
+
+function startMoveChild(childIdx){
+  const block = getCurrentBlock();
+  if(!block) return;
+  moveState = { fromType: 'child', fromIdx: childIdx, fromBlockId: block.id };
+  renderMoveModal();
+}
+
+function renderMoveModal(){
+  if(!moveState) return;
+  const old = document.getElementById('move-modal');
+  if(old) old.remove();
+
+  const targets = [{ id: '__top__', name: 'Верхний уровень плана' }];
+  (onbPlan.blocks || []).forEach(b => {
+    targets.push({ id: b.id, name: '📦 ' + b.name });
+  });
+
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="move-modal" onclick="if(event.target===this)closeMoveModal()" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:flex-end;justify-content:center">
+      <div onclick="event.stopPropagation()" style="background:#1a1a1a;border:1px solid #333;border-radius:12px 12px 0 0;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <strong>Куда переместить?</strong>
+          <button onclick="closeMoveModal()" style="background:transparent;border:none;color:#888;font-size:22px;cursor:pointer;padding:0 6px;line-height:1">×</button>
+        </div>
+        ${targets.map(t => `<button onclick="doMove('${t.id}')" style="display:block;width:100%;text-align:left;padding:10px;margin-bottom:6px;background:#141414;border:1px solid #262626;border-radius:6px;color:#ddd;font-size:13px;cursor:pointer">${escapeHtml(t.name)}</button>`).join('')}
+      </div>
+    </div>
+  `);
+}
+
+function closeMoveModal(){
+  const m = document.getElementById('move-modal');
+  if(m) m.remove();
+  moveState = null;
+}
+
+function doMove(targetId){
+  if(!moveState) return;
+
+  // 1. Забираем элемент из источника
+  let child = null;
+  if(moveState.fromType === 'item'){
+    child = onbPlan.items[moveState.fromIdx];
+    if(!child){ closeMoveModal(); return; }
+    onbPlan.items.splice(moveState.fromIdx, 1);
+  } else {
+    const src = (onbPlan.blocks || []).find(b => b.id === moveState.fromBlockId);
+    if(!src){ closeMoveModal(); return; }
+    child = (src.children || [])[moveState.fromIdx];
+    if(!child){ closeMoveModal(); return; }
+    src.children.splice(moveState.fromIdx, 1);
+  }
+
+  // 2. Кладём в цель
+  if(targetId === '__top__'){
+    if(child.type !== 'exercise'){
+      alert('Перемещение блоков пока не поддерживается');
+      closeMoveModal();
+      return;
+    }
+    const item = { id: child.id, schedule: child.schedule || { type: 'none' }, disabled: child.disabled || null };
+    if(child.sets) item.sets = child.sets;
+    onbPlan.items.push(item);
+  } else {
+    const target = (onbPlan.blocks || []).find(b => b.id === targetId);
+    if(!target){ closeMoveModal(); return; }
+    if(moveState.fromType === 'child' && moveState.fromBlockId === targetId){
+      alert('Уже в этом блоке');
+      closeMoveModal();
+      return;
+    }
+    target.children = target.children || [];
+    if(target.children.some(c => c.type === 'exercise' && c.id === child.id)){
+      alert('Это упражнение уже в целевом блоке');
+      closeMoveModal();
+      return;
+    }
+    if(child.type === 'exercise'){
+      target.children.push(child);
+    } else {
+      const newChild = { type: 'exercise', id: child.id, activeWithParent: true, schedule: child.schedule || { type: 'none' } };
+      if(child.sets) newChild.sets = child.sets;
+      if(child.disabled) newChild.disabled = child.disabled;
+      target.children.push(newChild);
+    }
+  }
+
+  closeMoveModal();
+  render();
+}
 function onbRemoveItem(idx){
   const item = onbPlan.items[idx];
   const ex = item ? EX[item.id] : null;
@@ -3631,6 +3748,9 @@ function renderPlanItems() {
         ${renderMarkerChipsOnly(item.id)}
         ${extra}
       </div>
+      <button class="pdel" onclick="startMoveItem(${idx})" title="Переместить">⇄</button>
+      <button class="pdel" onclick="movePlanItem(${idx},-1)" ${idx===0?'disabled style="opacity:0.3"':''} title="Выше">↑</button>
+<button class="pdel" onclick="movePlanItem(${idx},1)" ${idx===items.length-1?'disabled style="opacity:0.3"':''} title="Ниже">↓</button>
       <button class="pdel" style="color:#6ab0ff" onclick="onbShowEdit(${idx})" title="Редактировать">✎</button>
       <button class="pdel" onclick="onbRemoveItem(${idx})" title="Удалить">✕</button>
     </div>`;
@@ -3660,7 +3780,111 @@ function renderPlanBlocks() {
   });
   return html;
 }
+function toggleBlockSchedulePreview(blockId){
+  schedulePreviewBlockId = (schedulePreviewBlockId === blockId) ? null : blockId;
+  render();
+}
+function blockHasExercisesOn(block, date, allBlocks, visited, forceActive){
+  if(!block) return false;
+  visited = visited || new Set();
+  if(visited.has(block.id)) return false;
+  visited.add(block.id);
 
+  const dateStr = fmt(date);
+  if(isDisabledOn(block, dateStr)) return false;
+
+  const blockActive = forceActive ? true : isScheduleActive(block.schedule, date);
+
+  for(const child of (block.children || [])){
+    const childActive = isChildEntryActive(child, date, block, blockActive, allBlocks);
+    if(!childActive) continue;
+    if(isDisabledOn(child, dateStr)) continue;
+
+    if(child.type === 'exercise'){
+      if(EX[child.id]) return true;
+    } else if(child.type === 'block'){
+      const nested = getBlockById(allBlocks, child.id);
+      if(!nested) continue;
+      if(blockHasExercisesOn(nested, date, allBlocks, visited, true)) return true;
+    }
+  }
+  return false;
+}
+function renderBlockSchedulePreview(block){
+  if(!block) return '';
+
+  const weeksToShow = 2;
+  const dayShort = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  const today = todayDate();
+  const todayStr = fmt(today);
+  const dow = (today.getDay() + 6) % 7;
+  const monday = new Date(today);
+  monday.setDate(monday.getDate() - dow);
+
+  const allBlocks = onbPlan.blocks || [];
+
+  // Компактная рамка вокруг всей сетки
+  let html = `<div style="margin-top:8px;padding:8px;background:#111;border:1px solid #262626;border-radius:8px;max-width:340px">`;
+
+  // Шапка
+  html += `<div style="display:grid;grid-template-columns:30px repeat(7,1fr);gap:2px;margin-bottom:2px">`;
+  html += `<div></div>`;
+  dayShort.forEach(d => {
+    html += `<div style="text-align:center;font-size:10px;color:#888;font-weight:600">${d}</div>`;
+  });
+  html += `</div>`;
+
+  for(let w = 0; w < weeksToShow; w++){
+    const rowStart = new Date(monday);
+    rowStart.setDate(rowStart.getDate() + w * 7);
+    const label = rowStart.getDate() + '.' + String(rowStart.getMonth()+1).padStart(2,'0');
+
+    html += `<div style="display:grid;grid-template-columns:30px repeat(7,1fr);gap:2px;margin-bottom:2px">`;
+    html += `<div style="font-size:9.5px;color:#666;align-self:center">${label}</div>`;
+
+    for(let d = 0; d < 7; d++){
+      const cur = new Date(monday);
+      cur.setDate(cur.getDate() + w * 7 + d);
+      const curStr = fmt(cur);
+
+      const blockDis = isDisabledOn(block, curStr);
+      const blockActive = !blockDis && isScheduleActive(block.schedule, cur);
+      const hasEx = blockHasExercisesOn(block, cur, allBlocks, new Set(), false);
+      const isToday = curStr === todayStr;
+
+      let bg, fg, bd;
+      if(blockActive && hasEx){
+        // Блок работает — упражнения есть
+        bg = '#2a5a2a'; fg = '#9f9'; bd = '1px solid #3a7a3a';
+      } else if(blockActive && !hasEx){
+        // Блок работает, но упражнений в этот день нет
+        bg = '#1a2a1a'; fg = '#5a8a5a'; bd = '1px solid #2a4a2a';
+      } else if(!blockActive && hasEx){
+        // Блок сам не работает, но независимые дети активны
+        bg = '#1a3a5a'; fg = '#7cc0e8'; bd = '1px solid #3a7ac0';
+      } else {
+        // Тишина
+        bg = '#1a1a1a'; fg = '#555'; bd = '1px solid #262626';
+      }
+
+      if(isToday) bd = '2px solid #e8c44d';
+
+      html += `<div style="padding:3px 1px;text-align:center;background:${bg};color:${fg};border:${bd};border-radius:3px;font-size:11px;${isToday?'font-weight:600':''}" title="${curStr}">${cur.getDate()}</div>`;
+    }
+
+    html += `</div>`;
+  }
+
+  // Компактная легенда
+  html += `<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:#888;margin-top:6px;padding-top:6px;border-top:1px solid #222">
+    <span><span style="display:inline-block;width:10px;height:10px;background:#2a5a2a;border:1px solid #3a7a3a;border-radius:2px;vertical-align:middle"></span> блок работает</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:#1a3a5a;border:1px solid #3a7ac0;border-radius:2px;vertical-align:middle"></span> только дети</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:#1a2a1a;border:1px solid #2a4a2a;border-radius:2px;vertical-align:middle"></span> пусто</span>
+  </div>`;
+
+  html += `</div>`;
+  return html;
+}
 function renderBlockSettings(block) {
   const sched = block.schedule || {};
   let schedType = sched.type || 'none';
@@ -3696,6 +3920,12 @@ function renderBlockSettings(block) {
     </div>`}
     <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
     <input type="date" id="blkStart" class="form-input" value="${startDate}" onchange="updateCurrentBlockSchedule()">
+    <div style="margin-top:8px">
+  <button class="mini-btn" onclick="toggleBlockSchedulePreview('${block.id}')" style="padding:4px 10px;font-size:12px">
+    ${schedulePreviewBlockId === block.id ? '▼' : '▶'} Расписание (14 дней)
+  </button>
+  ${schedulePreviewBlockId === block.id ? renderBlockSchedulePreview(block) : ''}
+</div>
     ${renderDisableSection('blk', block, true)}
     <button class="mini-btn" style="margin-top:8px;background:#2a5a2a;border-color:#3a7a3a" onclick="updateCurrentBlockDisable()">Применить отключение</button>
   </div>`;
@@ -3736,6 +3966,9 @@ function renderBlockChildren(block) {
           ${renderMarkerChipsOnly(child.id)}
           ${dis ? `<div class="psched" style="color:#c66">🚫 ${escapeHtml(dis.reason)}${dis.until ? ` (до ${dis.until})` : ''}</div>` : ''}
         </div>
+        <button class="pdel" onclick="startMoveChild(${idx})" title="Переместить">⇄</button>
+        <button class="pdel" onclick="moveChild(${idx},-1)" ${idx===0?'disabled style="opacity:0.3"':''} title="Выше">↑</button>
+<button class="pdel" onclick="moveChild(${idx},1)" ${idx===children.length-1?'disabled style="opacity:0.3"':''} title="Ниже">↓</button>
         <button class="pdel" style="color:#6ab0ff" onclick="onEditChild(${idx})" title="Настройки">✎</button>
         <button class="pdel" onclick="removeChildAt(${idx})" title="Удалить">✕</button>
       </div>`;
@@ -3759,6 +3992,9 @@ function renderBlockChildren(block) {
           <div class="psched">${awp ? 'активен с родителем' : 'независимо'} · ${schedLabel} · ${exCount} упр.</div>
           ${dis ? `<div class="psched" style="color:#c66">🚫 ${escapeHtml(dis.reason)}${dis.until ? ` (до ${dis.until})` : ''}</div>` : ''}
         </div>
+        <button class="pdel" onclick="startMoveChild(${idx})" title="Переместить">⇄</button>
+        <button class="pdel" onclick="moveChild(${idx},-1)" ${idx===0?'disabled style="opacity:0.3"':''} title="Выше">↑</button>
+<button class="pdel" onclick="moveChild(${idx},1)" ${idx===children.length-1?'disabled style="opacity:0.3"':''} title="Ниже">↓</button>
         <button class="pdel" style="color:#6ab0ff" onclick="onEditChild(${idx})" title="Настройки">✎</button>
         <button class="pdel" style="color:#6ab0ff" onclick="enterBlock('${nested.id}')" title="Открыть">↗</button>
         <button class="pdel" onclick="removeChildAt(${idx})" title="Удалить">✕</button>
