@@ -720,6 +720,7 @@ function getPlan(date){
 
     const topBlocks = getTopLevelBlocks();
     topBlocks.forEach(block => {
+      // 1. Разовая отмена блока на сегодня
       if(skippedBlocks[block.id]){
         groups.push({
           type: 'block',
@@ -732,9 +733,25 @@ function getPlan(date){
         return;
       }
 
-      const blockActive = isScheduleActive(block.schedule, date);
-      const blockOut = processBlockTree(block, date, allBlocks, new Set(), false, null, blockActive);
+      // 2. Долгосрочное отключение блока (через "Свои")
+      const blockDis = isDisabledOn(block, dateStr);
+      if (blockDis) {
+        groups.push({
+          type: 'block',
+          blockId: block.id,
+          name: block.name,
+          disabled: blockDis,
+          tree: null
+        });
+        getBlockExercises(block, allBlocks).forEach(id => seen.add(id));
+        return;
+      }
 
+      const blockActive = isScheduleActive(block.schedule, date);
+      if (!blockActive) return;
+
+      const blockOut = processBlockTree(block, date, allBlocks, new Set(), false, null, blockActive);
+      
       if (blockOut) {
         const filterNode = (n) => {
           const newItems = [];
@@ -793,8 +810,16 @@ function getPlan(date){
             exercises: filteredBlock.flatExercises,
             tree: filteredBlock
           });
-        } else if (filteredBlock) {
+        } else if (filteredBlock && filteredBlock.cancelled.length > 0) {
+          // Блок активен, но все его упражнения отменены
           filteredBlock.cancelled.forEach(c => { cancelledSeen.add(c.id); cancelled.push(c); });
+          groups.push({
+            type: 'block',
+            blockId: block.id,
+            name: block.name,
+            disabled: { reason: 'все упражнения отменены' },
+            tree: null
+          });
         }
       }
     });
@@ -1382,6 +1407,7 @@ function renderToday(){
   if(plan.info.length)html+=`<div class="info">${plan.info.join(' · ')}</div>`;
   const dayMetaHtml=renderDayMetaHtml(dayLog,isToday);
   html+=`<div id="day-meta" class="meta-row" style="display:${dayMetaHtml?'flex':'none'}">${dayMetaHtml}</div>`;
+  
   if(skipped){
     html+=`<div class="skip-banner">
       <span>🚫 Пропуск: ${escapeHtml(dayLog._skip.reason||'без причины')}</span>
@@ -1400,35 +1426,41 @@ function renderToday(){
       </div>
     </div>`;
   }
+  
   if(!skipped){
-    if(plan.main.length){
+    if(plan.groups && plan.groups.length){
       html+=`<h2>Основные</h2>`;
-                  if(plan.groups && plan.groups.length){
-       plan.groups.forEach(g => {
-  if(g.type === 'exercise'){
-    html+=renderExercise(g.id, dayLog[g.id]);
-      } else if(g.type === 'block'){
-      if (g.skipped) {
-        const safeName = escapeHtml(g.name).replace(/'/g, "\\'");
-        html += `<div class="block-header" style="opacity:0.6;background:#2a1a1a;border-color:#4a2020;margin-bottom:6px;display:flex;align-items:center;gap:6px">
-          <span class="blk-icon">📦</span>
-          <span style="flex:1">${escapeHtml(g.name)}</span>
-          <span style="color:#c66;font-size:11px">⊘ ${escapeHtml(g.skipped.reason)}</span>
-          <button class="mini-btn" style="padding:3px 8px;font-size:11px" onclick="skipBlockToday('${g.blockId}', '${safeName}')" title="Изменить причину">✎</button>
-          <button class="mini-btn" style="padding:3px 8px;font-size:11px" onclick="unskipBlockToday('${g.blockId}')">Вернуть</button>
-        </div>`;
-      } else {
-        html += renderBlockGroup(g.tree, dayLog);
-      }
-    }else if(g.type === 'adhoc'){
-    html += renderAdHocExercise(g.id, dayLog[g.id]);
-  }
-});
-      } else {
-        plan.main.forEach(id => html+=renderExercise(id, dayLog[id]));
-      }
+      plan.groups.forEach(g => {
+        if(g.type === 'exercise'){
+          html += renderExercise(g.id, dayLog[g.id]);
+        } else if(g.type === 'block'){
+          if (g.skipped) {
+            const safeName = escapeHtml(g.name).replace(/'/g, "\\'");
+            html += `<div class="block-header" style="opacity:0.6;background:#2a1a1a;border-color:#4a2020;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+              <span class="blk-icon">📦</span>
+              <span style="flex:1">${escapeHtml(g.name)}</span>
+              <span style="color:#c66;font-size:11px">⊘ ${escapeHtml(g.skipped.reason)}</span>
+              <button class="mini-btn" style="padding:3px 8px;font-size:11px" onclick="skipBlockToday('${g.blockId}', '${safeName}')" title="Изменить причину">✎</button>
+              <button class="mini-btn" style="padding:3px 8px;font-size:11px" onclick="unskipBlockToday('${g.blockId}')">Вернуть</button>
+            </div>`;
+          } else if (g.disabled) {
+            html += `<div class="block-header" style="opacity:0.6;background:#2a1a1a;border-color:#4a2020;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+              <span class="blk-icon">📦</span>
+              <span style="flex:1">${escapeHtml(g.name)}</span>
+              <span style="color:#c66;font-size:11px">🚫 ${escapeHtml(g.disabled.reason || 'отменено')}${g.disabled.until ? ` (до ${g.disabled.until})` : ''}</span>
+            </div>`;
+          } else {
+            html += renderBlockGroup(g.tree, dayLog);
+          }
+        } else if(g.type === 'adhoc'){
+          html += renderAdHocExercise(g.id, dayLog[g.id]);
+        }
+      });
+    } else if(plan.main.length) {
+      plan.main.forEach(id => html+=renderExercise(id, dayLog[id]));
     }
-        if(plan.cancelled && plan.cancelled.length){
+
+    if(plan.cancelled && plan.cancelled.length){
       html+=`<h2>Отменено</h2>`;
       plan.cancelled.forEach(c=>{
         const ex=EX[c.id];
@@ -1449,15 +1481,16 @@ function renderToday(){
         </div>`;
       });
     }
-    if(plan.after.length){html+=`<h2>Потом</h2>`;plan.after.forEach(id=>html+=renderExercise(id,dayLog[id]))}
-    if(!plan.main.length && !plan.after.length && !(plan.cancelled && plan.cancelled.length)){
+    
+    if(!plan.groups.length && !plan.cancelled.length){
       html+=`<div class="ex" style="color:#777">
         На этот день упражнений нет.
         <button class="mini-btn" style="margin-top:8px" onclick="setView('custom')">Настроить план</button>
       </div>`;
     }
   }
-    html+=`<h2>Дополнительно</h2>`;
+  
+  html+=`<h2>Дополнительно</h2>`;
   html+=`<button class="add-btn" onclick="openAdHocPicker()">+ Добавить упражнение на сегодня</button>`;
   html+=`<h2>Заметка</h2>
   <textarea class="form-input" rows="2" placeholder="Как прошло, самочувствие…" oninput="setDayNote(this.value)">${escapeHtml(dayLog._note||'')}</textarea>`;
