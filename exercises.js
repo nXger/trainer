@@ -276,7 +276,7 @@ Object.assign(EX, {
   cable_crossover: { name:'Сведение рук на блоке (кроссовер)', sets:4, reps:'12-15',
     muscles:{pectoralis_major:70,delts:30},
     markers:['Тренажер', 'Волейбол'] },
-  pinch_grip_hang: { name:'Щипковый хват на пальцы (вис)', sets:4, reps:'30-60 сек',
+  pinch_grip_hang: { name:'Щипковый хват на пальцы (удержание блина/диска)', sets:4, reps:'30-60 сек',
     muscles:{fds:40,fdp:40,fcr:10,fcu:10},
     markers:['Гантели/Штанга/Гиря', 'Армрестлинг', 'Собственный вес'] },
 
