@@ -278,7 +278,7 @@ Object.assign(EX, {
     markers:['Тренажер', 'Волейбол'] },
   pinch_grip_hang: { name:'Щипковый хват на пальцы (удержание блина/диска)', sets:4, reps:'30-60 сек',
     muscles:{fds:40,fdp:40,fcr:10,fcu:10},
-    markers:['Гантели/Штанга/Гиря', 'Армрестлинг', 'Собственный вес'] },
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
 
   // Вторник
   cable_hook_imitation: { name:'Имитация борьбы в крюк на блоке', sets:4, reps:'12-15',
@@ -288,10 +288,6 @@ Object.assign(EX, {
     muscles:{fds:35,fdp:35,fcr:15,fcu:15},
     markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
 
-  // Среда
-  radial_deviation_weighted: { name:'Луч через кисть (радиальное/ульнарное отклонение)', sets:4, reps:'12-15',
-    muscles:{fcr:30,ecrl:40,ecrb:30},
-    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
     
   diamond_pushups: { name:'Алмазные отжимания (узкий хват)', sets:4, reps:'12-15',
     muscles:{triceps:60,pectoralis_major:30,delts:10},
@@ -434,5 +430,23 @@ Object.assign(EX, {
     markers:['Гантели/Штанга/Гиря'] },
   cable_wrist_curl: { name:'Заворот кисти на блоке', sets:4, reps:'12-15',
     muscles:{fcr:35,fcu:35,fds:15,fdp:15},
-    markers:['Тренажер', 'Армрестлинг'] }
+    markers:['Тренажер', 'Армрестлинг'] },
+  pronation_forearm_free_weight: { name:'Пронация предплечья, свободный вес', sets:4, reps:'12-15',
+    muscles:{pronator_teres:35,pronator_quadratus:35,biceps:30},
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
+  radial_ulnar_deviation_free_weight: { name:'Луч через кисть, свободный вес ', sets:4, reps:'12-15',
+    muscles:{fcr:30,ecrl:40,ecrb:30},
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
+    isolated_wrist_abduction_free_weight: { 
+    name:'Изолированное отведение кисти свободный вес', 
+    sets:4, reps:'12-15',
+    muscles:{ecrl:40, ecrb:30, fcr:20, apl:10},
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] 
+  },
+  wrist_curl_extension_free_weight: { name:'Кисть с гантелью свободный вес', sets:4, reps:'12-15',
+    muscles:{fcr:25,fcu:25,finger_extensors:50},
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
+  finger_hold_strap_handle: { name:'Удержание рукоятки на лямках пальцами (Finger Hold)', sets:4, reps:'30 сек',
+    muscles:{fds:50,fdp:50},
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] }
 });
