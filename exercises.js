@@ -461,4 +461,10 @@ Object.assign(EX, {
     muscles:{lats:50, rhomboids:15, rear_delts:15, biceps:20},
     markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] 
   },
+  calf_jumps: { 
+    name:'Прыжки на носках стоя', 
+    sets:4, reps:'15-20',
+    muscles:{calves:60, foot:30, quads:10},
+    markers:['Собственный вес', 'Волейбол'] 
+  }
 });
