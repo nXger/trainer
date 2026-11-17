@@ -8,7 +8,6 @@ function computePercents(loads){
   return result;
 }
 
-
 const BUILTIN_IDS=Object.keys(EX);
 
 function sortedExerciseEntries(){ return Object.entries(EX).sort((a,b)=>a[1].name.localeCompare(b[1].name,'ru')); }
