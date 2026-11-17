@@ -484,5 +484,8 @@ Object.assign(EX, {
     sets:4, reps:'12-15',
     muscles:{pectoralis_major:80, delts:15, pectoralis_minor:5},
     markers:['Гантели/Штанга/Гиря', 'Волейбол'] 
-  }
+  },
+    finger_pushups: { name:'Отжимания на пальцах', sets:4, reps:'6-12',
+    muscles:{fds:30,fdp:30,interossei:15,lumbricals:10,fcr:8,fcu:7},
+    markers:['Собственный вес', 'Волейбол', 'Армрестлинг'] }
 });
