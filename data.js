@@ -82,6 +82,7 @@ MUSCLES.forEach(cat => {
 });
 
 const MUSCLE_COEF = {
+  // Ноги и таз
   quads:{recovery_rate:0.78,daily_subtraction:0.020},
   hamstrings:{recovery_rate:0.77,daily_subtraction:0.020},
   glutes:{recovery_rate:0.78,daily_subtraction:0.020},
@@ -89,39 +90,17 @@ const MUSCLE_COEF = {
   abductors:{recovery_rate:0.76,daily_subtraction:0.020},
   calves:{recovery_rate:0.72,daily_subtraction:0.030},
   foot:{recovery_rate:0.70,daily_subtraction:0.030},
+
+  // Руки
   biceps:{recovery_rate:0.72,daily_subtraction:0.030},
   triceps:{recovery_rate:0.72,daily_subtraction:0.030},
   brachialis:{recovery_rate:0.73,daily_subtraction:0.030},
   coracobrachialis:{recovery_rate:0.75,daily_subtraction:0.020},
-  pectoralis_major:{recovery_rate:0.72,daily_subtraction:0.030},
-  pectoralis_minor:{recovery_rate:0.74,daily_subtraction:0.025},
-  serratus:{recovery_rate:0.76,daily_subtraction:0.020},
-  intercostals:{recovery_rate:0.78,daily_subtraction:0.020},
-  lats:{recovery_rate:0.77,daily_subtraction:0.020},
-  traps:{recovery_rate:0.75,daily_subtraction:0.025},
-  rhomboids:{recovery_rate:0.75,daily_subtraction:0.025},
-  levator_scapulae:{recovery_rate:0.74,daily_subtraction:0.025},
-  erectors:{recovery_rate:0.78,daily_subtraction:0.020},
-  ql:{recovery_rate:0.77,daily_subtraction:0.020},
-  rear_delts:{recovery_rate:0.72,daily_subtraction:0.030},
-  delts:{recovery_rate:0.72,daily_subtraction:0.030},
-  rotator_cuff:{recovery_rate:0.70,daily_subtraction:0.030},
-  teres:{recovery_rate:0.73,daily_subtraction:0.025},
-  rectus_abdominis:{recovery_rate:0.78,daily_subtraction:0.020},
-  obliques:{recovery_rate:0.77,daily_subtraction:0.020},
-  transverse:{recovery_rate:0.80,daily_subtraction:0.015},
-  iliopsoas:{recovery_rate:0.74,daily_subtraction:0.025},
-  pelvic_floor:{recovery_rate:0.82,daily_subtraction:0.010},
-  scm:{recovery_rate:0.74,daily_subtraction:0.025},
-  scalenes:{recovery_rate:0.72,daily_subtraction:0.030},
-  neck_extensors:{recovery_rate:0.70,daily_subtraction:0.030},
   brachioradialis:{recovery_rate:0.68,daily_subtraction:0.030},
   supinator:{recovery_rate:0.67,daily_subtraction:0.030},
-  pronator_teres:{recovery_rate:0.68,daily_subtraction:0.030},
-  pronator_quadratus:{recovery_rate:0.70,daily_subtraction:0.025},
+  pronators:{recovery_rate:0.68,daily_subtraction:0.030},
   fcr:{recovery_rate:0.68,daily_subtraction:0.030},
   fcu:{recovery_rate:0.68,daily_subtraction:0.030},
-  palmaris_longus:{recovery_rate:0.70,daily_subtraction:0.025},
   fds:{recovery_rate:0.66,daily_subtraction:0.035},
   fdp:{recovery_rate:0.66,daily_subtraction:0.035},
   fpl:{recovery_rate:0.66,daily_subtraction:0.035},
@@ -133,7 +112,6 @@ const MUSCLE_COEF = {
   edm:{recovery_rate:0.69,daily_subtraction:0.030},
   apl:{recovery_rate:0.67,daily_subtraction:0.030},
   thumb_extensors:{recovery_rate:0.67,daily_subtraction:0.030},
-  anconeus:{recovery_rate:0.72,daily_subtraction:0.025},
   fpb:{recovery_rate:0.66,daily_subtraction:0.035},
   apb:{recovery_rate:0.66,daily_subtraction:0.035},
   opponens_pollicis:{recovery_rate:0.66,daily_subtraction:0.035},
@@ -144,6 +122,38 @@ const MUSCLE_COEF = {
   opponens_digiti_minimi:{recovery_rate:0.68,daily_subtraction:0.030},
   lumbricals:{recovery_rate:0.70,daily_subtraction:0.025},
   interossei:{recovery_rate:0.68,daily_subtraction:0.030},
+
+  // Грудь
+  pectoralis_major:{recovery_rate:0.72,daily_subtraction:0.030},
+  pectoralis_minor:{recovery_rate:0.74,daily_subtraction:0.025},
+  serratus:{recovery_rate:0.76,daily_subtraction:0.020},
+  intercostals:{recovery_rate:0.78,daily_subtraction:0.020},
+
+  // Спина
+  lats:{recovery_rate:0.77,daily_subtraction:0.020},
+  traps:{recovery_rate:0.75,daily_subtraction:0.025},
+  rhomboids:{recovery_rate:0.75,daily_subtraction:0.025},
+  levator_scapulae:{recovery_rate:0.74,daily_subtraction:0.025},
+  erectors:{recovery_rate:0.78,daily_subtraction:0.020},
+  ql:{recovery_rate:0.77,daily_subtraction:0.020},
+  rear_delts:{recovery_rate:0.72,daily_subtraction:0.030},
+
+  // Плечи
+  delts:{recovery_rate:0.72,daily_subtraction:0.030},
+  rotator_cuff:{recovery_rate:0.70,daily_subtraction:0.030},
+  teres:{recovery_rate:0.73,daily_subtraction:0.025},
+
+  // Пресс и кор
+  rectus_abdominis:{recovery_rate:0.78,daily_subtraction:0.020},
+  obliques:{recovery_rate:0.77,daily_subtraction:0.020},
+  transverse:{recovery_rate:0.80,daily_subtraction:0.015},
+  iliopsoas:{recovery_rate:0.74,daily_subtraction:0.025},
+  pelvic_floor:{recovery_rate:0.82,daily_subtraction:0.010},
+
+  // Шея
+  scm:{recovery_rate:0.74,daily_subtraction:0.025},
+  scalenes:{recovery_rate:0.72,daily_subtraction:0.030},
+  neck_extensors:{recovery_rate:0.70,daily_subtraction:0.030},
 };
 
 const LOAD_FACTOR    = 0.25;
@@ -152,7 +162,7 @@ const LOAD_GREEN     = 0.40;
 const LOAD_YELLOW    = 0.65;
 const LOAD_ORANGE    = 0.85;
 
-const FOREARM_IDS=['brachioradialis','supinator','pronator_teres','pronator_quadratus','fcr','fcu','palmaris_longus','fds','fdp','fpl','ecrl','ecrb','ecu','finger_extensors','ei','edm','apl','thumb_extensors','anconeus','fpb','apb','opponens_pollicis','adductor_pollicis','palmaris_brevis','adm','fdm','opponens_digiti_minimi','lumbricals','interossei'];
+const FOREARM_IDS=['brachioradialis','supinator','pronators','fcr','fcu','fds','fdp','fpl','ecrl','ecrb','ecu','finger_extensors','ei','edm','apl','thumb_extensors','fpb','apb','opponens_pollicis','adductor_pollicis','palmaris_brevis','adm','fdm','opponens_digiti_minimi','lumbricals','interossei'];
 const DAYS=['вс','пн','вт','ср','чт','пт','сб'];
 const WEEK_ORDER=[1,2,3,4,5,6,0];
 const MONTH_NAMES=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
