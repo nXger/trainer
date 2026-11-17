@@ -1,4 +1,4 @@
-const MUSCLES=[
+const MUSCLES = [
   {id:'legs',name:'Ноги и таз',groups:[
     {id:'quads',name:'Квадрицепсы',sub:['Прямая','Латеральная','Медиальная','Промежуточная']},
     {id:'hamstrings',name:'Бицепс бедра',sub:['Длинная головка','Короткая головка']},
@@ -15,11 +15,9 @@ const MUSCLES=[
     {id:'coracobrachialis',name:'Клювовидно-плечевая мышца',sub:[]},
     {id:'brachioradialis',name:'Плечелучевая мышца',sub:[]},
     {id:'supinator',name:'Супинатор',sub:[]},
-    {id:'pronator_teres',name:'Круглый пронатор',sub:[]},
-    {id:'pronator_quadratus',name:'Квадратный пронатор',sub:[]},
+    {id:'pronators',name:'Пронаторы',sub:[]},
     {id:'fcr',name:'Лучевой сгибатель запястья',sub:[]},
     {id:'fcu',name:'Локтевой сгибатель запястья',sub:[]},
-    {id:'palmaris_longus',name:'Длинная ладонная мышца',sub:[]},
     {id:'fds',name:'Поверхностный сгибатель пальцев',sub:[]},
     {id:'fdp',name:'Глубокий сгибатель пальцев',sub:[]},
     {id:'fpl',name:'Длинный сгибатель большого пальца кисти',sub:[]},
@@ -31,7 +29,6 @@ const MUSCLES=[
     {id:'edm',name:'Разгибатель мизинца',sub:[]},
     {id:'apl',name:'Длинная мышца, отводящая большой палец кисти',sub:[]},
     {id:'thumb_extensors',name:'Разгибатели большого пальца (короткий и длинный)',sub:[]},
-    {id:'anconeus',name:'Локтевая мышца (anconeus)',sub:[]},
     {id:'fpb',name:'Короткий сгибатель большого пальца кисти',sub:[]},
     {id:'apb',name:'Короткая мышца, отводящая большой палец кисти',sub:[]},
     {id:'opponens_pollicis',name:'Противопоставляющая большой палец',sub:[]},
