@@ -466,5 +466,11 @@ Object.assign(EX, {
     sets:4, reps:'15-20',
     muscles:{calves:60, foot:30, quads:10},
     markers:['Собственный вес', 'Волейбол'] 
+  },
+    neck_extension_side: { 
+    name:'Разгибание шеи лежа на боку (в обе стороны)', 
+    sets:3, reps:'12-15',
+    muscles:{scm:40, scalenes:30, neck_extensors:30},
+    markers:['Собственный вес'] 
   }
 });
