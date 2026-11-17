@@ -381,7 +381,9 @@ function computeAllMuscleLoads(){
   const dates = Object.keys(logs).filter(d => {
     const day = logs[d];
     if(!day) return false;
-    return Object.entries(day).some(([k,v]) => !k.startsWith('_') && v && v.done && EX[k] && !EX[k].app);
+    return Object.entries(day).some(([k,v]) =>
+      !k.startsWith('_') && v && v.done && EX[logBaseId(k)] && !EX[logBaseId(k)].app
+    );
   }).sort();
   const loads = {};
   Object.keys(MUSCLE_COEF).forEach(m => { loads[m] = 0; });
@@ -410,9 +412,10 @@ function computeAllMuscleLoads(){
     const sessions = [];
     const trained = new Set();
     Object.entries(dayLog).forEach(([id, e]) => {
-      if(id.startsWith('_') || !e || !e.done || !EX[id]) return;
-      if(EX[id].app) return;
-      const muscles = getMusclesFromEx(EX[id]);
+      if(id.startsWith('_') || !e || !e.done) return;
+      const ex = EX[logBaseId(id)];
+      if(!ex || ex.app) return;
+      const muscles = getMusclesFromEx(ex);
       if(!muscles.length) return;
       sessions.push({ id, log: e, muscles });
       muscles.forEach(m => trained.add(m.id));
@@ -479,8 +482,14 @@ const ownPlanStore={
   set(v){localStorage.setItem('ownPlan',JSON.stringify(v))},
 };
 
+
+
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function logBaseId(logKey){
+  const i = logKey.search(/[~*]/);
+  return i < 0 ? logKey : logKey.slice(0, i);
 }
 function fmt(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function todayDate(){const d=new Date();d.setHours(0,0,0,0);return d}
@@ -507,6 +516,7 @@ function syncCustomEx(){
     EX[c.id]={name:c.name,app:!!c.app,sets:c.sets||4,reps:c.reps||'12-15',muscles};
   });
 }
+
 function isScheduleActive(schedule,date,startFallback){
   if(!schedule)return false;
   if(schedule.type==='none')return false;
@@ -697,6 +707,11 @@ function getPlan(date){
   const cancelledSeen = new Set();
   const dayLog = store.logs[dateStr] || {};
   const skippedBlocks = dayLog._skippedBlocks || {};
+  const counts = {};
+  const assignKey = (exId) => {
+    counts[exId] = (counts[exId] || 0) + 1;
+    return counts[exId] === 1 ? exId : exId + '~' + counts[exId];
+  };
 
   if(own && own.enabled){
     const allBlocks = own.blocks || [];
@@ -708,49 +723,31 @@ function getPlan(date){
       if(dis){
         cancelled.push({ id: item.id, reason: dis.reason, type: 'disabled' });
         cancelledSeen.add(item.id);
-      } else if(dayLog[item.id] && dayLog[item.id]._skipped) {
-        cancelled.push({ id: item.id, reason: dayLog[item.id]._skipped.reason || 'пропущено', type: 'skipped' });
-        cancelledSeen.add(item.id);
       } else {
-        main.push(item.id);
+        const logKey = assignKey(item.id);
+        main.push(logKey);
         seen.add(item.id);
-        groups.push({ type: 'exercise', id: item.id });
+        groups.push({ type: 'exercise', id: item.id, logKey });
       }
     });
 
     const topBlocks = getTopLevelBlocks();
     topBlocks.forEach(block => {
-      // 1. Разовая отмена блока на сегодня
       if(skippedBlocks[block.id]){
-        groups.push({
-          type: 'block',
-          blockId: block.id,
-          name: block.name,
-          skipped: skippedBlocks[block.id],
-          tree: null
-        });
+        groups.push({ type: 'block', blockId: block.id, name: block.name, skipped: skippedBlocks[block.id], tree: null });
         getBlockExercises(block, allBlocks).forEach(id => seen.add(id));
         return;
       }
-
-      // 2. Долгосрочное отключение блока (через "Свои")
       const blockDis = isDisabledOn(block, dateStr);
       if (blockDis) {
-        groups.push({
-          type: 'block',
-          blockId: block.id,
-          name: block.name,
-          disabled: blockDis,
-          tree: null
-        });
+        groups.push({ type: 'block', blockId: block.id, name: block.name, disabled: blockDis, tree: null });
         getBlockExercises(block, allBlocks).forEach(id => seen.add(id));
         return;
       }
 
       const blockActive = isScheduleActive(block.schedule, date);
-
       const blockOut = processBlockTree(block, date, allBlocks, new Set(), false, null, blockActive);
-      
+
       if (blockOut) {
         const filterNode = (n) => {
           const newItems = [];
@@ -759,13 +756,9 @@ function getPlan(date){
 
           n.items.forEach(it => {
             if (it.type === 'exercise') {
-              if (dayLog[it.id] && dayLog[it.id]._skipped) {
-                if(!cancelledSeen.has(it.id)){
-                  cancelled.push({ id: it.id, reason: dayLog[it.id]._skipped.reason || 'пропущено', blockName: block.name, type: 'skipped' });
-                  cancelledSeen.add(it.id);
-                }
-              } else if (!seen.has(it.id) && EX[it.id]) {
-                newItems.push(it);
+              if (EX[it.id]) {
+                const logKey = assignKey(it.id);
+                newItems.push({ ...it, logKey });
               }
             } else if (it.type === 'block') {
               if (skippedBlocks[it.node.blockId]) {
@@ -779,9 +772,7 @@ function getPlan(date){
                 return;
               }
               const filteredChild = filterNode(it.node);
-              if (filteredChild) {
-                newItems.push({ type: 'block', node: filteredChild });
-              }
+              if (filteredChild) newItems.push({ type: 'block', node: filteredChild });
             }
           });
 
@@ -790,35 +781,21 @@ function getPlan(date){
           let exCount = 0;
           const flatExs = [];
           newItems.forEach(it => {
-            if (it.type === 'exercise') { exCount++; flatExs.push(it.id); }
+            if (it.type === 'exercise') { exCount++; flatExs.push(it.logKey); }
             else { exCount += it.node.exCount; flatExs.push(...it.node.flatExercises); }
           });
-
           return { ...n, items: newItems, cancelled: newCancelled, exCount, flatExercises: flatExs };
         };
 
         const filteredBlock = filterNode(blockOut);
 
         if (filteredBlock && filteredBlock.exCount > 0) {
-          filteredBlock.flatExercises.forEach(id => { seen.add(id); main.push(id); });
+          filteredBlock.flatExercises.forEach(k => { main.push(k); seen.add(logBaseId(k)); });
           filteredBlock.cancelled.forEach(c => { cancelledSeen.add(c.id); cancelled.push(c); });
-          groups.push({
-            type: 'block',
-            blockId: block.id,
-            name: block.name,
-            exercises: filteredBlock.flatExercises,
-            tree: filteredBlock
-          });
+          groups.push({ type: 'block', blockId: block.id, name: block.name, tree: filteredBlock });
         } else if (filteredBlock && filteredBlock.cancelled.length > 0) {
-          // Блок активен, но все его упражнения отменены
           filteredBlock.cancelled.forEach(c => { cancelledSeen.add(c.id); cancelled.push(c); });
-          groups.push({
-            type: 'block',
-            blockId: block.id,
-            name: block.name,
-            disabled: { reason: 'все упражнения отменены' },
-            tree: null
-          });
+          groups.push({ type: 'block', blockId: block.id, name: block.name, disabled: { reason: 'все упражнения отменены' }, tree: null });
         }
       }
     });
@@ -826,29 +803,20 @@ function getPlan(date){
 
   customStore.list.forEach(c => {
     if(c.deleted || seen.has(c.id) || cancelledSeen.has(c.id)) return;
-    if(isCustomActive(c, date) && !main.includes(c.id)){
-      if(dayLog[c.id] && dayLog[c.id]._skipped){
-        cancelled.push({ id: c.id, reason: dayLog[c.id]._skipped.reason || 'пропущено', type: 'skipped' });
-        cancelledSeen.add(c.id);
-      } else {
-        main.push(c.id);
-        seen.add(c.id);
-        groups.push({ type: 'exercise', id: c.id });
-      }
+    if(isCustomActive(c, date)){
+      const logKey = assignKey(c.id);
+      main.push(logKey);
+      seen.add(c.id);
+      groups.push({ type: 'exercise', id: c.id, logKey });
     }
   });
 
   Object.entries(dayLog).forEach(([id, e]) => {
     if (id.startsWith('_') || !e || !e.adHoc) return;
-    if (seen.has(id)) return;
-    if (e._skipped) {
-      cancelled.push({ id, reason: e._skipped.reason || 'пропущено', type: 'skipped' });
-      cancelledSeen.add(id);
-    } else {
-      main.push(id);
-      seen.add(id);
-      groups.push({ type: 'adhoc', id: id });
-    }
+    if (main.includes(id)) return;
+    main.push(id);
+    seen.add(logBaseId(id));
+    groups.push({ type: 'adhoc', id, logKey: id });
   });
 
   return { info: [], main, groups, cancelled, after: [] };
@@ -872,31 +840,43 @@ function getExerciseStats(log){
   });
   return {maxW,maxR,totalVol,totalSets};
 }
-function getLastEntryBefore(exId,dateStr){
-  const logs=store.logs;
-  const dates=Object.keys(logs).filter(d=>d<dateStr).sort().reverse();
+function getLastEntryBefore(exId, dateStr){
+  const logs = store.logs;
+  const dates = Object.keys(logs).filter(d => d < dateStr).sort().reverse();
   for(const d of dates){
-    const e=logs[d]&&logs[d][exId];
-    if(e&&e.done)return {date:d,...e};
+    const day = logs[d];
+    if(!day) continue;
+    let best = null, bestMax = -1;
+    Object.entries(day).forEach(([k,e]) => {
+      if(k.startsWith('_') || !e || !e.done) return;
+      if(logBaseId(k) !== exId) return;
+      const m = Math.max(...(e.sets||[]).map(s=>parseFloat(s.w)||0), 0);
+      if(m > bestMax){ bestMax = m; best = { date: d, ...e }; }
+    });
+    if(best) return best;
   }
   return null;
 }
-function getExerciseHistoryBefore(exId,dateStr){
-  const logs=store.logs;
-  let maxW=0;
-  const repsByWeight={};
-  Object.keys(logs).filter(d=>d<dateStr).forEach(d=>{
-    const e=logs[d]&&logs[d][exId];
-    if(!e||!e.done)return;
-    (e.sets||[]).forEach(s=>{
-      if(!s)return;
-      const w=parseFloat(s.w)||0;
-      const r=parseFloat(s.r)||0;
-      if(w>maxW)maxW=w;
-      if(r>0){ if(repsByWeight[w]===undefined||r>repsByWeight[w])repsByWeight[w]=r; }
+function getExerciseHistoryBefore(exId, dateStr){
+  const logs = store.logs;
+  let maxW = 0;
+  const repsByWeight = {};
+  Object.keys(logs).filter(d => d < dateStr).forEach(d => {
+    const day = logs[d];
+    if(!day) return;
+    Object.entries(day).forEach(([k,e]) => {
+      if(k.startsWith('_') || !e || !e.done) return;
+      if(logBaseId(k) !== exId) return;
+      (e.sets||[]).forEach(s => {
+        if(!s) return;
+        const w = parseFloat(s.w)||0;
+        const r = parseFloat(s.r)||0;
+        if(w > maxW) maxW = w;
+        if(r > 0){ if(repsByWeight[w] === undefined || r > repsByWeight[w]) repsByWeight[w] = r; }
+      });
     });
   });
-  return {maxW,repsByWeight};
+  return { maxW, repsByWeight };
 }
 function checkPRs(exId,log,dateStr){
   const sets=log?.sets||[];
@@ -916,22 +896,25 @@ function checkPRs(exId,log,dateStr){
   return {weightPR,repsPR};
 }
 function getDaySteadyCount(dateStr){
-  const dayLog=store.logs[dateStr]||{};
-  let count=0;
-  Object.entries(dayLog).forEach(([id,e])=>{
-    if(id.startsWith('_')||!e||!e.done)return;
-    if(!EX[id]||EX[id].app)return;
-    if(checkSteadyAllSets(id,e,dateStr))count++;
+  const dayLog = store.logs[dateStr] || {};
+  let count = 0;
+  Object.entries(dayLog).forEach(([k,e])=>{
+    if(k.startsWith('_')||!e||!e.done) return;
+    const ex = EX[logBaseId(k)];
+    if(!ex||ex.app) return;
+    if(checkSteadyAllSets(logBaseId(k), e, dateStr)) count++;
   });
   return count;
 }
 function getDayPRCounts(dateStr){
   const dayLog=store.logs[dateStr]||{};
   let weight=0,reps=0;
-  Object.entries(dayLog).forEach(([id,e])=>{
-    if(id.startsWith('_')||!e||!e.done)return;
-    if(!EX[id]||EX[id].app)return;
-    const {weightPR,repsPR}=checkPRs(id,e,dateStr);
+  Object.entries(dayLog).forEach(([k,e])=>{
+    if(k.startsWith('_')||!e||!e.done)return;
+    const exId = logBaseId(k);
+    const ex = EX[exId];
+    if(!ex || ex.app) return;
+    const {weightPR,repsPR}=checkPRs(exId, e, dateStr);
     if(weightPR)weight++;
     if(repsPR)reps++;
   });
@@ -949,29 +932,32 @@ function getTargetReps(exId,dateStr){
   const logs=store.logs;
   const dates=Object.keys(logs).filter(d=>d<dateStr).sort().reverse();
   for(const d of dates){
-    const e=logs[d]?.[exId];
-    if(!e||!e.done)continue;
-    let maxW=0,repsAtMaxW=0;
-    (e.sets||[]).forEach(s=>{
-      if(!s)return;
-      const w=parseFloat(s.w)||0;
-      const r=parseFloat(s.r)||0;
-      if(r<=0)return;
-      if(w>maxW){maxW=w;repsAtMaxW=r;}
-      else if(w===maxW&&r>repsAtMaxW)repsAtMaxW=r;
+    const day = logs[d];
+    if(!day) continue;
+    let bestMaxW = 0, bestReps = 0;
+    Object.entries(day).forEach(([k,e])=>{
+      if(k.startsWith('_') || !e || !e.done) return;
+      if(logBaseId(k) !== exId) return;
+      let maxW=0,repsAtMaxW=0;
+      (e.sets||[]).forEach(s=>{
+        if(!s)return;
+        const w=parseFloat(s.w)||0;
+        const r=parseFloat(s.r)||0;
+        if(r<=0)return;
+        if(w>maxW){maxW=w;repsAtMaxW=r;}
+        else if(w===maxW&&r>repsAtMaxW)repsAtMaxW=r;
+      });
+      if(repsAtMaxW>0 && maxW > bestMaxW){ bestMaxW = maxW; bestReps = repsAtMaxW; }
     });
-    if(repsAtMaxW>0)return Math.min(repsAtMaxW+1,15);
+    if(bestReps>0) return Math.min(bestReps+1,15);
   }
   return 15;
 }
 function checkSteadyAllSets(exId,log,dateStr){
   const ex=EX[exId];
   if(!ex||ex.app)return null;
-  
   const plannedSets = (log && Number.isFinite(log._customSets) && log._customSets > 0)
-    ? log._customSets
-    : getExSets(exId);
-    
+    ? log._customSets : getExSets(exId);
   const filled=(log?.sets||[]).filter(s=>s&&parseFloat(s.r)>0);
   if(filled.length<plannedSets||filled.length<2)return null;
   const w0=parseFloat(filled[0].w)||0;
@@ -981,23 +967,31 @@ function checkSteadyAllSets(exId,log,dateStr){
   const logs=store.logs;
   let maxWBefore=0;
   Object.keys(logs).filter(d=>d<dateStr).forEach(d=>{
-    const e=logs[d]&&logs[d][exId];
-    if(!e||!e.done)return;
-    (e.sets||[]).forEach(s=>{
-      if(!s)return;
-      const w=parseFloat(s.w)||0;
-      if(w>maxWBefore)maxWBefore=w;
+    const day = logs[d];
+    if(!day) return;
+    Object.entries(day).forEach(([k,e])=>{
+      if(k.startsWith('_') || !e || !e.done) return;
+      if(logBaseId(k) !== exId) return;
+      (e.sets||[]).forEach(s=>{
+        if(!s)return;
+        const w=parseFloat(s.w)||0;
+        if(w>maxWBefore)maxWBefore=w;
+      });
     });
   });
   if(w0<maxWBefore)return null;
   let maxSteadyBefore=0;
   Object.keys(logs).filter(d=>d<dateStr).forEach(d=>{
-    const e=logs[d]&&logs[d][exId];
-    if(!e||!e.done)return;
-    const wSets=(e.sets||[]).filter(s=>s&&(parseFloat(s.w)||0)===w0&&parseFloat(s.r)>0);
-    if(wSets.length<plannedSets)return;
-    const minR=Math.min(...wSets.map(s=>parseFloat(s.r)||0));
-    if(minR>maxSteadyBefore)maxSteadyBefore=minR;
+    const day = logs[d];
+    if(!day) return;
+    Object.entries(day).forEach(([k,e])=>{
+      if(k.startsWith('_') || !e || !e.done) return;
+      if(logBaseId(k) !== exId) return;
+      const wSets=(e.sets||[]).filter(s=>s&&(parseFloat(s.w)||0)===w0&&parseFloat(s.r)>0);
+      if(wSets.length<plannedSets)return;
+      const minR=Math.min(...wSets.map(s=>parseFloat(s.r)||0));
+      if(minR>maxSteadyBefore)maxSteadyBefore=minR;
+    });
   });
   if(r0<=maxSteadyBefore)return null;
   return {count:filled.length,w:w0,r:r0};
@@ -1025,24 +1019,26 @@ function renderDayMetaHtml(dayLog,isToday){
   if(ton.sets>0)html+=`<span>${ton.tonnage} кг · ${ton.sets} подх.</span>`;
   return html;
 }
-function updateExerciseUI(exId){
-  const el=document.querySelector(`.ex[data-ex-id="${exId}"]`);
-  if(!el)return;
-  const dateStr=fmt(currentDate);
-  const log=store.logs[dateStr]?.[exId];
-  const progressEl=el.querySelector('[data-progress]');
-  const prEl=el.querySelector('[data-pr]');
-  const steadyEl=el.querySelector('[data-steady]');
-  if(progressEl)progressEl.innerHTML=computeProgressHtml(exId,log,dateStr);
+function updateExerciseUI(logKey){
+  const el = document.querySelector(`.ex[data-log-key="${logKey}"]`);
+  if(!el) return;
+  const exId = logBaseId(logKey);
+  const dateStr = fmt(currentDate);
+  const log = store.logs[dateStr]?.[logKey];
+  const progressEl = el.querySelector('[data-progress]');
+  const prEl = el.querySelector('[data-pr]');
+  const steadyEl = el.querySelector('[data-steady]');
+  if(progressEl) progressEl.innerHTML = computeProgressHtml(exId, log, dateStr);
   if(prEl){
-    const prHtml=getPRBadgesHtml(exId,log,dateStr);
-    prEl.innerHTML=prHtml?`<div class="pr-row">${prHtml}</div>`:'';
+    const prHtml = getPRBadgesHtml(exId, log, dateStr);
+    prEl.innerHTML = prHtml ? `<div class="pr-row">${prHtml}</div>` : '';
   }
   if(steadyEl){
-    const steady=checkSteadyAllSets(exId,log,dateStr);
-    steadyEl.innerHTML=steady?`<div class="pr-row"><span class="pr-badge pr-max" title="Все подходы одинаковые — пора увеличить вес или повторы">🎯 ${steady.count}×${steady.r}</span></div>`:'';
+    const steady = checkSteadyAllSets(exId, log, dateStr);
+    steadyEl.innerHTML = steady ? `<div class="pr-row"><span class="pr-badge pr-max" title="Все подходы одинаковые — пора увеличить вес или повторы">🎯 ${steady.count}×${steady.r}</span></div>` : '';
   }
 }
+
 function updateDayMeta(){
   const el=document.getElementById('day-meta');
   if(!el)return;
@@ -1155,8 +1151,10 @@ function getMaxWeightByMuscle(){
     const dayLog = logs[d];
     if(!dayLog) return;
     Object.entries(dayLog).forEach(([id, e]) => {
-      if(id.startsWith('_') || !e || !e.done || !EX[id] || EX[id].app) return;
-      const muscles = getMusclesFromEx(EX[id]);
+      if(id.startsWith('_') || !e || !e.done) return;
+      const ex = EX[logBaseId(id)];
+      if(!ex || ex.app) return;
+      const muscles = getMusclesFromEx(ex);
       if(!muscles.length) return;
       let maxW = 0;
       (e.sets||[]).forEach(s => {
@@ -1174,49 +1172,47 @@ function getMaxWeightByMuscle(){
   return result;
 }
 
-function toggleBlockCollapse(blockId){
-  const current = blockCollapseState[blockId];
-  blockCollapseState[blockId] = current === 'expanded' ? 'collapsed' : 'expanded';
+function toggleBlockCollapse(blockId, currentlyCollapsed){
+  blockCollapseState[blockId] = currentlyCollapsed ? 'expanded' : 'collapsed';
   render();
 }
 
 /* ---------- Training view ---------- */
-function renderExercise(exId, log, depth = 0){
-  const ex=EX[exId];
+function renderExercise(logKey, log, depth = 0){
+  const exId = logBaseId(logKey);
+  const ex = EX[exId];
   if(!ex) return '';
-  const dateStr=fmt(currentDate);
+  const dateStr = fmt(currentDate);
   const isSkipped = log && log._skipped;
-  const done=(log?.done && !isSkipped)?'done':'', checked=(log?.done && !isSkipped)?'checked':'';
-  const last=getLastEntryBefore(exId,dateStr);
+  const done = (log?.done && !isSkipped) ? 'done' : '';
+  const checked = (log?.done && !isSkipped) ? 'checked' : '';
+  const last = getLastEntryBefore(exId, dateStr);
   const musStr = muscleSummary(ex.muscles);
   const musclesHtml = musStr ? `<div class="ex-last" style="color:#7a7a7a">${escapeHtml(musStr)}</div>` : '';
   const markersHtml = renderMarkerChipsOnly(exId);
   const indentStyle = depth > 0 ? `margin-left:${depth * 16}px;` : '';
-
-  const sets = (log && Number.isFinite(log._customSets) && log._customSets > 0)
-    ? log._customSets
-    : getExSets(exId);
+  const sets = (log && Number.isFinite(log._customSets) && log._customSets > 0) ? log._customSets : getExSets(exId);
 
   const skipBtn = isSkipped
-    ? `<button class="mini-btn" style="padding:2px 7px;font-size:11px;background:#2a4a2a;border-color:#3a6a3a;color:#9f9" onclick="event.stopPropagation();unskipExerciseToday('${exId}')" title="Вернуть">↺</button>`
-    : `<button class="mini-btn" style="padding:2px 7px;font-size:11px;background:transparent;border-color:#444;color:#888" onclick="event.stopPropagation();skipExerciseToday('${exId}')" title="Пропустить на сегодня">⊘</button>`;
+    ? `<button class="mini-btn" style="padding:2px 7px;font-size:11px;background:#2a4a2a;border-color:#3a6a3a;color:#9f9" onclick="event.stopPropagation();unskipExerciseToday('${logKey}')" title="Вернуть">↺</button>`
+    : `<button class="mini-btn" style="padding:2px 7px;font-size:11px;background:transparent;border-color:#444;color:#888" onclick="event.stopPropagation();skipExerciseToday('${logKey}')" title="Пропустить на сегодня">⊘</button>`;
 
-  const head=`<div class="ex-head">
-      <input type="checkbox" ${checked} onchange="toggleDone('${exId}',this.checked)">
+  const head = `<div class="ex-head">
+      <input type="checkbox" ${checked} onchange="toggleDone('${logKey}',this.checked)">
       <strong>${escapeHtml(ex.name)}</strong>
       <span class="meta">${ex.app?'по приложению':sets+'×'+getTargetReps(exId,dateStr)}</span>
       ${skipBtn}
     </div>`;
 
   if (isSkipped) {
-    return `<div class="ex ex-cancelled" data-ex-id="${exId}" style="${indentStyle}">
+    return `<div class="ex ex-cancelled" data-ex-id="${exId}" data-log-key="${logKey}" style="${indentStyle}">
       ${head}
       <div class="ex-last" style="color:#c66;margin-bottom:0">🚫 Пропущено: ${escapeHtml(log._skipped.reason)}</div>
     </div>`;
   }
 
   if(ex.app){
-    return `<div class="ex ${done}" data-ex-id="${exId}" style="${indentStyle}">
+    return `<div class="ex ${done}" data-ex-id="${exId}" data-log-key="${logKey}" style="${indentStyle}">
       ${head}
       ${markersHtml}
       <div class="ex-app"><span>${log?.done?'✓ Подтверждено':'Отметь галочку, если сделал'}</span></div>
@@ -1225,27 +1221,27 @@ function renderExercise(exId, log, depth = 0){
     </div>`;
   }
 
-  const logSets=log?.sets||[];
-  let rows='';
+  const logSets = log?.sets || [];
+  let rows = '';
   for(let i=0;i<sets;i++){
-    const s=logSets[i]||{};
-    rows+=`<div class="set-row">
+    const s = logSets[i] || {};
+    rows += `<div class="set-row">
       <span class="set-num">${i+1}</span>
-      <input type="text" inputmode="decimal" placeholder="вес (кг)" value="${s.w||''}" oninput="onSetInput('${exId}',${i},'w',this)">
-      <input type="text" inputmode="numeric" placeholder="повторения" value="${s.r||''}" oninput="onSetInput('${exId}',${i},'r',this)">
+      <input type="text" inputmode="decimal" placeholder="вес (кг)" value="${s.w||''}" oninput="onSetInput('${logKey}',${i},'w',this)">
+      <input type="text" inputmode="numeric" placeholder="повторения" value="${s.r||''}" oninput="onSetInput('${logKey}',${i},'r',this)">
     </div>`;
   }
 
   const setsCtrl = `<div style="display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:12px;color:#888">
-    <button class="mini-btn" style="padding:1px 8px;font-size:14px;line-height:1;min-width:26px" onclick="changeSets('${exId}',-1)" title="Меньше подходов">−</button>
+    <button class="mini-btn" style="padding:1px 8px;font-size:14px;line-height:1;min-width:26px" onclick="changeSets('${logKey}',-1)" title="Меньше подходов">−</button>
     <span>Подходов: <strong style="color:#e8e8e8">${sets}</strong></span>
-    <button class="mini-btn" style="padding:1px 8px;font-size:14px;line-height:1;min-width:26px" onclick="changeSets('${exId}',1)" title="Больше подходов">+</button>
+    <button class="mini-btn" style="padding:1px 8px;font-size:14px;line-height:1;min-width:26px" onclick="changeSets('${logKey}',1)" title="Больше подходов">+</button>
   </div>`;
 
-  const progressHtml=computeProgressHtml(exId,log,dateStr);
-  const prHtml=getPRBadgesHtml(exId,log,dateStr);
-  const steady=checkSteadyAllSets(exId,log,dateStr);
-  return `<div class="ex ${done}" data-ex-id="${exId}" style="${indentStyle}">
+  const progressHtml = computeProgressHtml(exId, log, dateStr);
+  const prHtml = getPRBadgesHtml(exId, log, dateStr);
+  const steady = checkSteadyAllSets(exId, log, dateStr);
+  return `<div class="ex ${done}" data-ex-id="${exId}" data-log-key="${logKey}" style="${indentStyle}">
     ${head}
     ${markersHtml}
     <div class="ex-last">Прошлый раз: ${formatSets(last)}</div>
@@ -1274,9 +1270,10 @@ function renderBlockGroup(node, dayLog, depth = 0){
   const state = blockCollapseState[node.blockId];
   const isCollapsed = state === 'expanded' ? false : (state === 'collapsed' ? true : allDone);
   const indentStyle = depth > 0 ? `margin-left:${depth * 16}px;` : '';
+  const headerStyle = indentStyle + (allDone ? 'opacity:0.55;' : '');
   const skipBtn = `<button class="mini-btn" style="padding:2px 6px;font-size:10px;background:transparent;border-color:#444;color:#888" onclick="event.stopPropagation();skipBlockToday('${node.blockId}', '${escapeHtml(node.name).replace(/'/g, "\\'")}')" title="Пропустить блок на сегодня">⊘</button>`;
 
-  let html = `<div class="block-header" onclick="toggleBlockCollapse('${node.blockId}')" style="${indentStyle}">
+  let html = `<div class="block-header" onclick="toggleBlockCollapse('${node.blockId}', ${isCollapsed})" style="${headerStyle}">
     <span class="blk-toggle">${isCollapsed ? '▸' : '▾'}</span>
     <span class="blk-icon">📦</span>
     ${escapeHtml(node.name)}
@@ -1286,10 +1283,28 @@ function renderBlockGroup(node, dayLog, depth = 0){
     </span>
   </div>`;
 
-  if(!isCollapsed){
-    node.items.forEach(item => {
+   if(!isCollapsed){
+        const isChildDone = (item) => {
       if (item.type === 'exercise') {
-        html += renderExercise(item.id, dayLog[item.id], depth + 1);
+        const lg = dayLog[item.logKey];
+        return !!(lg && lg.done && !lg._skipped);
+      }
+      if (item.type === 'block') {
+        const cn = item.node;
+        if (!cn || cn.exCount === 0) return false;
+        return cn.flatExercises.every(id => dayLog[id] && dayLog[id].done && !dayLog[id]._skipped);
+      }
+      return false;
+    };
+    const normalItems = [];
+    const doneItems = [];
+    node.items.forEach(item => {
+      if (isChildDone(item)) doneItems.push(item);
+      else normalItems.push(item);
+    });
+    normalItems.concat(doneItems).forEach(item => {
+      if (item.type === 'exercise') {
+        html += renderExercise(item.logKey, dayLog[item.logKey], depth + 1);
       } else if (item.type === 'block') {
         html += renderBlockGroup(item.node, dayLog, depth + 1);
       }
@@ -1333,17 +1348,18 @@ function renderAdHocList() {
   const dayLog = store.logs[dateStr] || {};
 
   const matches = sortedExerciseEntries().filter(([id, ex]) => {
-    // Скрываем те, что уже есть в сегодняшнем дне
-    if (dayLog[id]) return false;
-    
-    if (!q) return true;
-    if (ex.name.toLowerCase().includes(q)) return true;
-    const markers = getExerciseMarkers(id);
-    if (markers.some(m => m.toLowerCase().includes(q))) return true;
-    const msum = muscleSummary(ex.muscles) || '';
-    if (msum.toLowerCase().includes(q)) return true;
-    return false;
-  });
+  const alreadyAdHoc = Object.entries(dayLog).some(([k, v]) =>
+    !k.startsWith('_') && v && v.adHoc && logBaseId(k) === id
+  );
+  if (alreadyAdHoc) return false;
+  if (!q) return true;
+  if (ex.name.toLowerCase().includes(q)) return true;
+  const markers = getExerciseMarkers(id);
+  if (markers.some(m => m.toLowerCase().includes(q))) return true;
+  const msum = muscleSummary(ex.muscles) || '';
+  if (msum.toLowerCase().includes(q)) return true;
+  return false;
+});
 
   if (!matches.length) {
     list.innerHTML = '<div style="padding:14px;color:#666;text-align:center">Ничего не найдено</div>';
@@ -1363,36 +1379,34 @@ function addAdHocExercise(id) {
   const dateStr = fmt(currentDate);
   const logs = store.logs;
   logs[dateStr] = logs[dateStr] || {};
-  
-  if (!logs[dateStr][id]) {
-    logs[dateStr][id] = {};
-  }
-  logs[dateStr][id].adHoc = true;
+  let n = 1, key;
+  do { key = id + '*' + n; n++; } while (logs[dateStr][key]);
+  logs[dateStr][key] = { adHoc: true };
   store.logs = logs;
-  
   closeAdHocPicker();
   render();
 }
 
-function removeAdHocExercise(id) {
-  if (!confirm('Убрать это упражнение из сегодняшней тренировки?')) return;
+function removeAdHocExercise(logKey) {
+  const exName = EX[logBaseId(logKey)]?.name || logKey;
+  if (!confirm(`Убрать «${exName}» из сегодняшней тренировки?`)) return;
   const dateStr = fmt(currentDate);
   const logs = store.logs;
-  if (logs[dateStr] && logs[dateStr][id]) {
-    delete logs[dateStr][id];
+  if (logs[dateStr] && logs[dateStr][logKey]) {
+    delete logs[dateStr][logKey];
     if (!Object.keys(logs[dateStr]).length) delete logs[dateStr];
     store.logs = logs;
   }
   render();
 }
 
-function renderAdHocExercise(exId, log) {
+function renderAdHocExercise(logKey, log) {
   return `<div style="position:relative; border:1px dashed #4a7a4a; border-radius:8px; padding:2px; margin-bottom:8px; background:#1a2a1a">
     <div style="position:absolute;top:6px;right:6px;z-index:10">
-      <button class="del-btn" style="font-size:16px;padding:4px" onclick="removeAdHocExercise('${exId}')" title="Убрать из сегодняшней тренировки">✕</button>
+      <button class="del-btn" style="font-size:16px;padding:4px" onclick="removeAdHocExercise('${logKey}')" title="Убрать из сегодняшней тренировки">✕</button>
     </div>
     <div style="padding:6px 6px 0 6px">
-      ${renderExercise(exId, log)}
+      ${renderExercise(logKey, log)}
     </div>
   </div>`;
 }
@@ -1432,11 +1446,32 @@ function renderToday(){
   }
   
   if(!skipped){
-    if(plan.groups && plan.groups.length){
-      html+=`<h2>Основные</h2>`;
+        if(plan.groups && plan.groups.length){
+      // Завершённые блоки И выполненные упражнения — в конец (относительно родителя)
+      const isGroupDone = (g) => {
+        if (g.type === 'block' && g.tree) {
+          const node = g.tree;
+          if (node.exCount === 0) return false;
+          return node.flatExercises.every(id => dayLog[id] && dayLog[id].done && !dayLog[id]._skipped);
+        }
+        if (g.type === 'exercise' || g.type === 'adhoc') {
+          const lg = dayLog[g.logKey];
+          return !!(lg && lg.done && !lg._skipped);
+        }
+        return false;
+      };
+      const normalGroups = [];
+      const doneGroups = [];
       plan.groups.forEach(g => {
+        if (isGroupDone(g)) doneGroups.push(g);
+        else normalGroups.push(g);
+      });
+      normalGroups.push(...doneGroups);
+
+      html+=`<h2>Основные</h2>`;
+      normalGroups.forEach(g => {
         if(g.type === 'exercise'){
-          html += renderExercise(g.id, dayLog[g.id]);
+          html += renderExercise(g.logKey, dayLog[g.logKey]);
         } else if(g.type === 'block'){
           if (g.skipped) {
             const safeName = escapeHtml(g.name).replace(/'/g, "\\'");
@@ -1453,21 +1488,27 @@ function renderToday(){
               <span style="flex:1">${escapeHtml(g.name)}</span>
               <span style="color:#c66;font-size:11px">🚫 ${escapeHtml(g.disabled.reason || 'отменено')}${g.disabled.until ? ` (до ${g.disabled.until})` : ''}</span>
             </div>`;
-          } else {
+          } else if (g.duplicateOnly) {
+  html += `<div class="block-header" style="opacity:0.6;background:#1a1a1a;border-color:#333;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+    <span class="blk-icon">📦</span>
+    <span style="flex:1">${escapeHtml(g.name)}</span>
+    <span style="color:#888;font-size:11px">↗ упражнения показаны отдельно</span>
+  </div>`;
+} else {
             html += renderBlockGroup(g.tree, dayLog);
           }
         } else if(g.type === 'adhoc'){
-          html += renderAdHocExercise(g.id, dayLog[g.id]);
+          html += renderAdHocExercise(g.logKey, dayLog[g.logKey]);
         }
       });
     } else if(plan.main.length) {
-      plan.main.forEach(id => html+=renderExercise(id, dayLog[id]));
+      plan.main.forEach(k => html += renderExercise(k, dayLog[k]));
     }
 
     if(plan.cancelled && plan.cancelled.length){
       html+=`<h2>Отменено</h2>`;
       plan.cancelled.forEach(c=>{
-        const ex=EX[c.id];
+        const ex=EX[logBaseId(c.id)];
         if(!ex) return;
         const reasonText = c.blockName ? `${c.reason} (${c.blockName})` : (c.reason||'без причины');
         const actions = c.type === 'skipped' ? `
@@ -1526,13 +1567,13 @@ function getDayStatus(dateStr){
   const dayLog = store.logs[dateStr] || {};
   if(dayLog._skip) return {state:'skip',reason:dayLog._skip.reason||'',isToday,isFuture:false,dayLog,date};
   const plan = getPlan(date);
-  const expected = [...plan.main, ...plan.after].filter(id=>EX[id]);
+  const expected = [...plan.main, ...plan.after].filter(k=>EX[logBaseId(k)]);
   const cancelled = plan.cancelled || [];
   const doneSet = new Set();
-  Object.entries(dayLog).forEach(([id,e])=>{
-    if(id.startsWith('_')) return;
-    if(e && e.done && EX[id]) doneSet.add(id);
-  });
+Object.entries(dayLog).forEach(([id,e])=>{
+  if(id.startsWith('_')) return;
+  if(e && e.done && EX[logBaseId(id)]) doneSet.add(id);
+});
   const doneInPlan = expected.filter(id => doneSet.has(id));
   const missed = expected.filter(id => !doneSet.has(id));
   const cancelledIds = new Set(cancelled.map(c => c.id));
@@ -1564,7 +1605,7 @@ function renderDayCard(dateStr){
     return `<div class="day-card">${header}<div class="ex" style="color:#666">До начала ведения истории</div></div>`;
   if(status.state==='future'){
     const plan=getPlan(d);
-    const expected=[...plan.main,...plan.after].filter(id=>EX[id]);
+        const expected=[...plan.main,...plan.after].filter(k=>EX[logBaseId(k)]);
     return `<div class="day-card">${header}
       <div class="ex" style="color:#888">Будущий день · запланировано ${expected.length} упр.</div>
     </div>`;
@@ -1594,7 +1635,7 @@ function renderDayCard(dateStr){
   if(doneInPlan.length){
     body+=`<h2>Сделано (${doneInPlan.length}/${expected.length})</h2>`;
     doneInPlan.forEach(id=>{
-      const ex=EX[id];
+      const ex=EX[logBaseId(id)]
       const val=ex.app?'✓':formatSets(dayLog[id]);
       const badges=getExerciseBadges(id,dayLog[id],dateStr);
       body+=`<div class="ex">
@@ -1628,14 +1669,14 @@ function renderDayCard(dateStr){
     const isT=status.isToday;
     body+=`<h2>${isT?'Не сделано (пока)':'Пропущено'} (${missed.length})</h2>`;
     missed.forEach(id=>{
-      const ex=EX[id];
+      const ex=EX[logBaseId(id)]
       body+=`<div class="ex" style="color:${isT?'#888':'#c66'}"><strong>${isT?'○':'✗'} ${escapeHtml(ex.name)}</strong></div>`;
     });
   }
   if(offPlan.length){
     body+=`<h2>Вне плана (${offPlan.length})</h2>`;
     offPlan.forEach(id=>{
-      const ex=EX[id];
+      const ex=EX[logBaseId(id)]
       const val=ex.app?'✓':formatSets(dayLog[id]);
       const badges=getExerciseBadges(id,dayLog[id],dateStr);
       body+=`<div class="ex">
@@ -1769,9 +1810,14 @@ function renderSearchResults(){
   matches.forEach(([id,ex])=>{
     const logs=store.logs;
     const entries=[];
-    Object.keys(logs).sort().reverse().forEach(d=>{
-      const e=logs[d]&&logs[d][id];
-      if(e&&e.done)entries.push({date:d,...e});
+        Object.keys(logs).sort().reverse().forEach(d=>{
+      const day = logs[d];
+      if(!day) return;
+      Object.entries(day).forEach(([k,e]) => {
+        if(k.startsWith('_') || !e || !e.done) return;
+        if(logBaseId(k) !== id) return;
+        entries.push({date:d, ...e});
+      });
     });
     html+=`<div class="ex ex-link" onclick="openExerciseStats('${id}')">`;
     html+=`<div class="hist-row" style="margin-bottom:2px">
@@ -1931,10 +1977,11 @@ function unskipDay(){
   }
   render();
 }
-function skipExerciseToday(exId) {
-  const name = EX[exId]?.name || exId;
+function skipExerciseToday(logKey) {
+  const exId = logBaseId(logKey);
+  const name = EX[exId]?.name || logKey;
   const d = fmt(currentDate), logs = store.logs;
-  const existing = logs[d]?.[exId]?._skipped;
+  const existing = logs[d]?.[logKey]?._skipped;
   const isEdit = !!existing;
   const reason = prompt(
     isEdit ? `Изменить причину пропуска «${name}»:` : `Пропустить «${name}» на сегодня?\nПричина:`,
@@ -1942,18 +1989,18 @@ function skipExerciseToday(exId) {
   );
   if (reason === null) return;
   logs[d] = logs[d] || {};
-  logs[d][exId] = logs[d][exId] || {};
-  logs[d][exId]._skipped = { reason: reason.trim() || 'без причины' };
-  if (logs[d][exId].done) delete logs[d][exId].done;
+  logs[d][logKey] = logs[d][logKey] || {};
+  logs[d][logKey]._skipped = { reason: reason.trim() || 'без причины' };
+  if (logs[d][logKey].done) delete logs[d][logKey].done;
   store.logs = logs;
   render();
 }
 
-function unskipExerciseToday(exId) {
+function unskipExerciseToday(logKey) {
   const d = fmt(currentDate), logs = store.logs;
-  if (logs[d] && logs[d][exId] && logs[d][exId]._skipped) {
-    delete logs[d][exId]._skipped;
-    if (!Object.keys(logs[d][exId]).length) delete logs[d][exId];
+  if (logs[d] && logs[d][logKey] && logs[d][logKey]._skipped) {
+    delete logs[d][logKey]._skipped;
+    if (!Object.keys(logs[d][logKey]).length) delete logs[d][logKey];
     if (!Object.keys(logs[d]).length) delete logs[d];
     store.logs = logs;
   }
@@ -2071,25 +2118,29 @@ function getMonthlyCompletion(){
     const st=getDayStatus(dStr);
     if(st.state==='before'||st.state==='skip')continue;
     const plan=st.plan||getPlan(new Date(dStr+'T00:00:00'));
-    const expected=[...plan.main,...plan.after].filter(id=>EX[id]);
+        const expected=[...plan.main,...plan.after].filter(k=>EX[logBaseId(k)]);
     total+=expected.length;
     if(st.doneInPlan)done+=st.doneInPlan.length;
   }
   return {total,done,pct:total>0?Math.round(done/total*100):0};
 }
 function countExercisePRs(exId){
-  const logs=store.logs;
-  let w=0,r=0,s=0;
-  if(!EX[exId]||EX[exId].app)return {w,r,s};
-  Object.keys(logs).sort().forEach(d=>{
-    const e=logs[d][exId];
-    if(!e||!e.done)return;
-    const pr=checkPRs(exId,e,d);
-    if(pr.weightPR)w++;
-    if(pr.repsPR)r++;
-    if(checkSteadyAllSets(exId,e,d))s++;
+  const logs = store.logs;
+  let w = 0, r = 0, s = 0;
+  if(!EX[exId] || EX[exId].app) return { w, r, s };
+  Object.keys(logs).sort().forEach(d => {
+    const day = logs[d];
+    if(!day) return;
+    Object.entries(day).forEach(([k, e]) => {
+      if(k.startsWith('_') || !e || !e.done) return;
+      if(logBaseId(k) !== exId) return;
+      const pr = checkPRs(exId, e, d);
+      if(pr.weightPR) w++;
+      if(pr.repsPR) r++;
+      if(checkSteadyAllSets(exId, e, d)) s++;
+    });
   });
-  return {w,r,s};
+  return { w, r, s };
 }
 function renderBars(items,opts={}){
   if(!items.length)return `<div class="ex" style="color:#666">Нет данных</div>`;
@@ -2127,14 +2178,17 @@ function renderStats(){
   html+=renderBars(weekly,{fmt:v=>v>999?Math.round(v/100)/10+'к':v});
   html+=`<h2>Упражнения</h2>`;
   const logs=store.logs;
-  const exStats=Object.entries(EX).map(([id,ex])=>{
+    const exStats=Object.entries(EX).map(([id,ex])=>{
     let sessions=0,totalSets=0;
     Object.keys(logs).forEach(d=>{
-      const e=logs[d][id];
-      if(e&&e.done){
+      const day = logs[d];
+      if(!day) return;
+      Object.entries(day).forEach(([k,e]) => {
+        if(k.startsWith('_') || !e || !e.done) return;
+        if(logBaseId(k) !== id) return;
         sessions++;
-        totalSets+=(e.sets||[]).filter(s=>s&&parseFloat(s.r)>0).length;
-      }
+        totalSets += (e.sets||[]).filter(s=>s&&parseFloat(s.r)>0).length;
+      });
     });
     return {id,ex,sessions,totalSets};
   }).filter(x=>x.sessions>0).sort((a,b)=>b.sessions-a.sessions);
@@ -2155,7 +2209,7 @@ function renderStats(){
   html+=renderDataSection();
   document.getElementById('app').innerHTML=html;
 }
-function openExerciseStats(exId){ statsExerciseId=exId; view='stats-ex'; render(); }
+function openExerciseStats(logKey){ statsExerciseId = logBaseId(logKey); view = 'stats-ex'; render(); }
 function renderExerciseStats(){
   const exId=statsExerciseId;
   const ex=EX[exId];
@@ -2166,7 +2220,16 @@ function renderExerciseStats(){
     <span style="font-size:13px;text-align:right">${escapeHtml(ex.name)}</span>
   </div>`;
   const logs=store.logs;
-  const sessions=Object.keys(logs).sort().filter(d=>logs[d][exId]&&logs[d][exId].done).map(d=>({date:d,log:logs[d][exId]}));
+    const sessions = [];
+  Object.keys(logs).sort().forEach(d => {
+    const day = logs[d];
+    if(!day) return;
+    Object.entries(day).forEach(([k, e]) => {
+      if(k.startsWith('_') || !e || !e.done) return;
+      if(logBaseId(k) !== exId) return;
+      sessions.push({ date: d, log: e });
+    });
+  });
   const msum = muscleSummary(ex.muscles);
   if(msum){ html+=`<div class="ex"><div class="ex-last" style="color:#999">Мышцы: ${escapeHtml(msum)}</div></div>`; }
   html+=`<div class="ex">${renderMarkerCells(exId, {marginTop: false})}</div>`;
@@ -3087,9 +3150,7 @@ function attemptAddExercise(){
     if(!name){alert('Введите название');return false;}
 
     const app = document.querySelector('input[name="addNewType"]:checked').value === 'app';
-    
     const loads = getMuscleLoads('addNewMuscle');
-    // Если это НЕ приложение, требуем хотя бы одну мышцу
     if(!app && Object.keys(loads).length === 0){
       alert('Выберите хотя бы одну мышцу');
       return false;
@@ -3106,17 +3167,18 @@ function attemptAddExercise(){
     newEx = { id, name, app, sets, reps, muscles, loads, schedule: { type: 'none' } };
   }
 
+  // Подтверждение только если дубликат в ТОМ ЖЕ контейнере
   if (blockEditPath.length) {
     const block = getCurrentBlock();
     if (!block) return false;
     const dup = (block.children || []).some(c => c.type === 'exercise' && c.id === id);
-    if (dup) { alert('Это упражнение уже есть в блоке'); return false; }
+    if (dup && !confirm('Это упражнение уже есть в этом блоке. Добавить ещё раз?')) return false;
   } else {
-    if (onbPlan.items.some(it => it.id === id)) {
-      alert('Это упражнение уже есть в плане'); return false;
-    }
+    if (onbPlan.items.some(it => it.id === id) &&
+        !confirm('Это упражнение уже есть в плане. Добавить ещё раз?')) return false;
   }
 
+  // Создать кастомное упражнение при необходимости
   if (newEx) {
     const list = customStore.list;
     list.push(newEx);
@@ -3125,6 +3187,7 @@ function attemptAddExercise(){
     if (newMarkers.length) setExerciseMarkers(id, newMarkers);
   }
 
+  // Добавить в план
   if (blockEditPath.length) {
     const block = getCurrentBlock();
     if (block) {
@@ -4167,21 +4230,8 @@ function renderOnboarding(){
   document.getElementById('app').innerHTML = html;
 }
 
-function checkWizardValid(step) {
-  if (step === 1) return wizardState.equipment.length > 0;
-  if (step === 2) return wizardState.days.length > 0;
-  if (step === 3) return wizardState.parts.length > 0;
-  return true;
-}
 
-function wizardNext() {
-  if (!checkWizardValid(wizardState.step)) {
-    alert('Пожалуйста, выберите хотя бы один вариант, чтобы продолжить.');
-    return;
-  }
-  wizardState.step++; 
-  renderOnboarding(); 
-}
+
 
 function checkWizardValid(step) {
   if (step === 1) return wizardState.equipment.length > 0;
@@ -4524,51 +4574,51 @@ function setView(v){
   render();
 }
 function shiftDay(d){currentDate.setDate(currentDate.getDate()+d);render()}
-function toggleDone(exId,checked){
-  if(checked && EX[exId].app){
-    if(!confirm(`Подтвердить: «${EX[exId].name}» сделано?`)){render();return}
+function toggleDone(logKey, checked){
+  const exId = logBaseId(logKey);
+  const ex = EX[exId];
+  if(!ex) return;
+  if(checked && ex.app){
+    if(!confirm(`Подтвердить: «${ex.name}» сделано?`)){render();return}
   }
-  const d=fmt(currentDate),logs=store.logs;
-  logs[d]=logs[d]||{};logs[d][exId]=logs[d][exId]||{};
-  if(checked && logs[d][exId]._skipped) delete logs[d][exId]._skipped;
-  logs[d][exId].done=checked;
+  const d = fmt(currentDate), logs = store.logs;
+  logs[d] = logs[d] || {};
+  logs[d][logKey] = logs[d][logKey] || {};
+  if(checked && logs[d][logKey]._skipped) delete logs[d][logKey]._skipped;
+  logs[d][logKey].done = checked;
   if(!checked){
-    const sets=logs[d][exId].sets;
-    const hasSets=sets&&sets.some(x=>x&&(x.w||x.r));
-    if(!hasSets && !logs[d][exId]._skipped)delete logs[d][exId];
+    const sets = logs[d][logKey].sets;
+    const hasSets = sets && sets.some(x => x && (x.w || x.r));
+    if(!hasSets && !logs[d][logKey]._skipped) delete logs[d][logKey];
   }
   if(logs[d]){
-    const nonMeta=Object.keys(logs[d]).filter(k=>!k.startsWith('_'));
+    const nonMeta = Object.keys(logs[d]).filter(k => !k.startsWith('_'));
     if(!nonMeta.length && !logs[d]._skip && !logs[d]._note && !logs[d]._skippedBlocks) delete logs[d];
   }
-  store.logs=logs;render();
+  store.logs = logs; render();
 }
-function onSetInput(exId,idx,field,el){
-  let v=el.value;
-  if(field==='w'){
-    v=v.replace(',', '.').replace(/[^\d.]/g,'');
-    const parts=v.split('.');
-    if(parts.length>2)v=parts[0]+'.'+parts.slice(1).join('');
-  }else{
-    v=v.replace(/,/g, '.').split('.')[0].replace(/\D/g,'');
+function onSetInput(logKey, idx, field, el){
+  let v = el.value;
+  if(field === 'w'){
+    v = v.replace(',', '.').replace(/[^\d.]/g,'');
+    const parts = v.split('.');
+    if(parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+  } else {
+    v = v.replace(/,/g, '.').split('.')[0].replace(/\D/g,'');
   }
-  if(v!==el.value)el.value=v;
-  setSet(exId,idx,field,v);
+  if(v !== el.value) el.value = v;
+  setSet(logKey, idx, field, v);
 }
-function changeSets(exId, delta) {
+function changeSets(logKey, delta) {
   const dateStr = fmt(currentDate);
   const logs = store.logs;
   logs[dateStr] = logs[dateStr] || {};
-  logs[dateStr][exId] = logs[dateStr][exId] || {};
-  const log = logs[dateStr][exId];
-
-  const current = (Number.isFinite(log._customSets) && log._customSets > 0)
-    ? log._customSets
-    : getExSets(exId);
-
+  logs[dateStr][logKey] = logs[dateStr][logKey] || {};
+  const log = logs[dateStr][logKey];
+  const exId = logBaseId(logKey);
+  const current = (Number.isFinite(log._customSets) && log._customSets > 0) ? log._customSets : getExSets(exId);
   const next = current + delta;
   if (next < 1 || next > 20) return;
-
   if (delta < 0) {
     const sets = log.sets || [];
     const removingIdx = current - 1;
@@ -4580,26 +4630,26 @@ function changeSets(exId, delta) {
     if (!confirm(msg)) return;
     if (sets.length > removingIdx) sets.splice(removingIdx, 1);
   }
-
   log._customSets = next;
   store.logs = logs;
   render();
 }
-function setSet(exId,idx,field,value){
-  const d=fmt(currentDate),logs=store.logs;
-  logs[d]=logs[d]||{};logs[d][exId]=logs[d][exId]||{};
-  const arr=logs[d][exId].sets||(logs[d][exId].sets=[]);
-  arr[idx]=arr[idx]||{};
-  arr[idx][field]=value;
-  store.logs=logs;
-  updateExerciseUI(exId);
+function setSet(logKey, idx, field, value){
+  const d = fmt(currentDate), logs = store.logs;
+  logs[d] = logs[d] || {}; logs[d][logKey] = logs[d][logKey] || {};
+  const arr = logs[d][logKey].sets || (logs[d][logKey].sets = []);
+  arr[idx] = arr[idx] || {};
+  arr[idx][field] = value;
+  store.logs = logs;
+  updateExerciseUI(logKey);
   updateDayMeta();
 }
-function getExerciseBadges(exId,log,dateStr){
-  const pr=getPRBadgesHtml(exId,log,dateStr);
-  const steady=EX[exId]&&!EX[exId].app?checkSteadyAllSets(exId,log,dateStr):null;
-  const steadyHtml=steady?`<span class="pr-badge pr-max" title="Все подходы одинаковые и максимальные повторы за всё время">🎯 ${steady.count}×${steady.r}</span>`:'';
-  return pr+steadyHtml;
+function getExerciseBadges(logKey, log, dateStr){
+  const exId = logBaseId(logKey);
+  const pr = getPRBadgesHtml(exId, log, dateStr);
+  const steady = EX[exId] && !EX[exId].app ? checkSteadyAllSets(exId, log, dateStr) : null;
+  const steadyHtml = steady ? `<span class="pr-badge pr-max" title="Все подходы одинаковые и максимальные повторы за всё время">🎯 ${steady.count}×${steady.r}</span>` : '';
+  return pr + steadyHtml;
 }
 /* ---------- PWA ---------- */
 let deferredPrompt=null;
