@@ -482,7 +482,72 @@ const ownPlanStore={
   set(v){localStorage.setItem('ownPlan',JSON.stringify(v))},
 };
 
+/* ---------- FLIP-анимация перемещений ---------- */
+const __reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/* ---------- Анимация вкладок и форм ---------- */
+(function injectAnimStyles(){
+  if (document.getElementById('anim-styles')) return;
+  const s = document.createElement('style');
+  s.id = 'anim-styles';
+  s.textContent = `
+    @keyframes appFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes formExpand {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    #app.app-anim { animation: appFadeIn 0.22s ease-out; }
+    [data-form-anim].form-anim { animation: formExpand 0.24s cubic-bezier(0.4, 0, 0.2, 1); }
+    @media (prefers-reduced-motion: reduce) {
+      #app.app-anim, [data-form-anim].form-anim { animation: none !important; }
+    }
+  `;
+  document.head.appendChild(s);
+})();
+
+let __animState = { view: null, form: null };
+let __appAnimTimer = null;
+function flipCapture(){
+  const map = new Map();
+  if (__reduceMotion) return map;
+  document.querySelectorAll('[data-flip-key]').forEach(el => {
+    const key = el.getAttribute('data-flip-key');
+    if (!key) return;
+    const r = el.getBoundingClientRect();
+    map.set(key, { top: r.top, left: r.left });
+  });
+  return map;
+}
+
+function flipPlay(before){
+  if (!before || !before.size) return;
+  document.querySelectorAll('[data-flip-key]').forEach(el => {
+    const key = el.getAttribute('data-flip-key');
+    if (!key) return;
+    const old = before.get(key);
+    if (!old) return;
+    const r = el.getBoundingClientRect();
+    const dx = old.left - r.left;
+    const dy = old.top - r.top;
+    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+    el.style.transition = 'none';
+    el.style.transform = `translate(${dx}px, ${dy}px)`;
+    el.style.willChange = 'transform';
+    void el.offsetWidth;              // принудительный reflow
+    el.style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+    el.style.transform = '';
+    const cleanup = () => {
+      el.style.transition = '';
+      el.style.transform = '';
+      el.style.willChange = '';
+    };
+    el.addEventListener('transitionend', cleanup, { once: true });
+    setTimeout(cleanup, 450);
+  });
+}
 
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -1204,15 +1269,15 @@ function renderExercise(logKey, log, depth = 0){
       ${skipBtn}
     </div>`;
 
-  if (isSkipped) {
-    return `<div class="ex ex-cancelled" data-ex-id="${exId}" data-log-key="${logKey}" style="${indentStyle}">
+    if (isSkipped) {
+    return `<div class="ex ex-cancelled" data-ex-id="${exId}" data-log-key="${logKey}" data-flip-key="log:${logKey}" style="${indentStyle}">
       ${head}
       <div class="ex-last" style="color:#c66;margin-bottom:0">🚫 Пропущено: ${escapeHtml(log._skipped.reason)}</div>
     </div>`;
   }
 
   if(ex.app){
-    return `<div class="ex ${done}" data-ex-id="${exId}" data-log-key="${logKey}" style="${indentStyle}">
+      return `<div class="ex ${done}" data-ex-id="${exId}" data-log-key="${logKey}" data-flip-key="log:${logKey}" style="${indentStyle}">
       ${head}
       ${markersHtml}
       <div class="ex-app"><span>${log?.done?'✓ Подтверждено':'Отметь галочку, если сделал'}</span></div>
@@ -1241,7 +1306,7 @@ function renderExercise(logKey, log, depth = 0){
   const progressHtml = computeProgressHtml(exId, log, dateStr);
   const prHtml = getPRBadgesHtml(exId, log, dateStr);
   const steady = checkSteadyAllSets(exId, log, dateStr);
-  return `<div class="ex ${done}" data-ex-id="${exId}" data-log-key="${logKey}" style="${indentStyle}">
+    return `<div class="ex ${done}" data-ex-id="${exId}" data-log-key="${logKey}" data-flip-key="log:${logKey}" style="${indentStyle}">
     ${head}
     ${markersHtml}
     <div class="ex-last">Прошлый раз: ${formatSets(last)}</div>
@@ -1310,7 +1375,7 @@ function renderBlockGroup(node, dayLog, depth = 0){
       }
     });
   }
-  return html;
+  return `<div data-flip-key="blk:${node.blockId}">${html}</div>`;
 }
 function openAdHocPicker() {
   let modal = document.getElementById('adhoc-modal');
@@ -3119,7 +3184,7 @@ function renderChildEditForm(child, idx) {
     `;
   }
 
-  return `<div class="child-settings">
+    return `<div class="child-settings" data-form-anim>
     <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Настройки: ${escapeHtml(name)}</div>
     ${renderChildScheduleEditor(child, 'ce' + idx, isBlock)}
     ${setsInput}
@@ -3646,8 +3711,8 @@ function renderAddForm(){
     <input type="date" id="addStart" class="form-input" value="${fmt(todayDate())}">
   `;
 
-  return `
-    <div class="ex" style="margin-top:10px">
+    return `
+    <div class="ex" data-form-anim style="margin-top:10px">
       <div class="form-row">
         <label><input type="radio" name="addType" value="existing" ${onbAddType==='existing'?'checked':''} onchange="onbSetAddType('existing')"> Существующее</label>
         <label><input type="radio" name="addType" value="new" ${onbAddType==='new'?'checked':''} onchange="onbSetAddType('new')"> Новое</label>
@@ -3718,7 +3783,7 @@ function renderPlanEditForm(item, idx){
   const toggle = `var f=document.getElementById('peDisFields');f.style.display=this.checked?'block':'none';`;
   const schedToggle = `var d=document.getElementById('peDays'),i=document.getElementById('peInterval');`;
 
-  return `<div class="ex" style="border-color:#3a5a3a;background:#152515;margin-top:6px;margin-bottom:8px">
+    return `<div class="ex" data-form-anim style="border-color:#3a5a3a;background:#152515;margin-top:6px;margin-bottom:8px">
     <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Редактирование: ${escapeHtml(ex.name)}</div>
     ${msum ? `<div class="psched" style="color:#666;margin-bottom:8px;font-size:11.5px">${escapeHtml(msum)}</div>` : ''}
     ${renderMarkerCells(item.id, {marginTop: false})}
@@ -3789,10 +3854,13 @@ function renderPlanItems() {
   if(!items.length){
     return `<div class="ex" style="color:#777;font-size:13px">Пока пусто — добавьте первое упражнение</div>`;
   }
-  let html = '';
+    let html = '';
+  const occ = {};
   items.forEach((item, idx) => {
     const ex = EX[item.id];
     if(!ex) return;
+    occ[item.id] = (occ[item.id] || 0) + 1;
+    const flipKey = `plan:${item.id}:${occ[item.id]}`;
     if(onbEditingIdx === idx){
       html += renderPlanEditForm(item, idx);
       return;
@@ -3803,7 +3871,7 @@ function renderPlanItems() {
     const msum = muscleSummary(ex.muscles);
     const mus = msum ? `<div class="psched" style="color:#666">${escapeHtml(msum)}</div>` : '';
     const extra = dis ? `<div class="psched" style="color:#c66">🚫 ${escapeHtml(dis.reason)}${dis.until ? ` (до ${dis.until})` : ''}</div>` : '';
-    html += `<div class="plan-item ${dis?'disabled':''}">
+       html += `<div class="plan-item ${dis?'disabled':''}" data-flip-key="${flipKey}">
       <div style="flex:1;min-width:0">
         <div class="pname">${escapeHtml(ex.name)}${badge}</div>
         <div class="psched">${scheduleSummary(item.schedule)} · ${plannedSets} ${plannedSets===1?'подход':(plannedSets<5?'подхода':'подходов')}</div>
@@ -4001,7 +4069,11 @@ function renderBlockChildren(block) {
   }
 
   let html = '';
+  const seen = {};
   children.forEach((child, idx) => {
+    const key = child.type + ':' + child.id;
+    seen[key] = (seen[key] || 0) + 1;
+    const flipKey = `child:${key}:${seen[key]}`;
     if (editingChildIdx === idx) {
       html += renderChildEditForm(child, idx);
       return;
@@ -4022,7 +4094,7 @@ function renderBlockChildren(block) {
       const dis = isCurrentlyDisabled(child);
       const badge = dis ? `<span class="pbadge">отменено</span>` : '';
       
-      html += `<div class="plan-item ${dis ? 'disabled' : ''}">
+            html += `<div class="plan-item ${dis ? 'disabled' : ''}" data-flip-key="${flipKey}">
         <div style="flex:1;min-width:0">
           <div class="pname">${escapeHtml(ex.name)}${badge}</div>
           <div class="psched">${awp ? '' : 'независимо · '}${schedLabel} · ${setsInfo}</div>
@@ -4049,7 +4121,7 @@ function renderBlockChildren(block) {
       const dis = isCurrentlyDisabled(child);
       const badge = dis ? `<span class="pbadge">отменено</span>` : '';
       
-      html += `<div class="plan-item ${dis ? 'disabled' : ''}">
+            html += `<div class="plan-item ${dis ? 'disabled' : ''}" data-flip-key="${flipKey}">
         <div style="flex:1;min-width:0">
           <div class="pname">📦 ${escapeHtml(nested.name)}${badge}</div>
           <div class="psched">${awp ? 'активен с родителем' : 'независимо'} · ${schedLabel} · ${exCount} упр.</div>
@@ -4081,7 +4153,7 @@ function renderAddExistingBlockList() {
       </div>
     `).join('');
   }
-  return `<div class="ex" style="margin-top:10px">
+    return `<div class="ex" data-form-anim style="margin-top:10px">
     <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Добавить существующий блок</div>
     <div style="max-height:320px;overflow-y:auto;margin-bottom:8px">${inner}</div>
     <button class="mini-btn" style="width:100%" onclick="cancelAddExistingBlock()">Отмена</button>
@@ -4533,6 +4605,56 @@ function generateAutoPlan() {
   render();
 }
 function render(){
+  const before = flipCapture();
+  renderInner();
+  flipPlay(before);
+
+  const rm = (typeof __reduceMotion !== 'undefined')
+    ? __reduceMotion
+    : (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  const app = document.getElementById('app');
+  if (app && !rm) {
+    /* --- Смена вкладки: затухание всего контента --- */
+    if (__animState.view !== null && __animState.view !== view) {
+      const oldV = __animState.view === 'stats-ex' ? 'stats' : __animState.view;
+      const newV = view === 'stats-ex' ? 'stats' : view;
+      if (oldV !== newV) {
+        clearTimeout(__appAnimTimer);
+        app.classList.remove('app-anim');
+        void app.offsetWidth;
+        app.classList.add('app-anim');
+        __appAnimTimer = setTimeout(() => app.classList.remove('app-anim'), 260);
+      }
+    }
+    __animState.view = view;
+
+    /* --- Открытие формы редактирования: выезд сверху --- */
+    const inBlock = blockEditPath.length > 0;
+    const curForm = [
+      inBlock ? 'B' : 'T',
+      onbEditingIdx !== null ? 'e' + onbEditingIdx : '-',
+      editingChildIdx !== null ? 'c' + editingChildIdx : '-',
+      onbAdding ? 'a' : '-',
+      onbAddingBlock ? 'ab' : '-',
+    ].join('|');
+    if (curForm !== __animState.form) {
+      const formEl = app.querySelector('[data-form-anim]');
+      if (formEl) {
+        formEl.classList.remove('form-anim');
+        void formEl.offsetWidth;
+        formEl.classList.add('form-anim');
+        setTimeout(() => formEl.classList.remove('form-anim'), 280);
+      }
+    }
+    __animState.form = curForm;
+  } else {
+    __animState.view = view;
+    __animState.form = null;
+  }
+}
+
+function renderInner(){
   if(needsOnboarding() || view === 'onboarding'){
     renderOnboarding();
     return;
