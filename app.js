@@ -1887,6 +1887,10 @@ function renderSearchResults(){
   if(!q){ el.innerHTML=`<div class="ex" style="color:#777">Введите название упражнения, метку или мышцу</div>`; return; }
   const matches=sortedExerciseEntries().filter(([id,ex]) => exerciseMatchesQuery(id, ex, q));
   if(!matches.length){ el.innerHTML=`<div class="ex" style="color:#777">Ничего не найдено</div>`; return; }
+
+  // id всех активных (не удалённых) своих упражнений
+  const customIds = new Set(customStore.list.filter(c => !c.deleted).map(c => c.id));
+
   let html='';
   matches.forEach(([id,ex])=>{
     const logs=store.logs;
@@ -1900,9 +1904,11 @@ function renderSearchResults(){
         entries.push({date:d, ...e});
       });
     });
+    const isCustom = customIds.has(id);
     html+=`<div class="ex ex-link" onclick="openExerciseStats('${id}')">`;
     html+=`<div class="hist-row" style="margin-bottom:2px">
       <strong style="flex:1">${escapeHtml(ex.name)}</strong>
+      ${isCustom ? `<button class="del-btn" title="Удалить упражнение" onclick="event.stopPropagation();deleteCustom('${id}')">✕</button>` : ''}
     </div>`;
     html+=`<div onclick="event.stopPropagation()">${renderMarkerCells(id, {q: q, marginTop: false})}</div>`;
     const msum = muscleSummary(ex.muscles);
@@ -2012,9 +2018,67 @@ function saveEditCustom(id){
   render();
 }
 function deleteCustom(id){
-  if(!confirm('Удалить упражнение?'))return;
-  customStore.list=customStore.list.map(c=>c.id===id?{...c,deleted:true}:c);
+  const name = EX[id]?.name || id;
+
+  const usages = [];
+  const own = ownPlanStore.get();
+  if(own && own.enabled){
+    if((own.items || []).some(it => it.id === id)) usages.push('в плане');
+    let inBlock = false;
+    (own.blocks || []).forEach(b => {
+      if((b.children || []).some(c => c.type === 'exercise' && c.id === id)) inBlock = true;
+    });
+    if(inBlock) usages.push('в блоке плана');
+  }
+  let historyCount = 0;
+  const logs0 = store.logs;
+  Object.keys(logs0).forEach(d => {
+    if(logs0[d] && logs0[d][id] && !logs0[d][id]._skip) historyCount++;
+  });
+  if(historyCount > 0) usages.push(`в истории (${historyCount} зап.)`);
+
+  const usageWarning = usages.length
+    ? `\n\n⚠️ Используется: ${usages.join(', ')}.`
+    : '';
+
+  if(!confirm(`Удалить «${name}»?${usageWarning}\n\nМетки упражнения тоже будут удалены.`)) return;
+
+  let wipeHistory = false;
+  if(historyCount > 0){
+    wipeHistory = confirm(
+      `Удалить также ${historyCount} записей истории по «${name}»?\n\n` +
+      `ОК — записи удалятся безвозвратно (тоннаж дней и статистика пересчитаются без них).\n` +
+      `Отмена — записи останутся в localStorage и в бэкапах, но в интерфейсе будут скрыты.`
+    );
+  }
+
+  customStore.list = customStore.list.map(c => c.id === id ? {...c, deleted: true} : c);
   setExerciseMarkers(id, []);
+  delete EX[id];
+
+  if(wipeHistory){
+    const logs = store.logs;
+    Object.keys(logs).forEach(d => {
+      const day = logs[d];
+      if(!day) return;
+      Object.keys(day).forEach(k => {
+        if(!k.startsWith('_') && logBaseId(k) === id) delete day[k];
+      });
+      if(!Object.keys(day).length) delete logs[d];
+    });
+    store.logs = logs;
+  }
+
+  // Почистить план от «мёртвых» ссылок (не обязательно, но убирает мусор из бэкапа)
+  const own2 = ownPlanStore.get();
+  if(own2){
+    if(Array.isArray(own2.items)) own2.items = own2.items.filter(it => it.id !== id);
+    (own2.blocks || []).forEach(b => {
+      b.children = (b.children || []).filter(c => !(c.type === 'exercise' && c.id === id));
+    });
+    ownPlanStore.set(own2);
+  }
+
   render();
 }
 
