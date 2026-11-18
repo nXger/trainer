@@ -2,6 +2,7 @@ const EX = {
   barbell_squat: { name:'Приседания со штангой', sets:4, reps:'12-15',
     muscles:{quads:41,glutes:24,adductors:16,hamstrings:7,erectors:12},
     markers:['Гантели/Штанга/Гиря','Волейбол'] },
+
   bulgarian_split: { name:'Болгарский сплит-присед', sets:4, reps:'12-15',
     muscles:{quads:44,glutes:30,adductors:11,hamstrings:9,erectors:6},
     markers:['Гантели/Штанга/Гиря','Собственный вес','Волейбол'] },
@@ -336,9 +337,7 @@ const EX = {
   finger_spread: { name:'Разведение пальцев с резинкой', sets:3, reps:'12-15',
     muscles:{lumbricals:35,interossei:55,finger_extensors:10},
     markers:['Резинка','Армрестлинг'] },
-});
 
-Object.assign(EX, {
   cable_crossover: { name:'Сведение рук на блоке (кроссовер)', sets:4, reps:'12-15',
     muscles:{pectoralis_major:60,delts:20,coracobrachialis:10,serratus:5,pectoralis_minor:5},
     markers:['Тренажер','Волейбол'] },
@@ -438,6 +437,7 @@ hanging_windshield_wipers: { name:'Дворники в висе на турни�
 fat_grip_hold: { name:'Удержание толстой рукоятки (Fat Grip)', sets:4, reps:'30-60 сек',
   muscles:{fds:30,fdp:30,fcr:15,fcu:15,brachioradialis:10},
   markers:['Армрестлинг', 'Гантели/Штанга/Гиря'] },
+
 one_arm_hang: { name:'Вис на одной руке', sets:4, reps:'10-30 сек',
   muscles:{fcr:25,fcu:25,fds:20,fdp:20,brachioradialis:10},
   markers:['Армрестлинг', 'Собственный вес'] },
@@ -512,8 +512,7 @@ db_hip_abduction: { name:'Отведение ноги с гантелью/бли
     name:'Изолированное отведение кисти свободный вес', 
     sets:4, reps:'12-15',
     muscles:{ecrl:40, ecrb:30, fcr:20, apl:10},
-    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] 
-  },
+    markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
   wrist_curl_extension_free_weight: { name:'Кисть с гантелью свободный вес', sets:4, reps:'12-15',
     muscles:{fcr:25,fcu:25,ecrl:20,ecrb:15,ecu:15},
     markers:['Гантели/Штанга/Гиря', 'Армрестлинг'] },
@@ -526,8 +525,7 @@ db_hip_abduction: { name:'Отведение ноги с гантелью/бли
     sets:4, reps:'12-15',
     // Акцент на верхнюю часть спины (ромбовидные, трапеции, задние дельты)
     muscles:{rhomboids:25, traps:20, rear_delts:15, biceps:15, brachialis:10, lats:10, teres:5},
-    markers:['Гантели/Штанга/Гиря', 'Волейбол'] 
-  },
+    markers:['Гантели/Штанга/Гиря', 'Волейбол'] },
   bent_over_row_waist: { 
     name:'Тяга к поясу в наклоне (штанга/гантели)', 
     sets:4, reps:'12-15',
@@ -570,4 +568,4 @@ db_hip_abduction: { name:'Отведение ноги с гантелью/бли
   side_lying_external_rotation: { name:'Боковая ротация лёжа (внешняя ротация плеча)', sets:4, reps:'12-15',
     muscles:{rotator_cuff:75, delts:25},
     markers:['Гантели/Штанга/Гиря', 'Резинка', 'Волейбол'] },
-});
+};
