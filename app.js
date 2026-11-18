@@ -8,6 +8,7 @@ function computePercents(loads){
   return result;
 }
 
+
 const BUILTIN_IDS=Object.keys(EX);
 
 function sortedExerciseEntries(){ return Object.entries(EX).sort((a,b)=>a[1].name.localeCompare(b[1].name,'ru')); }
@@ -393,21 +394,32 @@ function computeAllMuscleLoads(){
   let days = 0;
   const BODYWEIGHT_NOMINAL = 0.001;
   const TRANSITION_RESET   = 10;
+
   while(fmt(cur) <= todayStr){
     const dStr = fmt(cur);
     const dayLog = logs[dStr] || {};
+
+    // Явный пропуск дня — полный отдых для всех
     if(dayLog._skip){
-      if(dStr < todayStr){
-        Object.keys(loads).forEach(m => {
-          const cfg = MUSCLE_COEF[m];
-          if(!cfg) return;
-          loads[m] = Math.max(0, loads[m] * cfg.recovery_rate - cfg.daily_subtraction);
-        });
-      }
+      Object.keys(loads).forEach(m => {
+        const cfg = MUSCLE_COEF[m];
+        if(!cfg) return;
+        loads[m] = Math.max(0, loads[m] * cfg.recovery_rate - cfg.daily_subtraction);
+        if(loads[m] < 0.02) loads[m] = 0;
+      });
       cur.setDate(cur.getDate() + 1);
       days++;
       continue;
     }
+
+    // 1. Базовое восстановление каждый день
+    Object.keys(loads).forEach(m => {
+      const cfg = MUSCLE_COEF[m];
+      if(!cfg) return;
+      loads[m] = loads[m] * cfg.recovery_rate;
+    });
+
+    // 2. Сессии
     const sessions = [];
     const trained = new Set();
     Object.entries(dayLog).forEach(([id, e]) => {
@@ -417,8 +429,8 @@ function computeAllMuscleLoads(){
       const muscles = getMusclesFromEx(ex);
       if(!muscles.length) return;
       sessions.push({ id, log: e, muscles });
-      muscles.forEach(m => trained.add(m.id));
     });
+
     sessions.forEach(s => {
       let tonnage = 0, maxW = 0;
       (s.log.sets || []).forEach(set => {
@@ -430,8 +442,9 @@ function computeAllMuscleLoads(){
         tonnage += effW * r;
         if(effW > maxW) maxW = effW;
       });
-      if(tonnage <= 0) return;
+      if(tonnage <= 0) return;                 // ← ноль работы — не тренировка
       s.muscles.forEach(({ id, share }) => {
+        trained.add(id);                       // ← здесь, только после проверки тоннажа
         const effMaxW    = maxW * share;
         const effTonnage = tonnage * share;
         const rec = muscleRecords[id] || { maxWeight: 0, maxTonnage: 0 };
@@ -452,14 +465,18 @@ function computeAllMuscleLoads(){
         muscleRecords[id] = rec;
       });
     });
+
+    // 3. Полный отдых для мышц, у которых сегодня не было фактической работы
     if(dStr < todayStr){
       Object.keys(loads).forEach(m => {
         if(trained.has(m)) return;
         const cfg = MUSCLE_COEF[m];
         if(!cfg) return;
-        loads[m] = Math.max(0, loads[m] * cfg.recovery_rate - cfg.daily_subtraction);
+        loads[m] = Math.max(0, loads[m] - cfg.daily_subtraction);
+        if(loads[m] < 0.02) loads[m] = 0;
       });
     }
+
     cur.setDate(cur.getDate() + 1);
     days++;
   }
