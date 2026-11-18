@@ -2,7 +2,6 @@ const EX = {
   barbell_squat: { name:'Приседания со штангой', sets:4, reps:'12-15',
     muscles:{quads:41,glutes:24,adductors:16,hamstrings:7,erectors:12},
     markers:['Гантели/Штанга/Гиря','Волейбол'] },
-
   bulgarian_split: { name:'Болгарский сплит-присед', sets:4, reps:'12-15',
     muscles:{quads:44,glutes:30,adductors:11,hamstrings:9,erectors:6},
     markers:['Гантели/Штанга/Гиря','Собственный вес','Волейбол'] },
