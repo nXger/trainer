@@ -33,7 +33,6 @@ const MUSCLES = [
     {id:'apb',name:'Короткая мышца, отводящая большой палец кисти',sub:[]},
     {id:'opponens_pollicis',name:'Противопоставляющая большой палец',sub:[]},
     {id:'adductor_pollicis',name:'Приводящая большой палец',sub:[]},
-    {id:'palmaris_brevis',name:'Короткая ладонная мышца',sub:[]},
     {id:'adm',name:'Мышца, отводящая мизинец',sub:[]},
     {id:'fdm',name:'Короткий сгибатель мизинца',sub:[]},
     {id:'opponens_digiti_minimi',name:'Противопоставляющая мизинец',sub:[]},
@@ -116,7 +115,6 @@ const MUSCLE_COEF = {
   apb:{recovery_rate:0.66,daily_subtraction:0.035},
   opponens_pollicis:{recovery_rate:0.66,daily_subtraction:0.035},
   adductor_pollicis:{recovery_rate:0.66,daily_subtraction:0.035},
-  palmaris_brevis:{recovery_rate:0.68,daily_subtraction:0.030},
   adm:{recovery_rate:0.68,daily_subtraction:0.030},
   fdm:{recovery_rate:0.68,daily_subtraction:0.030},
   opponens_digiti_minimi:{recovery_rate:0.68,daily_subtraction:0.030},
@@ -162,7 +160,7 @@ const LOAD_GREEN     = 0.40;
 const LOAD_YELLOW    = 0.65;
 const LOAD_ORANGE    = 0.85;
 
-const FOREARM_IDS=['brachioradialis','supinator','pronators','fcr','fcu','fds','fdp','fpl','ecrl','ecrb','ecu','finger_extensors','ei','edm','apl','thumb_extensors','fpb','apb','opponens_pollicis','adductor_pollicis','palmaris_brevis','adm','fdm','opponens_digiti_minimi','lumbricals','interossei'];
+const FOREARM_IDS=['brachioradialis','supinator','pronators','fcr','fcu','fds','fdp','fpl','ecrl','ecrb','ecu','finger_extensors','ei','edm','apl','thumb_extensors','fpb','apb','opponens_pollicis','adductor_pollicis','adm','fdm','opponens_digiti_minimi','lumbricals','interossei'];
 const DAYS=['вс','пн','вт','ср','чт','пт','сб'];
 const WEEK_ORDER=[1,2,3,4,5,6,0];
 const MONTH_NAMES=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
