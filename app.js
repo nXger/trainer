@@ -3005,8 +3005,9 @@ function updateCurrentBlockSchedule() {
 
 /* ---------- Child schedule editor ---------- */
 function renderChildScheduleEditor(child, prefix, isBlock) {
+  const nestedBlock = isBlock ? (onbPlan.blocks || []).find(b => b.id === child.id) : null;
   const schedule = isBlock
-    ? (child.scheduleOverride || { type: 'none' })
+    ? (child.scheduleOverride || (nestedBlock && nestedBlock.schedule) || { type: 'none' })
     : (child.schedule || { type: 'none' });
   const activeWithParent = child.activeWithParent !== false;
   const days = schedule.days || [];
@@ -3077,6 +3078,20 @@ function readChildSchedule(prefix) {
 /* ---------- Child edit handlers ---------- */
 function onEditChild(idx) { editingChildIdx = idx; render(); }
 function onCancelChildEdit() { editingChildIdx = null; render(); }
+function schedulesMatch(a, b){
+  if(!a || !b) return false;
+  const at = a.type || 'none';
+  const bt = b.type || 'none';
+  if(at !== bt) return false;
+  if(at === 'days'){
+    const ad = (a.days || []).slice().sort().join(',');
+    const bd = (b.days || []).slice().sort().join(',');
+    return ad === bd;
+  }
+  if(at === 'interval') return a.interval === b.interval;
+  if(at === 'delayAfterParent') return a.delayDays === b.delayDays;
+  return true;
+}
 function onSaveChildEdit(idx) {
   const block = getCurrentBlock();
   if (!block) return;
@@ -3107,11 +3122,17 @@ function onSaveChildEdit(idx) {
   }
   
   child.activeWithParent = activeWithParent;
-  if (child.type === 'exercise') {
-    child.schedule = schedule;
+if (child.type === 'exercise') {
+  child.schedule = schedule;
+} else {
+  const nested = (onbPlan.blocks || []).find(b => b.id === child.id);
+  const nestedSched = nested ? nested.schedule : null;
+  if(schedule.type === 'none' || schedulesMatch(schedule, nestedSched)){
+    child.scheduleOverride = null;   // используем расписание самого подблока
   } else {
-    child.scheduleOverride = (schedule.type === 'none') ? null : schedule;
+    child.scheduleOverride = schedule;
   }
+}
   editingChildIdx = null;
   render();
 }
@@ -3187,8 +3208,9 @@ function renderChildEditForm(child, idx) {
     : (EX[child.id]?.name || 'упражнение');
 
   let setsInput = '';
-  if (!isBlock) {
-    const ex = EX[child.id];
+if (!isBlock) {
+  const ex = EX[child.id];
+  if (!ex || !ex.app) {
     const defaultSets = ex ? (ex.sets || 4) : 4;
     const currentSets = (Number.isFinite(child.sets) && child.sets > 0) ? child.sets : defaultSets;
     setsInput = `
@@ -3199,6 +3221,7 @@ function renderChildEditForm(child, idx) {
              value="${currentSets}" placeholder="${defaultSets}">
     `;
   }
+}
 
     return `<div class="child-settings" data-form-anim>
     <div style="font-size:13px;color:#9f9;margin-bottom:8px;font-weight:600">Настройки: ${escapeHtml(name)}</div>
@@ -3219,12 +3242,15 @@ function attemptAddExercise(){
   let newMarkers = [];
 
   if(onbAddType === 'existing'){
-    id = addExistingSelectedId;
-    if(!id){alert('Выберите упражнение из списка');return false;}
+  id = addExistingSelectedId;
+  if(!id){alert('Выберите упражнение из списка');return false;}
+  const selectedEx = EX[id];
+  if(!selectedEx || !selectedEx.app){
     const setsEl = document.getElementById('addExistingSets');
     const setsVal = setsEl ? parseInt(setsEl.value) : NaN;
     if(Number.isFinite(setsVal) && setsVal > 0) overrideSets = setsVal;
-  }else{
+  }
+}else{
     const nameEl = document.getElementById('addNewName');
     if(!nameEl){return false;}
     const name = nameEl.value.trim();
@@ -3430,6 +3456,10 @@ function updateAddExistingPreview(){
   }
   el.innerHTML = html;
   el.style.color = ex ? '#6ab06a' : '#888';
+  const setsWrapper = document.getElementById('addExistingSetsWrapper');
+if(setsWrapper){
+  setsWrapper.style.display = (ex && ex.app) ? 'none' : 'block';
+}
 }
 
 function filterAddExistingList(){
@@ -3745,10 +3775,10 @@ function renderAddForm(){
           }).join('')}
         </div>
         <div id="addExistingPreview" class="ex-last" style="margin-top:-4px;color:#888"></div>
-        <div style="margin-top:8px">
-          <div style="font-size:12px;color:#888;margin:6px 0 4px">Количество подходов (пусто = по умолчанию):</div>
-          <input type="number" id="addExistingSets" class="form-input" min="1" max="20" placeholder="напр. 4">
-        </div>
+        <div id="addExistingSetsWrapper" style="margin-top:8px;display:${(EX[addExistingSelectedId] && EX[addExistingSelectedId].app) ? 'none' : 'block'}">
+  <div style="font-size:12px;color:#888;margin:6px 0 4px">Количество подходов (пусто = по умолчанию):</div>
+  <input type="number" id="addExistingSets" class="form-input" min="1" max="20" placeholder="напр. 4">
+</div>
       </div>
       <div id="addNewBlock" style="display:${onbAddType==='new'?'block':'none'}">
         <input type="text" id="addNewName" class="form-input" placeholder="Название упражнения">
@@ -3819,8 +3849,8 @@ function renderPlanEditForm(item, idx){
       <input type="number" id="peIntervalVal" class="form-input" value="${interval}" min="1">
     </div>
 
-    <div style="font-size:12px;color:#888;margin:6px 0 4px">Количество подходов:</div>
-    <input type="number" id="peSets" class="form-input" min="1" max="20" value="${plannedSets}">
+    ${ex.app ? '' : `<div style="font-size:12px;color:#888;margin:6px 0 4px">Количество подходов:</div>
+<input type="number" id="peSets" class="form-input" min="1" max="20" value="${plannedSets}">`}
     <div style="font-size:12px;color:#888;margin:6px 0 4px">Начиная с:</div>
     <input type="date" id="peStart" class="form-input" value="${startDate}">
 
@@ -3883,6 +3913,9 @@ function renderPlanItems() {
     }
     const dis = isCurrentlyDisabled(item);
     const plannedSets = (Number.isFinite(item.sets) && item.sets > 0) ? item.sets : (ex.sets || 4);
+const setsLabel = ex.app
+  ? 'по приложению'
+  : `${plannedSets} ${plannedSets===1?'подход':(plannedSets<5?'подхода':'подходов')}`;
     const badge = dis ? `<span class="pbadge">отменено</span>` : '';
     const msum = muscleSummary(ex.muscles);
     const mus = msum ? `<div class="psched" style="color:#666">${escapeHtml(msum)}</div>` : '';
@@ -3890,7 +3923,7 @@ function renderPlanItems() {
        html += `<div class="plan-item ${dis?'disabled':''}" data-flip-key="${flipKey}">
       <div style="flex:1;min-width:0">
         <div class="pname">${escapeHtml(ex.name)}${badge}</div>
-        <div class="psched">${scheduleSummary(item.schedule)} · ${plannedSets} ${plannedSets===1?'подход':(plannedSets<5?'подхода':'подходов')}</div>
+        <div class="psched">${scheduleSummary(item.schedule)} · ${setsLabel}</div>
         ${mus}
         ${renderMarkerChipsOnly(item.id)}
         ${extra}
@@ -4105,7 +4138,7 @@ function renderBlockChildren(block) {
       // Вычисляем количество подходов (ручное или по умолчанию)
       const defaultSets = ex.sets || 4;
       const effectiveSets = (Number.isFinite(child.sets) && child.sets > 0) ? child.sets : defaultSets;
-      const setsInfo = `${effectiveSets} подх.`;
+      const setsInfo = ex.app ? 'по приложению' : `${effectiveSets} подх.`;
       
       const dis = isCurrentlyDisabled(child);
       const badge = dis ? `<span class="pbadge">отменено</span>` : '';
