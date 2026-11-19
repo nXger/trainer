@@ -374,7 +374,41 @@ function getLoadLabel(load){
   if(load > LOAD_GREEN)  return 'умеренная';
   return 'восстановлена';
 }
-
+function getWeightMode(exId){
+  const ex = EX[exId];
+  if(!ex) return 'total';
+  if(ex.weightMode) return ex.weightMode;
+  // Fallback для упражнений, которых нет в WEIGHT_MODES
+  const markers = Array.isArray(ex.markers) ? ex.markers : [];
+  const hasBW   = markers.includes('Собственный вес');
+  const hasFree = markers.includes('Гантели/Штанга/Гиря');
+  const hasMach = markers.includes('Тренажер');
+  const hasBand = markers.includes('Резинка');
+  if(hasBW && !hasFree && !hasMach && !hasBand) return 'bodyweight';
+  return 'total';
+}
+function weightLabel(mode){
+  switch(mode){
+    case 'one':        return 'вес на 1 сторону (кг)';
+    case 'both':       return 'общий вес (кг)';
+    case 'bodyweight': return 'доп. вес (кг)';
+    default:           return 'общий вес (кг)';
+  }
+}
+function weightHint(mode, exId){
+  const ex = EX[exId];
+  const markers = (ex && Array.isArray(ex.markers)) ? ex.markers : [];
+  switch(mode){
+    case 'one':
+      return '💡 Вес одной гантели/стороны. При расчёте усталости умножится на 2';
+    case 'both':
+      return '💡 Суммарный вес на обе стороны (штанга + блины = 60 → введите 60)';
+    case 'bodyweight':
+      return '💡 Пусто или 0 — свой вес. Введите доп. вес (пояс/жилет), если нужно';
+    default:
+      return '💡 Вес на обе стороны/тренажёре';
+  }
+}
 function computeAllMuscleLoads(){
   const logs = store.logs;
   const todayStr = fmt(todayDate());
@@ -394,9 +428,13 @@ function computeAllMuscleLoads(){
   let days = 0;
   const BODYWEIGHT_NOMINAL = 0.001;
   const TRANSITION_RESET   = 10;
+  let loadsAtStartOfToday = null;
 
   while(fmt(cur) <= todayStr){
     const dStr = fmt(cur);
+    if(dStr === todayStr){
+  loadsAtStartOfToday = { ...loads };
+}
     const dayLog = logs[dStr] || {};
 
     // Явный пропуск дня — полный отдых для всех
@@ -428,7 +466,7 @@ function computeAllMuscleLoads(){
       if(!ex || ex.app) return;
       const muscles = getMusclesFromEx(ex);
       if(!muscles.length) return;
-      sessions.push({ id, log: e, muscles });
+      sessions.push({ id, log: e, muscles, weightMode: ex.weightMode || 'total' });
     });
 
     sessions.forEach(s => {
@@ -443,10 +481,11 @@ function computeAllMuscleLoads(){
         if(effW > maxW) maxW = effW;
       });
       if(tonnage <= 0) return;                 // ← ноль работы — не тренировка
-      s.muscles.forEach(({ id, share }) => {
-        trained.add(id);                       // ← здесь, только после проверки тоннажа
-        const effMaxW    = maxW * share;
-        const effTonnage = tonnage * share;
+      const wMult = s.weightMode === 'one' ? 2 : 1;
+s.muscles.forEach(({ id, share }) => {
+  trained.add(id);
+  const effMaxW    = maxW * wMult * share;
+  const effTonnage = tonnage * wMult * share;
         const rec = muscleRecords[id] || { maxWeight: 0, maxTonnage: 0 };
         const rawWRatio = rec.maxWeight  > 0 ? effMaxW    / rec.maxWeight  : 1.0;
         const rawTRatio = rec.maxTonnage > 0 ? effTonnage / rec.maxTonnage : 1.0;
@@ -480,7 +519,13 @@ function computeAllMuscleLoads(){
     cur.setDate(cur.getDate() + 1);
     days++;
   }
-  return { loads, days };
+  const dailyDeltas = {};
+if(loadsAtStartOfToday){
+  Object.keys(loads).forEach(m => {
+    dailyDeltas[m] = loads[m] - (loadsAtStartOfToday[m] || 0);
+  });
+}
+return { loads, days, dailyDeltas };
 }
 
 
@@ -594,7 +639,7 @@ function syncCustomEx(){
       muscles = obj;
     }
     if(!muscles || typeof muscles!=='object') muscles = {};
-    EX[c.id]={name:c.name,app:!!c.app,sets:c.sets||4,reps:c.reps||'12-15',muscles};
+    EX[c.id]={name:c.name,app:!!c.app,sets:c.sets||4,reps:c.reps||'12-15',muscles,weightMode:c.weightMode||'total'};
   });
 }
 
@@ -1146,13 +1191,16 @@ function formatSets(log){
   if(!parts.length) return 'нет данных';
   const groups=[];
   parts.forEach(s=>{
-    const w=String(s.w||'?').trim();
+    const w=String(s.w||'').trim();
     const r=String(s.r||'?').trim();
     const last=groups[groups.length-1];
-    if(last&&last.w===w){last.reps.push(r)}
-    else{groups.push({w,reps:[r]})}
+    if(last && last.w===w){ last.reps.push(r); }
+    else { groups.push({w, reps:[r]}); }
   });
-  return groups.map(g=>`${g.w}кг(${g.reps.join('+')})`).join('+');
+  return groups.map(g => {
+    if(!g.w) return `свой вес (${g.reps.join('+')})`;
+    return `${g.w}кг(${g.reps.join('+')})`;
+  }).join('+');
 }
 function checkTonnagePR(dateStr){
   const logs=store.logs;
@@ -1183,10 +1231,12 @@ function dayTonnage(dayLog){
   let tonnage=0,sets=0;
   Object.entries(dayLog).forEach(([id,e])=>{
     if(id.startsWith('_')||!e||!e.done)return;
+    const ex = EX[logBaseId(id)];
+    const wMult = (ex && ex.weightMode === 'one') ? 2 : 1;
     (e.sets||[]).forEach(s=>{
       if(!s)return;
       const w=parseFloat(s.w)||0,r=parseFloat(s.r)||0;
-      if(r>0){sets++;if(w>0)tonnage+=w*r;}
+      if(r>0){sets++;if(w>0)tonnage+=w*r*wMult;}
     });
   });
   return {tonnage:Math.round(tonnage),sets};
@@ -1244,10 +1294,11 @@ function getMaxWeightByMuscle(){
         if(w > maxW) maxW = w;
       });
       if(maxW <= 0) return;
-      muscles.forEach(({id: mid, share}) => {
-        const effW = maxW * share;
-        if(!result[mid] || effW > result[mid]) result[mid] = effW;
-      });
+      const wMult = ex.weightMode === 'one' ? 2 : 1;
+muscles.forEach(({id: mid, share}) => {
+  const effW = maxW * wMult * share;
+  if(!result[mid] || effW > result[mid]) result[mid] = effW;
+});
     });
   });
   return result;
@@ -1302,15 +1353,21 @@ function renderExercise(logKey, log, depth = 0){
     </div>`;
   }
 
+
   const logSets = log?.sets || [];
   let rows = '';
+  const wMode = getWeightMode(exId);
+const wLabel = weightLabel(wMode);
+const wHintText = weightHint(wMode, exId);
+const wHint = `<div class="ex-last" style="color:#7cc0e8;font-size:11px;line-height:1.35;margin-bottom:4px">${wHintText}</div>`;
+  
   for(let i=0;i<sets;i++){
     const s = logSets[i] || {};
     rows += `<div class="set-row">
-      <span class="set-num">${i+1}</span>
-      <input type="text" inputmode="decimal" placeholder="вес (кг)" value="${s.w||''}" oninput="onSetInput('${logKey}',${i},'w',this)">
-      <input type="text" inputmode="numeric" placeholder="повторения" value="${s.r||''}" oninput="onSetInput('${logKey}',${i},'r',this)">
-    </div>`;
+  <span class="set-num">${i+1}</span>
+  <input type="text" inputmode="decimal" placeholder="${wLabel}" value="${s.w||''}" oninput="onSetInput('${logKey}',${i},'w',this)">
+  <input type="text" inputmode="numeric" placeholder="повторения" value="${s.r||''}" oninput="onSetInput('${logKey}',${i},'r',this)">
+</div>`;
   }
 
   const setsCtrl = `<div style="display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:12px;color:#888">
@@ -1326,8 +1383,9 @@ function renderExercise(logKey, log, depth = 0){
     ${head}
     ${markersHtml}
     <div class="ex-last">Прошлый раз: ${formatSets(last)}</div>
-    ${musclesHtml}
-    <div data-progress>${progressHtml}</div>
+${musclesHtml}
+${wHint}
+<div data-progress>${progressHtml}</div>
     <div data-pr>${prHtml?`<div class="pr-row">${prHtml}</div>`:''}</div>
     <div data-steady>${steady?`<div class="pr-row"><span class="pr-badge pr-max" title="Все подходы одинаковые — пора увеличить вес или повторы">🎯 ${steady.count}×${steady.r}</span></div>`:''}</div>
     ${setsCtrl}
@@ -1964,9 +2022,16 @@ function renderCustomEditForm(c){
       <label><input type="radio" name="editType" value="app" ${c.app?'checked':''} onchange="document.getElementById('editSetsBlock').style.display='none'"> По приложению</label>
     </div>
     <div id="editSetsBlock" style="display:${c.app?'none':'block'}">
-      <input type="number" id="editSets" class="form-input" value="${c.sets||4}" min="1" placeholder="Подходы">
-      <input type="text" id="editReps" class="form-input" value="${escapeHtml(c.reps||'12-15')}" placeholder="Повторения">
-    </div>
+  <input type="number" id="editSets" class="form-input" value="${c.sets||4}" min="1" placeholder="Подходы">
+  <input type="text" id="editReps" class="form-input" value="${escapeHtml(c.reps||'12-15')}" placeholder="Повторения">
+  <div style="font-size:12px;color:#888;margin:8px 0 4px">Как вы вводите вес?</div>
+<div class="form-row" style="flex-direction:column;gap:6px;align-items:flex-start">
+  <label><input type="radio" name="editWeightMode" value="total" ${(c.weightMode||'total')==='total'?'checked':''}> Общий вес снаряда</label>
+  <label><input type="radio" name="editWeightMode" value="both" ${c.weightMode==='both'?'checked':''}> Общий вес на обе стороны</label>
+  <label><input type="radio" name="editWeightMode" value="one" ${c.weightMode==='one'?'checked':''}> На одну сторону</label>
+  <label><input type="radio" name="editWeightMode" value="bodyweight" ${c.weightMode==='bodyweight'?'checked':''}> Свой вес</label>
+</div>
+</div>
     <div style="font-size:12px;color:#888;margin:8px 0 4px">Мышцы:</div>
     ${renderMusclePicker(c.muscles||[],'editMuscle')}
     <div style="font-size:13px;color:#ccc;margin:10px 0 6px">Расписание:</div>
@@ -2012,7 +2077,9 @@ function saveEditCustom(id){
   }else if(schedType==='even'||schedType==='odd'||schedType==='everyday'){
     schedule={type:schedType,startDate};
   }
-  customStore.list=customStore.list.map(x=>x.id===id?{...x,name,app,sets,reps,muscles,loads,schedule}:x);
+  const wModeEl = document.querySelector('input[name="editWeightMode"]:checked');
+const weightMode = wModeEl ? wModeEl.value : 'total';
+customStore.list=customStore.list.map(x=>x.id===id?{...x,name,app,sets,reps,muscles,loads,schedule,weightMode}:x);
   syncCustomEx();
   editingCustomId=null;
   render();
@@ -2556,8 +2623,7 @@ function renderDataSection(){
 
 /* ---------- Тренер ---------- */
 function renderTrainer(){
-  const { loads, days } = computeAllMuscleLoads();
-  const maxWeights = getMaxWeightByMuscle();
+  const { loads, days, dailyDeltas } = computeAllMuscleLoads();
 
   const planMuscles = new Set();
   const allPlanExIds = new Set();
@@ -2635,20 +2701,22 @@ function renderTrainer(){
             ? `<div class="muscle-item" style="justify-content:center;color:#666;font-size:12px">Нет мышц в этой группе</div>`
             : group.muscles.map(mid => {
                 const load = loads[mid] || 0;
-                const pct = Math.round(load * 100);
-                const color = getLoadColor(load);
-                const name = MUSCLE_BY_ID[mid]?.name || mid;
-                const maxW = maxWeights[mid];
-                const weightStr = maxW ? (Math.round(maxW * 10) / 10) + ' кг' : '—';
-                const inPlan = planMuscles.has(mid);
-                return `<div class="muscle-item">
-                  <div class="mi-info">
-                    <span class="mi-name">${escapeHtml(name)}${!inPlan?' <span style="color:#e8a860;font-size:10.5px">(не в плане)</span>':''}</span>
-                    <span class="mi-weight">макс. вес: ${weightStr}</span>
-                    <div class="mi-bar"><div class="mi-bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
-                  </div>
-                  <span class="mi-pct" style="color:${color}">${pct}%</span>
-                </div>`;
+const pct = Math.round(load * 100);
+const color = getLoadColor(load);
+const name = MUSCLE_BY_ID[mid]?.name || mid;
+const delta = (dailyDeltas && dailyDeltas[mid]) || 0;
+const deltaPct = Math.round(delta * 100);
+const deltaStr = deltaPct === 0 ? '±0%' : (deltaPct > 0 ? `+${deltaPct}%` : `${deltaPct}%`);
+const deltaColor = deltaPct > 0 ? '#6ab06a' : (deltaPct < 0 ? '#e85a5a' : '#888');
+const inPlan = planMuscles.has(mid);
+return `<div class="muscle-item">
+  <div class="mi-info">
+    <span class="mi-name">${escapeHtml(name)}${!inPlan?' <span style="color:#e8a860;font-size:10.5px">(не в плане)</span>':''}</span>
+    <span class="mi-weight" style="color:${deltaColor}">сегодня: ${deltaStr}</span>
+    <div class="mi-bar"><div class="mi-bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
+  </div>
+  <span class="mi-pct" style="color:${color}">${pct}%</span>
+</div>`;
               }).join('')
           }
         </div>
@@ -3335,7 +3403,9 @@ function attemptAddExercise(){
     const markersEl = document.getElementById('addNewMarkers');
     newMarkers = parseMarkers(markersEl ? markersEl.value : '');
     id = 'c' + Date.now().toString(36);
-    newEx = { id, name, app, sets, reps, muscles, loads, schedule: { type: 'none' } };
+    const wModeEl = document.querySelector('input[name="addNewWeightMode"]:checked');
+const weightMode = wModeEl ? wModeEl.value : 'total';
+newEx = { id, name, app, sets, reps, muscles, loads, schedule: { type: 'none' }, weightMode };
   }
 
   // Подтверждение только если дубликат в ТОМ ЖЕ контейнере
@@ -3853,6 +3923,16 @@ function renderAddForm(){
         <div id="addNewSetsBlock">
           <input type="number" id="addNewSets" class="form-input" value="4" min="1" placeholder="Количество подходов">
           <input type="text" id="addNewReps" class="form-input" value="12-15" placeholder="Повторения">
+          <div style="font-size:12px;color:#888;margin:8px 0 4px">Как вы вводите вес?</div>
+<div class="form-row" style="flex-direction:column;gap:6px;align-items:flex-start">
+  <label><input type="radio" name="addNewWeightMode" value="total" checked> Общий вес снаряда (машина, блин, стек)</label>
+  <label><input type="radio" name="addNewWeightMode" value="both"> Общий вес на обе стороны (штанга, 2 гантели)</label>
+  <label><input type="radio" name="addNewWeightMode" value="one"> На одну руку/ногу/сторону (одна гантель)</label>
+  <label><input type="radio" name="addNewWeightMode" value="bodyweight"> Свой вес (без веса или доп. отягощение)</label>
+</div>
+<div style="font-size:11px;color:#777;margin-top:4px">
+  «На одну сторону» умножается на 2 при расчёте усталости.
+</div>
         </div>
         <div style="font-size:12px;color:#888;margin:8px 0 4px">Метки (через запятую, необязательно):</div>
         <input type="text" id="addNewMarkers" class="form-input" placeholder="напр. база, жим, домашние">
