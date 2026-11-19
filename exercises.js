@@ -569,3 +569,184 @@ db_hip_abduction: { name:'Отведение ноги с гантелью/бли
     muscles:{rotator_cuff:75, delts:25},
     markers:['Гантели/Штанга/Гиря', 'Резинка', 'Волейбол'] },
 };
+
+/* =========================================================
+   WEIGHT MODE
+   'one'        — вес на одну руку/ногу/сторону → при расчёте ×2
+   'both'       — суммарный вес на обе стороны (штанга, 2 гантели) → ×1
+   'total'      — вес снаряда (машина, блин, резинка, стек) → ×1
+   'bodyweight' — свой вес; поле опционально (доп. отягощение) → ×1
+   По умолчанию — 'total'
+   ========================================================= */
+const WEIGHT_MODES = {
+  // ============================================================
+  // 'one' — вес одной гантели / одной руки-ноги / одной стороны
+  // ============================================================
+  bulgarian_split: 'one',
+  hammer_curl: 'one',
+  incline_db_press: 'one',
+  overhead_press_db: 'one',
+  lateral_raise: 'one',
+  front_raise: 'one',
+  bent_reverse_fly: 'one',
+  farmers_walk: 'one',
+  side_bend_db: 'one',
+  db_forearm_lever: 'one',
+  db_hip_abduction: 'one',
+  db_arm_adduction: 'one',
+  db_thumb_flexion: 'one',
+  db_thumb_extension: 'one',
+  plate_finger_extension: 'one',
+  plate_pinky_grip: 'one',
+  plate_finger_spread: 'one',
+  dumbbell_flyes: 'one',
+  seated_external_rotation: 'one',
+  standing_shoulder_rotation: 'one',
+  side_lying_external_rotation: 'one',
+  supination_db: 'one',
+  pronation_db: 'one',
+  pronation_forearm_free_weight: 'one',
+  radial_ulnar_deviation_free_weight: 'one',
+  isolated_wrist_abduction_free_weight: 'one',
+  wrist_curl_extension_free_weight: 'one',
+  arm_abduction_band: 'one',    // по одной руке
+  arm_adduction_band: 'one',    // по одной руке
+
+  // ============================================================
+  // 'both' — суммарный вес на обе стороны (штанга / две гантели)
+  // ============================================================
+  barbell_squat: 'both',
+  romanian_deadlift: 'both',
+  deadlift: 'both',
+  bench_press: 'both',
+  decline_press: 'both',
+  glute_bridge_weighted: 'both',
+  biceps_barbell: 'both',
+  shrugs: 'both',
+  upright_row: 'both',
+  bent_over_row_chest: 'both',
+  bent_over_row_waist: 'both',
+  wrist_curl: 'both',
+  wrist_extension: 'both',
+
+  // ============================================================
+  // 'bodyweight' — свой вес, поле опционально (доп. отягощение)
+  // ============================================================
+  // Отжимания
+  pushups: 'bodyweight',
+  incline_feet_pushups: 'bodyweight',
+  hands_elevated_pushups: 'bodyweight',
+  close_pushups: 'bodyweight',
+  wide_pushups: 'bodyweight',
+  diamond_pushups: 'bodyweight',
+  clap_pushups: 'bodyweight',
+  handstand_pushups: 'bodyweight',
+  archer_pushups: 'bodyweight',
+  pseudo_planche_pushups: 'bodyweight',
+  spiderman_pushups: 'bodyweight',
+  pushup_plus: 'bodyweight',
+  finger_pushups: 'bodyweight',
+  // Брусья / турник
+  dips: 'bodyweight',
+  pullups: 'bodyweight',
+  chin_ups: 'bodyweight',
+  neutral_pullups: 'bodyweight',
+  close_grip_pullups: 'bodyweight',
+  pullup_wide: 'bodyweight',
+  muscle_ups: 'bodyweight',
+  l_sit_pullups: 'bodyweight',
+  typewriter_pullups: 'bodyweight',
+  explosive_pullups: 'bodyweight',
+  towel_pullups: 'bodyweight',
+  front_lever: 'bodyweight',
+  back_lever: 'bodyweight',
+  hang_bar: 'bodyweight',
+  one_arm_hang: 'bodyweight',
+  // Кор / пресс
+  crunches: 'bodyweight',
+  leg_raise_hanging: 'bodyweight',
+  leg_raise_lying: 'bodyweight',
+  reverse_crunches: 'bodyweight',
+  side_plank: 'bodyweight',
+  plank: 'bodyweight',
+  plank_protraction: 'bodyweight',
+  stomach_vacuum: 'bodyweight',
+  knee_raise_hanging: 'bodyweight',
+  hanging_windshield_wipers: 'bodyweight',
+  dragon_flag: 'bodyweight',
+  kegel: 'bodyweight',
+  breath_resistance: 'bodyweight',
+  // Шея
+  neck_flexion: 'bodyweight',
+  neck_side: 'bodyweight',
+  neck_extension: 'bodyweight',
+  neck_extension_prone: 'bodyweight',
+  neck_extension_side: 'bodyweight',
+  // Спина / гиперэкстензия / Y-подъёмы
+  hyperextension: 'bodyweight',
+  y_raises_prone: 'bodyweight',
+  // Ноги (тело)
+  jump_squats: 'bodyweight',
+  box_jumps: 'bodyweight',
+  jumping_lunges: 'bodyweight',
+  broad_jumps: 'bodyweight',
+  single_leg_hops: 'bodyweight',
+  pistol_squats: 'bodyweight',
+  calf_jumps: 'bodyweight',
+  calf_raise_standing: 'bodyweight',
+  walk_toes_heels: 'bodyweight',
+  glute_bridge_hold: 'bodyweight',
+
+  // ============================================================
+  // 'total' — снаряд / стек / блин / резинка / прочее (×1)
+  // ============================================================
+  // Тренажёры / блоки
+  leg_curl_machine: 'total',
+  leg_adduction_machine: 'total',
+  leg_abduction_machine: 'total',
+  reverse_fly_machine: 'total',
+  reverse_pec_deck: 'total',
+  lat_pulldown: 'total',
+  rows_to_waist: 'total',
+  cable_crossover: 'total',
+  hammer_strength_press: 'total',
+  hammer_strength_row: 'total',
+  cable_hook_imitation: 'total',
+  cable_wrist_curl: 'total',
+  calf_raise_seated: 'total',
+  crunches_weighted: 'total',
+  // Блины / фиксированный вес / один снаряд на две руки
+  weighted_breathing: 'total',
+  pinch_grip_hang: 'total',
+  rolling_thunder: 'total',
+  fat_grip_hold: 'total',
+  finger_hold_strap_handle: 'total',
+  thumb_pinch: 'total',
+  hand_gripper: 'total',
+  sumo_squat_db: 'total',     // одна гантель двумя руками
+  overhead_triceps: 'total',  // одна гантель двумя руками
+  pullover_db: 'total',       // одна гантель двумя руками
+  bend_with_db: 'total',      // одна гантель
+  russian_twist: 'total',     // блином / без веса
+  // Резинки
+  leg_curl_band: 'total',
+  leg_adduction_band: 'total',
+  leg_abduction_band: 'total',
+  side_steps_band: 'total',
+  toe_curl_towel: 'total',
+  lateral_raise_band: 'total',
+  band_pull_apart: 'total',
+  rotator_cuff_rot: 'total',
+  shoulder_shrug_band: 'total',
+  thumb_ip_flexion: 'total',
+  finger_extension_single: 'total',
+  thumb_extension_band: 'total',
+  anconeus_extension: 'total',
+  pinky_grip: 'total',
+  finger_spread: 'total',
+  leg_raise_band: 'total',
+};
+
+Object.entries(WEIGHT_MODES).forEach(([id, mode]) => {
+  if(EX[id]) EX[id].weightMode = mode;
+});
