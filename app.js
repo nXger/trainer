@@ -426,7 +426,8 @@ function computeAllMuscleLoads(){
   const start = new Date(dates[0] + 'T00:00:00');
   const cur = new Date(start);
   let days = 0;
-  const BODYWEIGHT_NOMINAL = 0.001;
+  const ASSUMED_BODYWEIGHT_KG = parseFloat(localStorage.getItem('bodyWeight')) || 75;
+const DEFAULT_BW_FACTOR = 0.65;
   const TRANSITION_RESET   = 10;
   let loadsAtStartOfToday = null;
 
@@ -466,7 +467,11 @@ function computeAllMuscleLoads(){
       if(!ex || ex.app) return;
       const muscles = getMusclesFromEx(ex);
       if(!muscles.length) return;
-      sessions.push({ id, log: e, muscles, weightMode: ex.weightMode || 'total' });
+      sessions.push({
+  id, log: e, muscles,
+  weightMode: ex.weightMode || 'total',
+  bwEffWeight: ASSUMED_BODYWEIGHT_KG * (ex.bwFactor ?? DEFAULT_BW_FACTOR),
+});
     });
 
     sessions.forEach(s => {
@@ -476,9 +481,9 @@ function computeAllMuscleLoads(){
         const r = parseFloat(set.r) || 0;
         if(r <= 0) return;
         const w = parseFloat(set.w) || 0;
-        const effW = w > 0 ? w : BODYWEIGHT_NOMINAL;
-        tonnage += effW * r;
-        if(effW > maxW) maxW = effW;
+        const effW = w > 0 ? w : s.bwEffWeight;
+tonnage += effW * r;
+if(effW > maxW) maxW = effW;
       });
       if(tonnage <= 0) return;                 // ← ноль работы — не тренировка
       const wMult = s.weightMode === 'one' ? 2 : 1;
@@ -1010,14 +1015,45 @@ function checkPRs(exId,log,dateStr){
   if(!hasData)return {weightPR:null,repsPR:null};
   const prev=getExerciseHistoryBefore(exId,dateStr);
   let weightPR=null,repsPR=null;
+  
+  // Лучшие результаты, включая предыдущие подходы текущего дня
+  let bestW = prev.maxW;
+  let bestRepsByWeight = { ...prev.repsByWeight };
+  
   sets.forEach(s=>{
     if(!s)return;
     const w=parseFloat(s.w)||0;
     const r=parseFloat(s.r)||0;
     if(r<=0)return;
-    if(w>prev.maxW){ if(!weightPR||w>weightPR.w||(w===weightPR.w&&r>weightPR.r))weightPR={w,r}; }
-    const prevReps=prev.repsByWeight[w];
-    if(prevReps===undefined||r>prevReps){ if(!repsPR||r>repsPR.r||(r===repsPR.r&&w>repsPR.w))repsPR={w,r}; }
+    
+    // Weight PR: строго больше лучшего веса, виденного до этого момента
+    if(w>bestW){ 
+      if(!weightPR||w>weightPR.w||(w===weightPR.w&&r>weightPR.r)) weightPR={w,r}; 
+    }
+    
+    // Reps PR: больше повторений на этом весе, чем когда-либо ранее
+    const prevReps=bestRepsByWeight[w];
+    const isNewWeight = prevReps===undefined;
+    
+    if(isNewWeight || r>prevReps){
+      // Проверка доминирования: не выдавать reps-PR, если ранее был более тяжёлый подход с >= повторениями
+      let dominated = false;
+      for(const [w2, r2] of Object.entries(bestRepsByWeight)){
+        if(parseFloat(w2) >= w && r2 >= r){
+          dominated = true;
+          break;
+        }
+      }
+      if(!dominated){
+        if(!repsPR||r>repsPR.r||(r===repsPR.r&&w>repsPR.w)) repsPR={w,r};
+      }
+    }
+    
+    // Обновляем "лучшие на данный момент" для следующих подходов
+    if(w>bestW) bestW = w;
+    if(r>0){
+      if(bestRepsByWeight[w]===undefined || r>bestRepsByWeight[w]) bestRepsByWeight[w] = r;
+    }
   });
   return {weightPR,repsPR};
 }
@@ -1233,11 +1269,16 @@ function dayTonnage(dayLog){
     if(id.startsWith('_')||!e||!e.done)return;
     const ex = EX[logBaseId(id)];
     const wMult = (ex && ex.weightMode === 'one') ? 2 : 1;
-    (e.sets||[]).forEach(s=>{
-      if(!s)return;
-      const w=parseFloat(s.w)||0,r=parseFloat(s.r)||0;
-      if(r>0){sets++;if(w>0)tonnage+=w*r*wMult;}
-    });
+const bwEff = ex ? (75 * (ex.bwFactor ?? 0.65)) : 0;
+(e.sets||[]).forEach(s=>{
+  if(!s)return;
+  const w0=parseFloat(s.w)||0, r=parseFloat(s.r)||0;
+  if(r>0){
+    sets++;
+    const w = w0 > 0 ? w0 : bwEff;
+    if(w > 0) tonnage += w * r * wMult;
+  }
+});
   });
   return {tonnage:Math.round(tonnage),sets};
 }
@@ -1400,6 +1441,7 @@ function renderTabs(){
     <button class="${view==='search'?'active':''}" onclick="setView('search')">Поиск</button>
     <button class="${view==='stats'||view==='stats-ex'?'active':''}" onclick="setView('stats')">Стата</button>
     <button class="${view==='trainer'?'active':''}" onclick="setView('trainer')">Тренер</button>
+    <button class="${view==='settings'?'active':''}" onclick="setView('settings')" title="Настройки">⚙️</button>
   </div>`;
 }
 
@@ -2581,6 +2623,7 @@ function resetAll(){
   localStorage.removeItem('planConfigured');
   localStorage.removeItem('exerciseMarkers');
   localStorage.removeItem('defaultMarkersSeeded_v1');
+  localStorage.removeItem('bodyWeight'); // <-- ДОБАВЛЕНО: удаляем вес
   location.reload();
 }
 function renderInstallSection(){
@@ -2620,6 +2663,89 @@ function renderDataSection(){
     <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImportFile(event)">
   </div>`;
 }
+/* ---------- Настройки и Вес тела ---------- */
+function renderSettings(){
+  const currentBW = parseFloat(localStorage.getItem('bodyWeight')) || 75;
+  const last = localStorage.getItem('lastBackupDate');
+  let lastLine, warn = '';
+  
+  if(last){
+    const days = Math.floor((todayDate() - new Date(last + 'T00:00:00')) / 86400000);
+    lastLine = `Последний бэкап: ${last} (${days === 0 ? 'сегодня' : days + ' дн. назад'})`;
+    if(days >= 14) warn = `<div class="ex-last" style="color:#e8a860">⚠️ Пора сделать новый бэкап</div>`;
+  } else {
+    lastLine = 'Последний бэкап: никогда';
+    warn = `<div class="ex-last" style="color:#e8a860">⚠️ Бэкап ещё не делался</div>`;
+  }
+  
+  let html = renderTabs();
+  html += `<div class="header"><span>Настройки</span></div>
+  <div class="ex" style="margin-top:12px">
+    <h3>⚖️ Вес тела</h3>
+    <p style="font-size:13px;color:#888;margin-bottom:8px">Используется для расчёта усталости при упражнениях с собственным весом (например, отжимания).</p>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+      <input type="number" id="settings-bodyweight" value="${currentBW}" min="30" max="250" step="0.5" style="width:100px;padding:8px;border-radius:6px;border:1px solid #ccc">
+      <span>кг</span>
+      <button class="mini-btn" onclick="saveBodyWeight()">Сохранить</button>
+    </div>
+  </div>
+  <h2>Данные</h2>
+  <div class="ex">
+    <div class="ex-last">${lastLine}</div>
+    ${warn}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+      <button class="mini-btn" style="background:#2a5a2a;border-color:#3a7a3a" onclick="exportData()">💾 Скачать</button>
+      <button class="mini-btn" onclick="importData()">📂 Загрузить</button>
+      <button class="mini-btn" style="background:#5a2a2a;border-color:#7a3a3a" onclick="resetAll()">🗑 Сбросить</button>
+    </div>
+    <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImportFile(event)">
+  </div>`;
+  
+  document.getElementById('app').innerHTML = html;
+}
+
+function saveBodyWeight(){
+  const input = document.getElementById('settings-bodyweight');
+  if(!input) return;
+  const val = parseFloat(input.value);
+  if(val >= 30 && val <= 250){
+    localStorage.setItem('bodyWeight', val);
+    alert('Вес тела сохранён!');
+    render();
+  } else {
+    alert('Введите корректный вес (30-250 кг)');
+  }
+}
+
+function showBodyWeightPrompt(){
+  if(localStorage.getItem('bodyWeight')) return;
+  const modal = document.createElement('div');
+  modal.id = 'bw-prompt-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999';
+  modal.innerHTML = `
+    <div style="background:#1e1e1e;padding:24px;border-radius:12px;max-width:320px;width:90%;text-align:center;border:1px solid #333">
+      <h3 style="margin-top:0;color:#fff">Добро пожаловать! 🏋️</h3>
+      <p style="color:#ccc;font-size:14px;margin-bottom:16px">Для точного расчёта усталости в упражнениях с собственным весом, укажите ваш текущий вес тела:</p>
+      <input type="number" id="onboard-bodyweight" value="75" min="30" max="250" step="0.5" style="width:100%;padding:10px;border-radius:6px;border:1px solid #444;background:#2a2a2a;color:#fff;font-size:16px;margin-bottom:16px;text-align:center">
+      <button class="mini-btn" style="width:100%;padding:10px;font-size:16px;background:#2a5a2a;border-color:#3a7a3a" onclick="saveOnboardBodyWeight()">Начать тренировку</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function saveOnboardBodyWeight(){
+  const input = document.getElementById('onboard-bodyweight');
+  const val = parseFloat(input.value);
+  if(val >= 30 && val <= 250){
+    localStorage.setItem('bodyWeight', val);
+    const modal = document.getElementById('bw-prompt-modal');
+    if(modal) modal.remove();
+    render();
+  } else {
+    alert('Введите корректный вес (30-250 кг)');
+  }
+}
+
 
 /* ---------- Тренер ---------- */
 function renderTrainer(){
@@ -4640,6 +4766,7 @@ function onbSave(){
   }else{
     view = 'today';
     currentDate = todayDate();
+    showBodyWeightPrompt(); // <-- ДОБАВЛЕНО: запрашиваем вес при старте
     render();
   }
 }
@@ -4793,8 +4920,9 @@ function generateAutoPlan() {
   saveOnbPlanToStore();
   localStorage.setItem('planConfigured', '1');
   
-  view = 'today';
+    view = 'today';
   currentDate = todayDate();
+  showBodyWeightPrompt(); // <-- ДОБАВЛЕНО
   render();
 }
 function render(){
@@ -4858,6 +4986,7 @@ function renderInner(){
   else if(view === 'stats') renderStats();
   else if(view === 'stats-ex') renderExerciseStats();
   else if(view === 'trainer') renderTrainer();
+  else if(view === 'settings') renderSettings();
   else renderToday();
 }
 
@@ -4982,4 +5111,5 @@ if('serviceWorker' in navigator){
 
 syncCustomEx();
 loadOnbPlanFromStore();
+showBodyWeightPrompt();
 render();
