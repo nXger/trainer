@@ -750,3 +750,40 @@ const WEIGHT_MODES = {
 Object.entries(WEIGHT_MODES).forEach(([id, mode]) => {
   if(EX[id]) EX[id].weightMode = mode;
 });
+/* Доля собственного веса, которую реально поднимает упражнение.
+   Используется, когда поле веса пустое (bodyweight).
+   По умолчанию — DEFAULT_BW_FACTOR из app.js (0.65). */
+const BW_FACTORS = {
+  // Полный вес / почти полный
+  pullups: 1.0, chin_ups: 1.0, neutral_pullups: 1.0, close_grip_pullups: 1.0,
+  pullup_wide: 1.0, muscle_ups: 1.0, l_sit_pullups: 1.0, typewriter_pullups: 1.0,
+  explosive_pullups: 1.0, towel_pullups: 1.0, hang_bar: 0.6, one_arm_hang: 1.0,
+  front_lever: 0.8, back_lever: 0.8, dragon_flag: 0.5,
+  dips: 0.95, finger_pushups: 0.75, handstand_pushups: 0.95,
+
+  // ~60-70% (отжимания, приседы, выпады)
+  pushups: 0.65, incline_feet_pushups: 0.72, hands_elevated_pushups: 0.55,
+  close_pushups: 0.65, wide_pushups: 0.60, diamond_pushups: 0.68,
+  clap_pushups: 0.70, archer_pushups: 0.75, pseudo_planche_pushups: 0.80,
+  spiderman_pushups: 0.65, pushup_plus: 0.65,
+  jump_squats: 0.65, box_jumps: 0.70, jumping_lunges: 0.60,
+  broad_jumps: 0.65, single_leg_hops: 1.0, pistol_squats: 0.90,
+  calf_jumps: 0.90, calf_raise_standing: 0.95, walk_toes_heels: 0.95,
+  glute_bridge_hold: 0.40,
+
+  // Кор / пресс (нагрузка сильно ниже)
+  crunches: 0.15, leg_raise_hanging: 0.30, leg_raise_lying: 0.25,
+  reverse_crunches: 0.20, side_plank: 0.25, plank: 0.25,
+  plank_protraction: 0.25, stomach_vacuum: 0.05,
+  knee_raise_hanging: 0.30, hanging_windshield_wipers: 0.25,
+  breath_resistance: 0.05, kegel: 0.02,
+
+  // Спина / шея
+  hyperextension: 0.50, y_raises_prone: 0.10,
+  neck_flexion: 0.10, neck_side: 0.08, neck_extension: 0.10,
+  neck_extension_prone: 0.08, neck_extension_side: 0.08,
+};
+
+Object.entries(BW_FACTORS).forEach(([id, f]) => {
+  if(EX[id]) EX[id].bwFactor = f;
+});
