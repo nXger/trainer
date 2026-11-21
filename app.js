@@ -430,8 +430,10 @@ function computeAllMuscleLoads(){
 const DEFAULT_BW_FACTOR = 0.65;
   const TRANSITION_RESET   = 10;
     let loadsAtStartOfToday = null;
-  let trainedToday = null;        // мышцы, реально тренированные сегодня
-  let todayIsSkip = false;        // сегодня — явный пропуск дня
+let trainedToday = null;        // мышцы, реально тренированные сегодня
+let trainedYesterday = null;    // мышцы, тренированные вчера
+let yesterdayWasSkip = false;   // был ли вчера пропуск
+let todayIsSkip = false;        // сегодня — явный пропуск дня
 
   while(fmt(cur) <= todayStr){
     const dStr = fmt(cur);
@@ -524,24 +526,31 @@ s.muscles.forEach(({ id, share }) => {
       });
     }
 
-    if(dStr === todayStr) trainedToday = trained;   // ← ДОБАВЛЕНО
-
-    cur.setDate(cur.getDate() + 1);
-    days++;
+    if(dStr === todayStr) {
+  trainedToday = new Set(trained);
+} else {
+  trainedYesterday = new Set(trained);
+  yesterdayWasSkip = !!dayLog._skip;
+}
+cur.setDate(cur.getDate() + 1);
+days++;
   }
     const dailyDeltas = {};
-  if(loadsAtStartOfToday){
-    Object.keys(loads).forEach(m => {
-      let projected = loads[m];
-      // «прогноз на конец дня»: если сегодня мышца не тренировалась
-      // и день не пропущен явно — вычитаем daily_subtraction (k2)
-      if(!todayIsSkip && !(trainedToday && trainedToday.has(m))){
-        const cfg = MUSCLE_COEF[m];
-        if(cfg) projected = Math.max(0, projected - cfg.daily_subtraction);
-      }
-      dailyDeltas[m] = projected - (loadsAtStartOfToday[m] || 0);
-    });
-  }
+if(loadsAtStartOfToday){
+  Object.keys(loads).forEach(m => {
+    let projected = loads[m];
+    
+    // Вычитаем daily_subtraction, если вчера был пропуск ИЛИ мышца вчера не тренировалась.
+    // Сегодняшний статус не влияет.
+    const trainedYest = trainedYesterday && trainedYesterday.has(m);
+    if (yesterdayWasSkip || !trainedYest) {
+      const cfg = MUSCLE_COEF[m];
+      if(cfg) projected = Math.max(0, projected - cfg.daily_subtraction);
+    }
+    
+    dailyDeltas[m] = projected - (loadsAtStartOfToday[m] || 0);
+  });
+}
   return { loads, days, dailyDeltas };
 }
 
