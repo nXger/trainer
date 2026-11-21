@@ -429,7 +429,9 @@ function computeAllMuscleLoads(){
   const ASSUMED_BODYWEIGHT_KG = parseFloat(localStorage.getItem('bodyWeight')) || 75;
 const DEFAULT_BW_FACTOR = 0.65;
   const TRANSITION_RESET   = 10;
-  let loadsAtStartOfToday = null;
+    let loadsAtStartOfToday = null;
+  let trainedToday = null;        // мышцы, реально тренированные сегодня
+  let todayIsSkip = false;        // сегодня — явный пропуск дня
 
   while(fmt(cur) <= todayStr){
     const dStr = fmt(cur);
@@ -439,7 +441,8 @@ const DEFAULT_BW_FACTOR = 0.65;
     const dayLog = logs[dStr] || {};
 
     // Явный пропуск дня — полный отдых для всех
-    if(dayLog._skip){
+        if(dayLog._skip){
+      if(dStr === todayStr) todayIsSkip = true;
       Object.keys(loads).forEach(m => {
         const cfg = MUSCLE_COEF[m];
         if(!cfg) return;
@@ -510,7 +513,7 @@ s.muscles.forEach(({ id, share }) => {
       });
     });
 
-    // 3. Полный отдых для мышц, у которых сегодня не было фактической работы
+        // 3. Полный отдых для мышц, у которых сегодня не было фактической работы
     if(dStr < todayStr){
       Object.keys(loads).forEach(m => {
         if(trained.has(m)) return;
@@ -521,16 +524,25 @@ s.muscles.forEach(({ id, share }) => {
       });
     }
 
+    if(dStr === todayStr) trainedToday = trained;   // ← ДОБАВЛЕНО
+
     cur.setDate(cur.getDate() + 1);
     days++;
   }
-  const dailyDeltas = {};
-if(loadsAtStartOfToday){
-  Object.keys(loads).forEach(m => {
-    dailyDeltas[m] = loads[m] - (loadsAtStartOfToday[m] || 0);
-  });
-}
-return { loads, days, dailyDeltas };
+    const dailyDeltas = {};
+  if(loadsAtStartOfToday){
+    Object.keys(loads).forEach(m => {
+      let projected = loads[m];
+      // «прогноз на конец дня»: если сегодня мышца не тренировалась
+      // и день не пропущен явно — вычитаем daily_subtraction (k2)
+      if(!todayIsSkip && !(trainedToday && trainedToday.has(m))){
+        const cfg = MUSCLE_COEF[m];
+        if(cfg) projected = Math.max(0, projected - cfg.daily_subtraction);
+      }
+      dailyDeltas[m] = projected - (loadsAtStartOfToday[m] || 0);
+    });
+  }
+  return { loads, days, dailyDeltas };
 }
 
 
@@ -783,7 +795,7 @@ function processBlockTree(block, date, blocks, visited, ancestorDisabled, disabl
   };
 
   (block.children || []).forEach(child => {
-    const childActive = isChildEntryActive(child, date, block, blockActive, blocks);
+  const childActive = isChildEntryActive(child, date, block, blockActive, blocks);
     const childDis = isDisabledOn(child, dateStr);
     const childDisabled = myDisabled || !!childDis;
     const childReason = childDis ? childDis.reason : myReason;
@@ -848,8 +860,8 @@ function getPlan(date){
     const allBlocks = own.blocks || [];
 
     (own.items || []).forEach(item => {
-      if(!EX[item.id]) return;
-      if(!isScheduleActive(item.schedule, date)) return;
+  if(!EX[item.id]) return;
+  if(!isScheduleActive(item.schedule, date)) return;
       const dis = isDisabledOn(item, dateStr);
       if(dis){
         cancelled.push({ id: item.id, reason: dis.reason, type: 'disabled' });
@@ -3011,8 +3023,70 @@ function needsOnboarding(){
   if(localStorage.getItem('planConfigured')) return false;
   return Object.keys(store.logs).length === 0;
 }
+function markLogsAsAdHoc(exId){
+  const logs = store.logs;
+  let changed = false;
+  Object.keys(logs).forEach(d => {
+    const day = logs[d];
+    if(!day) return;
+    Object.keys(day).forEach(k => {
+      if(k.startsWith('_')) return;
+      if(logBaseId(k) !== exId) return;
+      const e = day[k];
+      if(e && e.done && !e.adHoc && !e._skipped){
+        e.adHoc = true;
+        changed = true;
+      }
+    });
+  });
+  if(changed) store.logs = logs;
+}
+
+// Одноразовая миграция: если в плане остались _removedFrom — вычищаем их
+// и помечаем логи как adHoc, чтобы данные не «пропали» в прошлых днях
+function migrateRemovedFromItems(){
+  const own = ownPlanStore.get();
+  if(!own) return;
+  const removedIds = new Set();
+
+  if(Array.isArray(own.items)){
+    own.items.forEach(it => {
+      if(it._removedFrom) removedIds.add(it.id);
+    });
+    own.items = own.items.filter(it => !it._removedFrom);
+  }
+  (own.blocks || []).forEach(b => {
+    if(Array.isArray(b.children)){
+      b.children.forEach(c => {
+        if(c._removedFrom && c.type === 'exercise') removedIds.add(c.id);
+      });
+      b.children = b.children.filter(c => !c._removedFrom);
+    }
+  });
+
+  if(removedIds.size > 0){
+    const logs = store.logs;
+    let logsChanged = false;
+    Object.keys(logs).forEach(d => {
+      const day = logs[d];
+      if(!day) return;
+      Object.keys(day).forEach(k => {
+        if(k.startsWith('_')) return;
+        if(!removedIds.has(logBaseId(k))) return;
+        const e = day[k];
+        if(e && e.done && !e.adHoc && !e._skipped){
+          e.adHoc = true;
+          logsChanged = true;
+        }
+      });
+    });
+    if(logsChanged) store.logs = logs;
+    ownPlanStore.set(own);
+  }
+}
 
 function loadOnbPlanFromStore(){
+  migrateRemovedFromItems();
   const own = ownPlanStore.get();
   let items = (own && own.items) ? JSON.parse(JSON.stringify(own.items)).filter(it => EX[it.id]) : [];
   let blocks = (own && own.blocks) ? JSON.parse(JSON.stringify(own.blocks)) : [];
@@ -3181,6 +3255,10 @@ function removeChildAt(idx) {
   }
 
   if (!confirm(`Удалить ${name} из блока?`)) return;
+
+  if (child.type === 'exercise') {
+    markLogsAsAdHoc(child.id);
+  }
 
   block.children = (block.children || []).filter((_, i) => i !== idx);
   editingChildIdx = null;
@@ -3894,9 +3972,26 @@ function doMove(targetId){
 }
 function onbRemoveItem(idx){
   const item = onbPlan.items[idx];
-  const ex = item ? EX[item.id] : null;
+  if(!item) return;
+  const ex = EX[item.id];
   const name = ex ? ex.name : 'упражнение';
-  if(!confirm(`Удалить «${name}» из плана?`)) return;
+
+  const logs = store.logs;
+  const hasHistory = Object.keys(logs).some(d => {
+    const day = logs[d];
+    if(!day) return false;
+    return Object.entries(day).some(([k, e]) =>
+      !k.startsWith('_') && e && e.done && !e.adHoc && logBaseId(k) === item.id
+    );
+  });
+
+  const msg = hasHistory
+    ? `Удалить «${name}» из плана?\n\nЗаписи в прошлых днях сохранятся и будут показаны как «добавлено на сегодня».`
+    : `Удалить «${name}» из плана?`;
+  if(!confirm(msg)) return;
+
+  markLogsAsAdHoc(item.id);
+
   onbPlan.items.splice(idx, 1);
   onbEditingIdx = null;
   render();
