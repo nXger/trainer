@@ -164,3 +164,86 @@ const FOREARM_IDS=['brachioradialis','supinator','pronators','fcr','fcu','fds','
 const DAYS=['вс','пн','вт','ср','чт','пт','сб'];
 const WEEK_ORDER=[1,2,3,4,5,6,0];
 const MONTH_NAMES=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MUSCLE_NAMES_I18N = {
+  // Категории
+  legs:      { ru: 'Ноги и таз', en: 'Legs & Hips' },
+  arms:      { ru: 'Руки',        en: 'Arms' },
+  chest:     { ru: 'Грудь',       en: 'Chest' },
+  back:      { ru: 'Спина',       en: 'Back' },
+  shoulders: { ru: 'Плечи',       en: 'Shoulders' },
+  core:      { ru: 'Пресс и кор', en: 'Core' },
+  neck:      { ru: 'Шея',         en: 'Neck' },
+  forearm:   { ru: 'Предплечья',  en: 'Forearms' },
+
+  // Ноги
+  quads:      { ru: 'Квадрицепсы',              en: 'Quadriceps' },
+  hamstrings: { ru: 'Бицепс бедра',             en: 'Hamstrings' },
+  glutes:     { ru: 'Ягодицы',                   en: 'Glutes' },
+  adductors:  { ru: 'Приводящие мышцы',          en: 'Adductors' },
+  abductors:  { ru: 'Отводящие мышцы',           en: 'Abductors' },
+  calves:     { ru: 'Икры',                      en: 'Calves' },
+  foot:       { ru: 'Мышцы стопы',               en: 'Foot muscles' },
+
+  // Руки
+  biceps:            { ru: 'Бицепс плеча',                  en: 'Biceps' },
+  triceps:           { ru: 'Трицепс плеча',                 en: 'Triceps' },
+  brachialis:        { ru: 'Плечевая мышца',                en: 'Brachialis' },
+  coracobrachialis:  { ru: 'Клювовидно-плечевая мышца',     en: 'Coracobrachialis' },
+  brachioradialis:   { ru: 'Плечелучевая мышца',            en: 'Brachioradialis' },
+  supinator:         { ru: 'Супинатор',                     en: 'Supinator' },
+  pronators:         { ru: 'Пронаторы',                     en: 'Pronators' },
+  fcr:               { ru: 'Лучевой сгибатель запястья',    en: 'Flexor carpi radialis' },
+  fcu:               { ru: 'Локтевой сгибатель запястья',   en: 'Flexor carpi ulnaris' },
+  fds:               { ru: 'Поверхностный сгибатель пальцев', en: 'Flexor digitorum superficialis' },
+  fdp:               { ru: 'Глубокий сгибатель пальцев',    en: 'Flexor digitorum profundus' },
+  fpl:               { ru: 'Сгибатель большого пальца',     en: 'Flexor pollicis longus' },
+  ecrl:              { ru: 'Длинный лучевой разгибатель',   en: 'Extensor carpi radialis longus' },
+  ecrb:              { ru: 'Короткий лучевой разгибатель',  en: 'Extensor carpi radialis brevis' },
+  ecu:               { ru: 'Локтевой разгибатель запястья', en: 'Extensor carpi ulnaris' },
+  finger_extensors:  { ru: 'Разгибатели пальцев',           en: 'Finger extensors' },
+  ei:                { ru: 'Разгибатель указательного пальца', en: 'Extensor indicis' },
+  edm:               { ru: 'Разгибатель мизинца',           en: 'Extensor digiti minimi' },
+  apl:               { ru: 'Длинная отводящая большого пальца', en: 'Abductor pollicis longus' },
+  thumb_extensors:   { ru: 'Разгибатели большого пальца',   en: 'Thumb extensors' },
+  fpb:               { ru: 'Короткий сгибатель большого пальца', en: 'Flexor pollicis brevis' },
+  apb:               { ru: 'Короткая отводящая большого пальца', en: 'Abductor pollicis brevis' },
+  opponens_pollicis: { ru: 'Противопоставляющая большой палец', en: 'Opponens pollicis' },
+  adductor_pollicis: { ru: 'Приводящая большой палец',      en: 'Adductor pollicis' },
+  adm:               { ru: 'Отводящая мизинец',             en: 'Abductor digiti minimi' },
+  fdm:               { ru: 'Короткий сгибатель мизинца',    en: 'Flexor digiti minimi' },
+  opponens_digiti_minimi: { ru: 'Противопоставляющая мизинец', en: 'Opponens digiti minimi' },
+  lumbricals:        { ru: 'Червеобразные мышцы',           en: 'Lumbricals' },
+  interossei:        { ru: 'Межкостные мышцы',              en: 'Interossei' },
+
+  // Грудь
+  pectoralis_major:  { ru: 'Большая грудная',               en: 'Pectoralis major' },
+  pectoralis_minor:  { ru: 'Малая грудная',                 en: 'Pectoralis minor' },
+  serratus:          { ru: 'Передняя зубчатая',             en: 'Serratus anterior' },
+  intercostals:      { ru: 'Межрёберные',                   en: 'Intercostals' },
+
+  // Спина
+  lats:              { ru: 'Широчайшая мышца спины',        en: 'Latissimus dorsi' },
+  traps:             { ru: 'Трапециевидная мышца',          en: 'Trapezius' },
+  rhomboids:         { ru: 'Ромбовидные мышцы',             en: 'Rhomboids' },
+  levator_scapulae:  { ru: 'Мышца, поднимающая лопатку',    en: 'Levator scapulae' },
+  erectors:          { ru: 'Разгибатели спины',             en: 'Spinal erectors' },
+  ql:                { ru: 'Квадратная мышца поясницы',     en: 'Quadratus lumborum' },
+  rear_delts:        { ru: 'Задние дельты',                 en: 'Rear deltoids' },
+
+  // Плечи
+  delts:             { ru: 'Дельтовидные',                  en: 'Deltoids' },
+  rotator_cuff:      { ru: 'Вращательная манжета',          en: 'Rotator cuff' },
+  teres:             { ru: 'Большая и малая круглые',       en: 'Teres major/minor' },
+
+  // Кор
+  rectus_abdominis:  { ru: 'Прямая мышца живота',           en: 'Rectus abdominis' },
+  obliques:          { ru: 'Косые мышцы',                   en: 'Obliques' },
+  transverse:        { ru: 'Поперечная мышца живота',       en: 'Transverse abdominis' },
+  iliopsoas:         { ru: 'Подвздошно-поясничная',         en: 'Iliopsoas' },
+  pelvic_floor:      { ru: 'Мышцы тазового дна',            en: 'Pelvic floor' },
+
+  // Шея
+  scm:               { ru: 'Грудино-ключично-сосцевидная',  en: 'Sternocleidomastoid' },
+  scalenes:          { ru: 'Лестничные',                    en: 'Scalenes' },
+  neck_extensors:    { ru: 'Разгибатели шеи',               en: 'Neck extensors' },
+};
