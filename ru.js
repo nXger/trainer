@@ -464,5 +464,7 @@ const I18N_RU = {
   'fortune.part.back': 'Спина',
   'fortune.part.shoulders': 'Плечи',
   'fortune.part.core': 'Пресс и кор',
-  'fortune.part.neck': 'Шея'
+  'fortune.part.neck': 'Шея',
+    'settings.developerContact': 'Связаться с разработчиком',
+  'settings.developerContactDesc': 'Вопросы, предложения и сообщения об ошибках',
 };
