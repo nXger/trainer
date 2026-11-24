@@ -3091,12 +3091,30 @@ function renderToday(){
         return false;
       };
       const normalGroups = [];
-      const doneGroups = [];
-      plan.groups.forEach(g => {
-        if (isGroupDone(g)) doneGroups.push(g);
-        else normalGroups.push(g);
-      });
-      normalGroups.push(...doneGroups);
+const doneGroups = [];
+const skippedGroups = [];
+
+// Распределяем элементы по трём группам
+plan.groups.forEach(g => {
+  // Отменённые блоки отправляем в самую последнюю очередь
+  if(g.type === 'block' && g.skipped){
+    skippedGroups.push(g);
+  }
+  // Выполненные блоки и упражнения — перед отменёнными
+  else if(isGroupDone(g)){
+    doneGroups.push(g);
+  }
+  // Остальные остаются наверху
+  else {
+    normalGroups.push(g);
+  }
+});
+
+// Итоговый порядок:
+// 1. Обычные
+// 2. Выполненные
+// 3. Отменённые
+normalGroups.push(...doneGroups, ...skippedGroups);
 
       html += `<h2>${t('train.main')}</h2>`;
       normalGroups.forEach(g => {
@@ -5288,8 +5306,52 @@ function renderSettings(){
         <div style="color:#e8e8e8;font-size:14px">${t('settings.version')} <strong>${APP_VERSION}</strong></div>
         <div style="color:#888;font-size:12px;margin-top:2px">${t('settings.changelogCount', {n: CHANGELOG.length})}</div>
       </div>
-      <button class="mini-btn" onclick="openChangelogAll()" style="padding:8px 14px;background:#2a4a5a;border-color:#3a6a7a">${t('settings.changelog')}</button>
+            <button class="mini-btn" onclick="openChangelogAll()" style="padding:8px 14px;background:#2a4a5a;border-color:#3a6a7a">${t('settings.changelog')}</button>
     </div>
+
+    <a
+      href="https://t.me/hodxd"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="${getLang() === 'ru' ? 'Связаться с разработчиком в Telegram' : 'Contact the developer on Telegram'}"
+      style="
+        display:flex;
+        align-items:center;
+        gap:10px;
+        margin-top:12px;
+        padding:11px 12px;
+        border:1px solid #31536a;
+        border-radius:9px;
+        background:#182a35;
+        color:#e8f5fb;
+        text-decoration:none;
+      "
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="26"
+        height="26"
+        style="flex-shrink:0"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="12" fill="#229ED9"/>
+        <path
+          fill="#fff"
+          d="M18.9 6.3 16.8 17c-.16.76-.6.95-1.22.59l-3.4-2.5-1.64 1.58c-.18.18-.33.33-.67.33l.24-3.45 6.28-5.67c.27-.24-.06-.37-.42-.13L8.2 12.7 4.83 11.65c-.73-.23-.75-.73.15-1.08L18.15 5.5c.61-.23 1.14.14.94.8z"
+        />
+      </svg>
+
+      <span style="display:flex;flex-direction:column;gap:3px;min-width:0">
+        <strong style="font-size:14px">
+          ${t('settings.developerContact')}
+        </strong>
+        <span style="font-size:12px;color:#9bb8c8">
+          ${t('settings.developerContactDesc')}
+        </span>
+      </span>
+
+      <span style="margin-left:auto;color:#8cb4ca;font-size:18px">↗</span>
+    </a>
   </div>
   <h2>${t('settings.data')}</h2>
   <div class="ex">
