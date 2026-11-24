@@ -671,22 +671,17 @@ cur.setDate(cur.getDate() + 1);
 days++;
   }
     const dailyDeltas = {};
-if(loadsAtStartOfToday){
+
+if (loadsAtStartOfToday) {
   Object.keys(loads).forEach(m => {
-    let projected = loads[m];
-    
-    // Вычитаем daily_subtraction, если вчера был пропуск ИЛИ мышца вчера не тренировалась.
-    // Сегодняшний статус не влияет.
-    const trainedYest = trainedYesterday && trainedYesterday.has(m);
-    if (yesterdayWasSkip || !trainedYest) {
-      const cfg = MUSCLE_COEF[m];
-      if(cfg) projected = Math.max(0, projected - cfg.daily_subtraction);
-    }
-    
-    dailyDeltas[m] = projected - (loadsAtStartOfToday[m] || 0);
+    // Изменение нагрузки за сегодня.
+    // Восстановление предыдущих дней уже учтено
+    // в основном цикле, повторно вычитать его нельзя.
+    dailyDeltas[m] = loads[m] - (loadsAtStartOfToday[m] || 0);
   });
 }
-  return { loads, days, dailyDeltas };
+
+return { loads, days, dailyDeltas };ы
 }
 
 
@@ -5877,7 +5872,16 @@ function deleteBlockById(blockId){
   if(!block) return;
   const childCount = (block.children || []).length;
   const extra = childCount > 0 ? t('plan.deleteBlockWith', {n: childCount}) : '';
-  if(!confirm(t('plan.deleteBlock', {name: block.name}) + extra)) return;
+    if(!confirm(t('plan.deleteBlock', {name: block.name}) + extra)) return;
+
+  // Сохраняем выполненные упражнения из удаляемого блока
+  // как дополнительные, включая упражнения во вложенных блоках.
+  const removedExerciseIds = [
+    ...new Set(getBlockExercises(block, onbPlan.blocks || []))
+  ];
+
+  removedExerciseIds.forEach(exId => markLogsAsAdHoc(exId));
+
   const toDelete = new Set([blockId]);
   const collect = (id) => {
     const b = (onbPlan.blocks || []).find(x => x.id === id);
