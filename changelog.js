@@ -1,4 +1,4 @@
-﻿
+
 // ============================================================
 // CHANGELOG (История версий приложения)
 // ============================================================
@@ -9,8 +9,30 @@
 // ============================================================
 
 const CHANGELOG = [
+    {
+    version: '1.3.0',
+    date: '24.11.2026',
+    changes: [
+      {
+        ru: 'Изменены некоторые формулы , константы и изменена логика расчёта нагрузки мышц',
+        en: 'Some formulas, constants have been changed , and the logic for calculating muscle load has been changed'
+      },
+      {
+        ru: 'Исправлены ошибки перевода',
+        en: 'Fixed translation issues'
+      },
+      {
+        ru: 'Исправлены отображения шагов в обучении',
+        en: 'Fixed the display of steps in training'
+      },
+      {
+        ru: 'Исправлены ошибки интерфейса',
+        en: 'Fixed interface issues'
+      }
+    ]
+  },
   {
-    version: '1.1.1',
+    version: '1.2.0',
     date: '23.11.2026',
     changes: [
       {
