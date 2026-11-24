@@ -14,7 +14,11 @@ const CHANGELOG = [
     date: '24.11.2026',
     changes: [
       {
-        ru: 'Изменены некоторые формулы , константы и изменена логика расчёта нагрузки мышц',
+        ru: 'Исправлена критическая ошибка при отмене блока в конкретный день',
+        en: 'Fixed a critical error when canceling the block on a specific day'
+      },
+      {
+        ru: 'Изменены некоторые формулы, константы и изменена логика расчёта нагрузки мышц',
         en: 'Some formulas, constants have been changed , and the logic for calculating muscle load has been changed'
       },
       {
