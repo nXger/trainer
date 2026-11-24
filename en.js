@@ -1,4 +1,4 @@
-﻿const I18N_EN = {
+const I18N_EN = {
   'tab.today':'Training','tab.history':'History','tab.custom':'My Plan',
   'tab.search':'Search','tab.stats':'Stats','tab.trainer':'Trainer','tab.settings':'⚙️',
   'onb.createPlan':'Create Plan','onb.chooseMode':'Choose setup method',
