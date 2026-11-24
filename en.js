@@ -440,5 +440,7 @@ const I18N_EN = {
   'fortune.part.back': 'Back',
   'fortune.part.shoulders': 'Shoulders',
   'fortune.part.core': 'Abs & core',
-  'fortune.part.neck': 'Neck'
+  'fortune.part.neck': 'Neck',
+    'settings.developerContact': 'Contact the developer',
+  'settings.developerContactDesc': 'Questions, suggestions and bug reports',
 };
