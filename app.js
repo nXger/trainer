@@ -1817,7 +1817,7 @@ function renderBlockGroup(node, dayLog, depth = 0){
   const isCollapsed = state === 'expanded' ? false : (state === 'collapsed' ? true : allDone);
   const indentStyle = depth > 0 ? `margin-left:${depth * 16}px;` : '';
   const headerStyle = indentStyle + (allDone ? 'opacity:0.55;' : '');
-  const skipBtn = `<button class="mini-btn" style="padding:2px 6px;font-size:10px;background:transparent;border-color:#444;color:#888" onclick="event.stopPropagation();skipBlockToday('${node.blockId}', '${escapeHtml(node.name).replace(/'/g, "\\'")}')" title="${t('train.skipBlockToday')}">⊘</button>`;
+  const skipBtn = `<button class="mini-btn" style="padding:2px 6px;font-size:10px;background:transparent;border-color:#444;color:#888" onclick="event.stopPropagation();skipBlockToday('${node.blockId}')" title="${t('train.skipBlockToday')}">⊘</button>`;
 
   let html = `<div class="block-header" onclick="toggleBlockCollapse('${node.blockId}', ${isCollapsed})" style="${headerStyle}">
     <span class="blk-toggle">${isCollapsed ? '▸' : '▾'}</span>
@@ -3108,7 +3108,9 @@ function renderToday(){
     <span class="blk-icon">📦</span>
     <span style="flex:1">${escapeHtml(g.name)}</span>
     <span style="color:#c66;font-size:11px">⊘ ${escapeHtml(g.skipped.reason)}</span>
-    <button class="mini-btn" style="padding:3px 8px;font-size:11px" onclick="skipBlockToday('${g.blockId}', '${safeName}')" title="${t('train.changeReason')}">✎</button>
+    <button class="mini-btn" style="padding:3px 8px;font-size:11px"
+  onclick="skipBlockToday('${g.blockId}')"
+  title="${t('train.changeReason')}">✎</button>
     <button class="mini-btn" style="padding:3px 8px;font-size:11px" onclick="unskipBlockToday('${g.blockId}')">${t('train.return')}</button>
   </div>`;
 } else if(g.disabled){
@@ -3719,18 +3721,33 @@ function unskipExerciseToday(logKey) {
   render();
 }
 
-function skipBlockToday(blockId, blockName){
-  const d = fmt(currentDate), logs = store.logs;
+function skipBlockToday(blockId){
+  const own = ownPlanStore.get();
+  const block = getBlockById((own && own.blocks) || [], blockId);
+  const blockName = block ? block.name : t('plan.block');
+
+  const d = fmt(currentDate);
+  const logs = store.logs;
+
   const existing = logs[d]?._skippedBlocks?.[blockId];
   const isEdit = !!existing;
+
   const reason = prompt(
-    isEdit ? t('train.skipBlockEdit', {name: blockName}) : t('train.skipBlock', {name: blockName}),
+    isEdit
+      ? t('train.skipBlockEdit', {name: blockName})
+      : t('train.skipBlock', {name: blockName}),
     existing ? existing.reason : ''
   );
-  if (reason === null) return;
+
+  if(reason === null) return;
+
   logs[d] = logs[d] || {};
   logs[d]._skippedBlocks = logs[d]._skippedBlocks || {};
-  logs[d]._skippedBlocks[blockId] = { reason: reason.trim() || t('train.noReason') };
+
+  logs[d]._skippedBlocks[blockId] = {
+    reason: reason.trim() || t('train.noReason')
+  };
+
   store.logs = logs;
   render();
 }
