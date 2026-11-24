@@ -1,4 +1,4 @@
-﻿const I18N_RU = {
+const I18N_RU = {
   // Tabs
   'tab.today':'Тренировка','tab.history':'История','tab.custom':'Свои',
   'tab.search':'Поиск','tab.stats':'Стата','tab.trainer':'Тренер','tab.settings':'⚙️',
