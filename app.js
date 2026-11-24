@@ -1,10 +1,13 @@
 function computePercents(loads){
-  const ids = Object.keys(loads||{});
-  if(!ids.length) return {};
-  const sum = ids.reduce((s,id)=>s+(parseFloat(loads[id])||0), 0);
-  if(sum<=0) return {};
   const result = {};
-  ids.forEach(id=>{ result[id] = Math.round(100/sum*(parseFloat(loads[id])||0)); });
+
+  Object.entries(loads || {}).forEach(([id, value]) => {
+    const n = parseFloat(value);
+    if(!Number.isFinite(n)) return;
+
+    result[id] = Math.max(5, Math.min(100, Math.round(n)));
+  });
+
   return result;
 }
 
@@ -298,11 +301,15 @@ document.addEventListener('keydown', e=>{
 /* ---------- Muscle picker ---------- */
 function renderMusclePicker(loadsOrIds, prefix){
   let loads = {};
-  if(Array.isArray(loadsOrIds)){ loadsOrIds.forEach(id=>{loads[id]=5}); }
+  if(Array.isArray(loadsOrIds)){
+  loadsOrIds.forEach(id=>{loads[id]=50});
+}
   else if(loadsOrIds && typeof loadsOrIds==='object'){ loads = loadsOrIds; }
   const renderGroup = (g)=>{
     const isChecked = g.id in loads;
-    const loadVal = isChecked ? loads[g.id] : 5;
+    const loadVal = isChecked
+  ? Math.max(5, Math.min(100, Number(loads[g.id]) || 50))
+  : 50;
     const active = v=>loadVal===v?'preset-active':'';
     return `
       <div style="margin-bottom:10px">
@@ -312,15 +319,26 @@ function renderMusclePicker(loadsOrIds, prefix){
         <div class="${prefix}-load" data-mid="${g.id}" style="display:${isChecked?'block':'none'};margin-left:22px;margin-top:6px">
           <div class="muscle-load-row" style="margin:0">
             <div class="form-row" style="margin-bottom:6px">
-              <button type="button" class="preset-btn ${active(7.5)}" data-val="7.5" onclick="musclePreset('${prefix}','${g.id}',7.5)">${t('muscle.high')}</button>
-              <button type="button" class="preset-btn ${active(5)}" data-val="5" onclick="musclePreset('${prefix}','${g.id}',5)">${t('muscle.medium')}</button>
-              <button type="button" class="preset-btn ${active(2.5)}" data-val="2.5" onclick="musclePreset('${prefix}','${g.id}',2.5)">${t('muscle.low')}</button>
+              <button type="button" class="preset-btn ${active(80)}"
+  data-val="80" onclick="musclePreset('${prefix}','${g.id}',80)">
+  ${t('muscle.high')}
+</button>
+
+<button type="button" class="preset-btn ${active(50)}"
+  data-val="50" onclick="musclePreset('${prefix}','${g.id}',50)">
+  ${t('muscle.medium')}
+</button>
+
+<button type="button" class="preset-btn ${active(20)}"
+  data-val="20" onclick="musclePreset('${prefix}','${g.id}',20)">
+  ${t('muscle.low')}
+</button>
             </div>
             <div class="slider-wrap">
-              <input type="range" min="1" max="10" step="0.5" value="${loadVal}"
+              <input type="range" min="5" max="100" step="1"
                 class="${prefix}-slider" data-mid="${g.id}"
                 oninput="muscleSliderInput('${prefix}','${g.id}',this.value)">
-              <span class="${prefix}-val load-val" data-mid="${g.id}">${loadVal}</span>
+              <span class="${prefix}-val load-val" data-mid="${g.id}">${loadVal}%</span>
             </div>
           </div>
         </div>
@@ -380,14 +398,14 @@ function musclePreset(prefix, mid, val){
   const display = document.querySelector(`.${prefix}-val[data-mid="${mid}"]`);
   const buttons = document.querySelectorAll(`.${prefix}-load[data-mid="${mid}"] .preset-btn`);
   if(slider) slider.value = val;
-  if(display) display.textContent = val;
+  if(display) display.textContent = `${val}%`;
   buttons.forEach(b=>{ b.classList.toggle('preset-active', parseFloat(b.dataset.val)===val); });
 }
 function muscleSliderInput(prefix, mid, val){
   const v = parseFloat(val);
   const display = document.querySelector(`.${prefix}-val[data-mid="${mid}"]`);
   const buttons = document.querySelectorAll(`.${prefix}-load[data-mid="${mid}"] .preset-btn`);
-  if(display) display.textContent = val;
+  if(display) display.textContent = `${v}%`;
   buttons.forEach(b=>{ b.classList.toggle('preset-active', parseFloat(b.dataset.val)===v); });
 }
 function getMuscleLoads(prefix){
@@ -395,7 +413,7 @@ function getMuscleLoads(prefix){
   document.querySelectorAll(`.${prefix}-chk:checked`).forEach(chk=>{
     const mid = chk.dataset.mid;
     const slider = document.querySelector(`.${prefix}-slider[data-mid="${mid}"]`);
-    const val = slider ? (parseFloat(slider.value)||5) : 5;
+    const val = slider ? (parseFloat(slider.value) || 50) : 50;
     result[mid] = val;
   });
   return result;
@@ -403,11 +421,27 @@ function getMuscleLoads(prefix){
 
 function getMusclesFromEx(ex){
   if(!ex || !ex.muscles) return [];
+
   if(Array.isArray(ex.muscles)){
-    const n = Math.max(ex.muscles.length, 1);
-    return ex.muscles.map(id => ({ id, share: 1 / n }));
+    return ex.muscles.map(id => ({
+      id,
+      loadFactor: 0.5
+    }));
   }
-  return Object.entries(ex.muscles).map(([id, pct]) => ({ id, share: (parseFloat(pct) || 0) / 100 }));
+
+  return Object.entries(ex.muscles)
+    .map(([id, pct]) => {
+      const n = parseFloat(pct);
+      const safePct = Number.isFinite(n)
+        ? Math.max(0, Math.min(100, n))
+        : 0;
+
+      return {
+        id,
+        loadFactor: safePct / 100
+      };
+    })
+    .filter(item => item.loadFactor > 0);
 }
 
 function getPlanItem(exId){
@@ -452,6 +486,26 @@ function getLoadLabel(load){
   if(load > LOAD_YELLOW) return t('load.high');
   if(load > LOAD_GREEN)  return t('load.moderate');
   return t('load.recovered');
+}
+// Единый источник массы тела пользователя
+function getUserBodyWeight(){
+  const weight = parseFloat(localStorage.getItem('bodyWeight'));
+  return Number.isFinite(weight) && weight > 0 ? weight : 75;
+}
+
+// Эффективный вес тела для конкретного упражнения
+function getEffectiveBodyWeight(ex){
+  if(!ex) return 0;
+
+  const bodyWeight = getUserBodyWeight();
+  const rawFactor = ex.bwFactor ?? 0.65;
+  const factor = parseFloat(rawFactor);
+
+  return bodyWeight * (
+    Number.isFinite(factor) && factor >= 0
+      ? factor
+      : 0.65
+  );
 }
 function getWeightMode(exId){
   const ex = EX[exId];
@@ -502,8 +556,7 @@ function computeAllMuscleLoads(){
   const start = new Date(dates[0] + 'T00:00:00');
   const cur = new Date(start);
   let days = 0;
-  const ASSUMED_BODYWEIGHT_KG = parseFloat(localStorage.getItem('bodyWeight')) || 75;
-const DEFAULT_BW_FACTOR = 0.65;
+  
   const TRANSITION_RESET   = 10;
     let loadsAtStartOfToday = null;
 let trainedToday = null;        // мышцы, реально тренированные сегодня
@@ -549,9 +602,11 @@ let todayIsSkip = false;        // сегодня — явный пропуск 
       const muscles = getMusclesFromEx(ex);
       if(!muscles.length) return;
       sessions.push({
-  id, log: e, muscles,
-  weightMode: ex.weightMode || 'total',
-  bwEffWeight: ASSUMED_BODYWEIGHT_KG * (ex.bwFactor ?? DEFAULT_BW_FACTOR),
+  id,
+  log: e,
+  muscles,
+  weightMode: getWeightMode(logBaseId(id)),
+  bwEffWeight: getEffectiveBodyWeight(ex),
 });
     });
 
@@ -571,10 +626,11 @@ let todayIsSkip = false;        // сегодня — явный пропуск 
       });
       if(tonnage <= 0) return;                 // ← ноль работы — не тренировка
       const wMult = s.weightMode === 'one' ? 2 : 1;
-s.muscles.forEach(({ id, share }) => {
+s.muscles.forEach(({ id, loadFactor }) => {
   trained.add(id);
-  const effMaxW    = maxW * wMult * share;
-  const effTonnage = tonnage * wMult * share;
+
+  const effMaxW = maxW * wMult * loadFactor;
+  const effTonnage = tonnage * wMult * loadFactor;
         const rec = muscleRecords[id] || { maxWeight: 0, maxTonnage: 0 };
         const rawWRatio = rec.maxWeight  > 0 ? effMaxW    / rec.maxWeight  : 1.0;
         const rawTRatio = rec.maxTonnage > 0 ? effTonnage / rec.maxTonnage : 1.0;
@@ -696,19 +752,56 @@ const __reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-
     .tutorial-tooltip.arrow-left::before { left: -8px; top: 50%; margin-top: -6px; transform: rotate(-45deg); }
     .tutorial-tooltip.arrow-right::before { right: -8px; top: 50%; margin-top: -6px; transform: rotate(135deg); }
     
-    .tutorial-skip-btn {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      z-index: 10002;
-      background: #333;
-      border: 1px solid #444;
-      color: #aaa;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      cursor: pointer;
-    }
+    
+.tutorial-controls {
+  position: fixed;
+  left: 50%;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 10003;
+
+  display: flex;
+  gap: 8px;
+  width: min(480px, calc(100vw - 24px));
+
+  pointer-events: none;
+}
+
+.tutorial-skip-btn {
+  position: static;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+
+  background: #333;
+  border: 1px solid #444;
+  color: #ddd;
+  padding: 10px 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.25;
+  cursor: pointer;
+
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+/* Оставляем место для нижней панели на телефонах */
+body.tutorial-active #app {
+  padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* Линия, соединяющая подсказку с нужным элементом */
+.tutorial-connector-svg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10000;
+  pointer-events: none;
+  overflow: visible;
+}
+
     @media (prefers-reduced-motion: reduce) {
       #app.app-anim, [data-form-anim].form-anim { animation: none !important; }
       .tutorial-highlight { animation: none !important; }
@@ -777,18 +870,91 @@ function customStartDate(c){
   return '1970-01-01';
 }
 function syncCustomEx(){
-  customStore.list.forEach(c=>{
+  const list = customStore.list;
+  let changed = false;
+
+  list.forEach(c => {
     if(c.deleted) return;
+
     let muscles = c.muscles;
-    if(Array.isArray(muscles)){
-      const pct = muscles.length ? Math.floor(100/muscles.length) : 0;
-      const obj = {};
-      muscles.forEach(id=>{obj[id]=pct});
-      muscles = obj;
+
+    // Однократный перевод старых пользовательских упражнений
+    // в новую независимую шкалу процентов.
+    if(c.muscleModelVersion !== 2){
+      const legacyLoads =
+        c.loads && typeof c.loads === 'object' && !Array.isArray(c.loads)
+          ? Object.entries(c.loads)
+          : [];
+
+      let entries;
+
+      if(legacyLoads.length){
+        // Старые значения ползунков были в диапазоне 1–10.
+        entries = legacyLoads.map(([id, val]) => [
+          id,
+          (parseFloat(val) || 5) * 10
+        ]);
+      } else if(Array.isArray(muscles)){
+        entries = muscles.map(id => [id, 50]);
+      } else {
+        // Если исходных значений ползунков нет,
+        // приблизительно восстанавливаем старые нормированные значения.
+        entries = Object.entries(muscles || {}).map(([id, val]) => {
+          const oldPct = Math.max(
+            0,
+            Math.min(100, parseFloat(val) || 0)
+          );
+
+          return [id, Math.sqrt(oldPct * 100)];
+        });
+      }
+
+      muscles = {};
+
+      entries.forEach(([id, val]) => {
+        const num = parseFloat(val);
+        if(!Number.isFinite(num)) return;
+
+        muscles[id] = Math.max(
+          5,
+          Math.min(100, Math.round(num))
+        );
+      });
+
+      c.muscles = muscles;
+      c.loads = muscles;
+      c.muscleModelVersion = 2;
+      changed = true;
     }
-    if(!muscles || typeof muscles!=='object') muscles = {};
-    EX[c.id]={name:c.name,app:!!c.app,sets:c.sets||4,reps:c.reps||'12-15',muscles,weightMode:c.weightMode||'total'};
+
+    if(Array.isArray(muscles)){
+      muscles = Object.fromEntries(
+        muscles.map(id => [id, 50])
+      );
+
+      c.muscles = muscles;
+      c.loads = muscles;
+      c.muscleModelVersion = 2;
+      changed = true;
+    }
+
+    if(!muscles || typeof muscles !== 'object'){
+      muscles = {};
+    }
+
+    EX[c.id] = {
+      name: c.name,
+      app: !!c.app,
+      sets: c.sets || 4,
+      reps: c.reps || '12-15',
+      muscles,
+      weightMode: c.weightMode || 'total'
+    };
   });
+
+  if(changed){
+    customStore.list = list;
+  }
 }
 
 function isScheduleActive(schedule,date,startFallback){
@@ -1459,17 +1625,20 @@ function dayTonnage(dayLog){
   Object.entries(dayLog).forEach(([id,e])=>{
     if(id.startsWith('_')||!e||!e.done)return;
     const ex = EX[logBaseId(id)];
-    const wMult = (ex && ex.weightMode === 'one') ? 2 : 1;
-const bwEff = ex ? (75 * (ex.bwFactor ?? 0.65)) : 0;
+if(!ex) return;
+
+const weightMode = getWeightMode(logBaseId(id));
+const wMult = weightMode === 'one' ? 2 : 1;
+const bwEff = getEffectiveBodyWeight(ex);
 (e.sets||[]).forEach(s=>{
   if(!s)return;
   const w0=parseFloat(s.w)||0, r=parseFloat(s.r)||0;
 if(r >0){
   sets++;
   // Если упражнение с собственным весом — суммируем eff.вес тела и доп.вес
-  const w = (ex.weightMode === 'bodyweight')
-    ? bwEff + (w0 > 0 ? w0 : 0)
-    : (w0 > 0 ? w0 : 0);
+  const w = (weightMode === 'bodyweight')
+  ? bwEff + Math.max(0, w0)
+  : Math.max(0, w0);
   if(w > 0) tonnage += w * r * wMult;
 }
 });
@@ -1522,17 +1691,35 @@ function getMaxWeightByMuscle(){
       if(!ex || ex.app) return;
       const muscles = getMusclesFromEx(ex);
       if(!muscles.length) return;
-      let maxW = 0;
-      (e.sets||[]).forEach(s => {
-        if(!s) return;
-        const w = parseFloat(s.w)||0;
-        if(w > maxW) maxW = w;
-      });
-      if(maxW <= 0) return;
-      const wMult = ex.weightMode === 'one' ? 2 : 1;
-muscles.forEach(({id: mid, share}) => {
-  const effW = maxW * wMult * share;
-  if(!result[mid] || effW > result[mid]) result[mid] = effW;
+      const weightMode = getWeightMode(logBaseId(id));
+const bwEff = getEffectiveBodyWeight(ex);
+
+let maxW = 0;
+
+(e.sets || []).forEach(s => {
+  if(!s) return;
+
+  const w = Math.max(0, parseFloat(s.w) || 0);
+
+  // Для упражнений с собственным весом
+  // учитываем вес тела и дополнительное отягощение
+  const effW = weightMode === 'bodyweight'
+    ? bwEff + w
+    : w;
+
+  if(effW > maxW) maxW = effW;
+});
+
+if(maxW <= 0) return;
+
+const wMult = weightMode === 'one' ? 2 : 1;
+
+muscles.forEach(({id: mid, loadFactor}) => {
+  const effW = maxW * wMult * loadFactor;
+
+  if(!result[mid] || effW > result[mid]) {
+    result[mid] = effW;
+  }
 });
     });
   });
@@ -1586,14 +1773,40 @@ const steady = checkSteadyAllSets(exId, log, dateStr);
 return `<div class="ex ${done}" data-ex-id="${exId}" data-log-key="${logKey}" data-flip-key="log:${logKey}" style="${indentStyle}"> ${head} ${markersHtml} <div class="ex-last">${t('train.lastTime')} ${formatSets(last)}</div> ${musclesHtml} ${wHint} <div data-progress>${progressHtml}</div> <div data-pr>${prHtml ? `<div class="pr-row">${prHtml}</div>` : ''}</div> <div data-steady>${steady ? `<div class="pr-row"><span class="pr-badge pr-max" title="${t('train.allSame')}">🎯 ${steady.count}×${steady.r}</span></div>` : ''}</div> ${setsCtrl} ${rows} </div>`;
 }
 function renderTabs(){
-  return `<div class="tabs">
-    <button class="${view==='today'?'active':''}" onclick="setView('today')">${t('tab.today')}</button>
-    <button class="${view==='history'?'active':''}" onclick="setView('history')">${t('tab.history')}</button>
-    <button class="${view==='custom'?'active':''}" onclick="setView('custom')">${t('tab.custom')}</button>
-    <button class="${view==='search'?'active':''}" onclick="setView('search')">${t('tab.search')}</button>
-    <button class="${view==='stats'||view==='stats-ex'?'active':''}" onclick="setView('stats')">${t('tab.stats')}</button>
-    <button class="${view==='trainer'?'active':''}" onclick="setView('trainer')">${t('tab.trainer')}</button>
-    <button class="${view==='settings'?'active':''}" onclick="setView('settings')" title="${t('settings.title')}">${t('tab.settings')}</button>
+  const stripStyle = [
+    'display:flex',
+    'flex-wrap:nowrap',
+    'justify-content:flex-start',
+    'gap:6px',
+    'width:100%',
+    'max-width:100%',
+    'box-sizing:border-box',
+    'overflow-x:auto',
+    'overflow-y:hidden',
+    'white-space:nowrap',
+    '-webkit-overflow-scrolling:touch',
+    'overscroll-behavior-x:contain',
+    'scrollbar-width:none',
+    'scroll-behavior:auto',
+    'touch-action:pan-x'
+  ].join(';');
+
+  const buttonStyle = [
+    'flex:0 0 auto',
+    'width:auto',
+    'min-width:max-content',
+    'white-space:nowrap',
+    'touch-action:manipulation'
+  ].join(';');
+
+  return `<div class="tabs" id="main-tabs" style="${stripStyle}">
+    <button style="${buttonStyle}" class="${view==='today'?'active':''}" onclick="setView('today')">${t('tab.today')}</button>
+    <button style="${buttonStyle}" class="${view==='history'?'active':''}" onclick="setView('history')">${t('tab.history')}</button>
+    <button style="${buttonStyle}" class="${view==='custom'?'active':''}" onclick="setView('custom')">${t('tab.custom')}</button>
+    <button style="${buttonStyle}" class="${view==='search'?'active':''}" onclick="setView('search')">${t('tab.search')}</button>
+    <button style="${buttonStyle}" class="${view==='stats'||view==='stats-ex'?'active':''}" onclick="setView('stats')">${t('tab.stats')}</button>
+    <button style="${buttonStyle}" class="${view==='trainer'?'active':''}" onclick="setView('trainer')">${t('tab.trainer')}</button>
+    <button style="${buttonStyle}" class="${view==='settings'?'active':''}" onclick="setView('settings')" title="${t('settings.title')}">${t('tab.settings')}</button>
   </div>`;
 }
 
@@ -3365,7 +3578,22 @@ function saveEditCustom(id){
   }
   const wModeEl = document.querySelector('input[name="editWeightMode"]:checked');
 const weightMode = wModeEl ? wModeEl.value : 'total';
-customStore.list=customStore.list.map(x=>x.id===id?{...x,name,app,sets,reps,muscles,loads,schedule,weightMode}:x);
+customStore.list = customStore.list.map(x =>
+  x.id === id
+    ? {
+        ...x,
+        name,
+        app,
+        sets,
+        reps,
+        muscles,
+        loads: muscles,
+        muscleModelVersion: 2,
+        schedule,
+        weightMode
+      }
+    : x
+);
   syncCustomEx();
   editingCustomId=null;
   render();
@@ -4331,6 +4559,7 @@ if (tutorialState.active) {
 
 // Повторное включение блокировки интерфейса во время обучения
 function applyTutorialBlockStyle() {
+    document.body.classList.add('tutorial-active');
   if (document.getElementById('tutorial-block-style')) return;
 
   const style = document.createElement('style');
@@ -4460,6 +4689,190 @@ function moveTutorialStepBlock(element, targetTop, targetLeft, animate = true) {
 }
 
 
+// Создаём SVG для линии и стрелки
+function ensureTutorialConnectorSvg() {
+  let svg = document.getElementById('tutorial-connector-svg');
+
+  if (!svg) {
+    svg = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'svg'
+    );
+
+    svg.id = 'tutorial-connector-svg';
+    svg.classList.add('tutorial-connector-svg');
+
+    document.body.appendChild(svg);
+  }
+
+  return svg;
+}
+
+
+// Рисуем линию от карточки подсказки к целевому элементу
+function updateTutorialConnector(card, target) {
+  if (!card || !target || !card.isConnected || !target.isConnected) return;
+
+  const svg = ensureTutorialConnectorSvg();
+
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+  const a = card.getBoundingClientRect();
+  const b = target.getBoundingClientRect();
+
+  const targetX = b.left + b.width / 2;
+  const targetY = b.top + b.height / 2;
+
+  const cardX = a.left + a.width / 2;
+  const cardY = a.top + a.height / 2;
+
+  let startX;
+  let startY;
+
+  // Выбираем ту сторону карточки, которая ближе к элементу
+  if (Math.abs(targetX - cardX) > Math.abs(targetY - cardY)) {
+    startX = targetX > cardX ? a.right : a.left;
+    startY = Math.max(a.top + 12, Math.min(targetY, a.bottom - 12));
+  } else {
+    startY = targetY > cardY ? a.bottom : a.top;
+    startX = Math.max(a.left + 12, Math.min(targetX, a.right - 12));
+  }
+
+  const controlX = (startX + targetX) / 2;
+  const controlY = (startY + targetY) / 2;
+
+  svg.innerHTML = `
+    <defs>
+      <marker
+        id="tutorial-arrowhead"
+        markerWidth="10"
+        markerHeight="10"
+        refX="9"
+        refY="5"
+        orient="auto"
+        markerUnits="userSpaceOnUse">
+        <path d="M0 0 L10 5 L0 10 Z" fill="#6ab06a"/>
+      </marker>
+    </defs>
+
+    <path
+      d="M ${startX} ${startY} Q ${controlX} ${controlY} ${targetX} ${targetY}"
+      fill="none"
+      stroke="#6ab06a"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      marker-end="url(#tutorial-arrowhead)"
+      opacity="0.95"
+    />
+  `;
+}
+
+
+// Размещаем карточку максимально далеко от элемента
+function positionTutorialCallout(tooltip, target, step, animate = true) {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  const controls = document.querySelector('.tutorial-controls');
+  const controlsTop = controls
+    ? controls.getBoundingClientRect().top
+    : h - 12;
+
+  const safeTop = 12;
+  const safeBottom = Math.max(safeTop + 130, controlsTop - 14);
+
+  tooltip.style.position = 'fixed';
+  tooltip.style.right = 'auto';
+  tooltip.style.bottom = 'auto';
+  tooltip.style.transform = 'none';
+
+  tooltip.style.width = 'min(360px, calc(100vw - 24px))';
+  tooltip.style.maxWidth = '360px';
+  tooltip.style.maxHeight = Math.max(
+    120,
+    Math.min(Math.round(h * 0.42), safeBottom - safeTop - 12)
+  ) + 'px';
+
+  tooltip.style.boxSizing = 'border-box';
+  tooltip.style.overflowY = 'auto';
+  tooltip.style.margin = '0';
+  tooltip.style.zIndex = '10001';
+
+  // Ознакомительным подсказкам оставляем возможность нажать Продолжить
+  tooltip.style.pointerEvents =
+    step.manualContinue && step.action === 'inspect'
+      ? 'auto'
+      : 'none';
+
+  const cardWidth = Math.min(360, w - 24);
+  let left = Math.max(12, (w - cardWidth) / 2);
+
+  const cardHeight = tooltip.offsetHeight;
+  const topPosition = safeTop;
+  const bottomPosition = Math.max(
+    safeTop,
+    safeBottom - cardHeight
+  );
+
+  const targetRect = target.getBoundingClientRect();
+  const targetCenterY = targetRect.top + targetRect.height / 2;
+
+  // Если элемент сверху — подсказка снизу, и наоборот
+  let top = targetCenterY < h / 2
+    ? bottomPosition
+    : topPosition;
+
+  const overlapsTarget = (candidateTop, candidateLeft) => {
+    return (
+      candidateLeft < targetRect.right + 12 &&
+      candidateLeft + cardWidth > targetRect.left - 12 &&
+      candidateTop < targetRect.bottom + 12 &&
+      candidateTop + cardHeight > targetRect.top - 12
+    );
+  };
+
+  // Если первая позиция пересекается с элементом, пробуем противоположную
+  if (overlapsTarget(top, left)) {
+    top = top === topPosition ? bottomPosition : topPosition;
+  }
+
+  // В крайнем случае ставим карточку сбоку
+  if (overlapsTarget(top, left)) {
+    left = targetRect.left > w / 2
+      ? 12
+      : Math.max(12, w - cardWidth - 12);
+
+    top = Math.max(
+      safeTop,
+      Math.min(
+        targetCenterY - cardHeight / 2,
+        safeBottom - cardHeight
+      )
+    );
+  }
+
+  moveTutorialStepBlock(tooltip, top, left, animate);
+
+  // Следим за стрелкой, пока карточка плавно перемещается
+  const started = Date.now();
+
+  const track = () => {
+    if (!tooltip.isConnected || !target.isConnected) return;
+
+    updateTutorialConnector(tooltip, target);
+
+    if (Date.now() - started < 520) {
+      requestAnimationFrame(track);
+    }
+  };
+
+  requestAnimationFrame(track);
+}
+
+
 function showTutorialStep() {
   if (!tutorialState.active) return;
   applyTutorialBlockStyle();
@@ -4473,41 +4886,52 @@ if (oldTooltip && !tutorialStepStartRect) {
   rememberTutorialStepPosition(oldTooltip);
 }
 
-// Убираем старые подсказки и кнопки
-document.querySelectorAll('.tutorial-tooltip, .tutorial-skip-btn')
-  .forEach(el => el.remove());
+
+// Убираем старые подсказки, стрелки и нижнюю панель
+document.querySelectorAll(
+  '.tutorial-tooltip, .tutorial-controls, .tutorial-skip-btn, .tutorial-connector-svg'
+).forEach(el => el.remove());
 
 document.querySelectorAll('.tutorial-highlight')
   .forEach(el => el.classList.remove('tutorial-highlight'));
 
- // Кнопка "Пропустить обучение"
+// Нижняя панель управления обучением
+const controls = document.createElement('div');
+controls.className = 'tutorial-controls';
+
+// Кнопка пропуска обучения
 const skipBtn = document.createElement('button');
 skipBtn.className = 'tutorial-skip-btn';
 skipBtn.textContent = t('common.skipTutorial');
+
 skipBtn.onclick = (e) => {
   e.stopPropagation();
   finishTutorial();
 };
-document.body.appendChild(skipBtn);
 
-// === НОВОЕ: переключатель языка ===
+controls.appendChild(skipBtn);
+
+// Переключение языка
 const langBtn = document.createElement('button');
 langBtn.className = 'tutorial-skip-btn';
-langBtn.style.right = 'auto';
-langBtn.style.left = '12px';
+
 langBtn.style.background = '#2a4a5a';
 langBtn.style.borderColor = '#3a6a7a';
 langBtn.style.color = '#9cf';
+
 const curLang = getLang();
 langBtn.textContent = curLang === 'en' ? '🌐 English' : '🌐 Русский';
+
 langBtn.onclick = (e) => {
   e.stopPropagation();
 
   const newLang = getLang() === 'ru' ? 'en' : 'ru';
-
   changeLanguagePreservingState(newLang);
 };
-document.body.appendChild(langBtn);
+
+controls.appendChild(langBtn);
+document.body.appendChild(controls);
+
 
   if (!step.selector) {
     showTutorialModal(step);
@@ -4565,68 +4989,12 @@ if (step.manualContinue && step.action === "inspect") {
 }
     document.body.appendChild(tooltip);
 
-    // Функция обновления позиции подсказки (для скролла и ресайза)
     
+// Позиционируем подсказку в свободной области и рисуем стрелку
 const updateTooltipPos = (animate = true) => {
-
-  // Общие параметры позиционирования
-  tooltip.style.position = 'fixed';
-  tooltip.style.right = 'auto';
-  tooltip.style.bottom = 'auto';
-  tooltip.style.transform = 'none';
-
-  // Для ознакомительных шагов располагаем блок сверху
-  if (step.manualContinue) {
-
-    tooltip.style.width = 'min(420px, calc(100vw - 24px))';
-    tooltip.style.maxWidth = '420px';
-    tooltip.style.maxHeight = 'calc(100vh - 90px)';
-    tooltip.style.overflowY = 'auto';
-    tooltip.style.pointerEvents = 'auto';
-
-    const left = Math.max(
-      12,
-      (window.innerWidth - tooltip.offsetWidth) / 2
-    );
-
-    moveTutorialStepBlock(tooltip, 70, left, animate);
-    return;
-  }
-
-  // Обычная подсказка около выделенного элемента
-  tooltip.style.width = '';
-  tooltip.style.maxWidth = '280px';
-  tooltip.style.maxHeight = '';
-  tooltip.style.overflowY = '';
-  tooltip.style.pointerEvents = 'none';
-
-  const rect = el.getBoundingClientRect();
-  const arrow = step.arrow || 'top';
-
-  let top, left;
-
-  if (arrow === 'top') {
-    top = rect.bottom + 14;
-    left = rect.left + rect.width / 2 - 140;
-
-  } else if (arrow === 'bottom') {
-    top = rect.top - tooltip.offsetHeight - 14;
-    left = rect.left + rect.width / 2 - 140;
-
-  } else if (arrow === 'left') {
-    top = rect.top + rect.height / 2 - 40;
-    left = rect.right + 14;
-
-  } else {
-    top = rect.top + rect.height / 2 - 40;
-    left = rect.left - tooltip.offsetWidth - 14;
-  }
-
-  left = Math.max(10, Math.min(left, window.innerWidth - 300));
-  top = Math.max(10, Math.min(top, window.innerHeight - 150));
-
-  moveTutorialStepBlock(tooltip, top, left, animate);
+  positionTutorialCallout(tooltip, el, step, animate);
 };
+
 
 
     updateTooltipPos();
@@ -4795,7 +5163,11 @@ function finishTutorial() {
   tutorialState.active = false;
 
   // Убираем все элементы обучения
-  document.querySelectorAll('.tutorial-highlight, .tutorial-tooltip, .tutorial-skip-btn, #tutorial-modal').forEach(el => el.remove());
+  document.querySelectorAll(
+  '.tutorial-highlight, .tutorial-tooltip, .tutorial-controls, .tutorial-skip-btn, .tutorial-connector-svg, #tutorial-modal'
+).forEach(el => el.remove());
+
+document.body.classList.remove('tutorial-active');
 
   // Убираем слушатели скролла/ресайза
   if (window.tutorialTooltipHandler) {
@@ -5123,7 +5495,7 @@ suggestionHtml += `<div class="ex" style="font-size:12.5px;color:#aaa;line-heigh
     let hasSuggestions = false;
     notInPlan.forEach(g => {
   const validExs = Object.entries(EX)
-    .map(([id, ex]) => ({ id, ex, share: (ex.muscles && ex.muscles[g.id]) || 0 }))
+    .map(([id, ex]) => ({ id, ex, loadPct: (ex.muscles && ex.muscles[g.id]) || 0 }))
     .filter(item => item.share >= 30 && !allPlanExIds.has(item.id))
     .sort((a,b) => b.share - a.share);
   
@@ -5777,7 +6149,18 @@ function attemptAddExercise(){
     id = 'c' + Date.now().toString(36);
     const wModeEl = document.querySelector('input[name="addNewWeightMode"]:checked');
 const weightMode = wModeEl ? wModeEl.value : 'total';
-newEx = { id, name, app, sets, reps, muscles, loads, schedule: { type: 'none' }, weightMode };
+newEx = {
+  id,
+  name,
+  app,
+  sets,
+  reps,
+  muscles,
+  loads: muscles,
+  muscleModelVersion: 2,
+  schedule: { type: 'none' },
+  weightMode
+};
   }
 
   // Подтверждение только если дубликат в ТОМ ЖЕ контейнере
@@ -7166,8 +7549,27 @@ function generateAutoPlan(){
   render();
 }
 function render(){
+  // Запоминаем горизонтальное положение вкладок
+  const oldTabs = document.querySelector('.tabs');
+  const tabsScrollLeft = oldTabs ? oldTabs.scrollLeft : null;
+
   const before = flipCapture();
   renderInner();
+
+  // Возвращаем прокрутку после перерисовки DOM
+  if (tabsScrollLeft !== null) {
+    requestAnimationFrame(() => {
+      const newTabs = document.querySelector('.tabs');
+
+      if (newTabs) {
+        newTabs.scrollLeft = Math.min(
+          tabsScrollLeft,
+          Math.max(0, newTabs.scrollWidth - newTabs.clientWidth)
+        );
+      }
+    });
+  }
+
   flipPlay(before);
 
   const rm = (typeof __reduceMotion !== 'undefined')
@@ -7451,7 +7853,10 @@ setTimeout(() => advanceTutorial(), delay);
     const isSearchList = step.selector === "#addExistingSearch" && e.target.closest('#addExistingList');
     
     // Разрешаем клики по чекбоксам дней на шаге 4
-    const isDayCheckbox = step.selector === ".add-day[value=\"1\"]" && e.target.closest('.add-day');
+    const isDayCheckbox = step.id === 's4' && (
+  e.target.closest('.add-day[value="1"]') ||
+  e.target.closest('.day-chk')?.querySelector('.add-day[value="1"]')
+);
     
     if (isSearchList) {
       setTimeout(() => {
