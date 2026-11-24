@@ -1516,19 +1516,35 @@ function checkSteadyAllSets(exId,log,dateStr){
   return {count:filled.length,w:w0,r:r0};
 }
 function computeProgressHtml(exId, log, dateStr){
-  if(!log||!log.sets)return '';
-  const last=getLastEntryBefore(exId,dateStr);
-  if(!last)return '';
-  if(!log.sets.some(s=>s&&parseFloat(s.r)>0))return '';
-  const t=getExerciseStats(log),p=getExerciseStats(last);
-  const dW=Math.round((t.maxW-p.maxW)*100)/100;
-  const dR=Math.round(t.maxR-p.maxR);
-  const parts=[];
-  if(dW > 0) parts.push(`<span class="up">${t('misc.progressUp', {v: dW})}</span>`);
-  else if(dW < 0) parts.push(`<span class="down">${t('misc.progressDown', {v: dW})}</span>`);
-  if(dR > 0) parts.push(`<span class="up">${t('misc.progressRepsUp', {v: dR})}</span>`);
-  else if(dR < 0) parts.push(`<span class="down">${t('misc.progressRepsDown', {v: dR})}</span>`);
-  if(!parts.length)return '';
+  if(!log || !log.sets) return '';
+
+  const last = getLastEntryBefore(exId, dateStr);
+  if(!last) return '';
+
+  if(!log.sets.some(s => s && parseFloat(s.r) > 0)) return '';
+
+  const currentStats = getExerciseStats(log);
+  const previousStats = getExerciseStats(last);
+
+  const dW = Math.round((currentStats.maxW - previousStats.maxW) * 100) / 100;
+  const dR = Math.round(currentStats.maxR - previousStats.maxR);
+
+  const parts = [];
+
+  if(dW > 0){
+    parts.push(`<span class="up">${t('misc.progressUp', {v: dW})}</span>`);
+  } else if(dW < 0){
+    parts.push(`<span class="down">${t('misc.progressDown', {v: dW})}</span>`);
+  }
+
+  if(dR > 0){
+    parts.push(`<span class="up">${t('misc.progressRepsUp', {v: dR})}</span>`);
+  } else if(dR < 0){
+    parts.push(`<span class="down">${t('misc.progressRepsDown', {v: dR})}</span>`);
+  }
+
+  if(!parts.length) return '';
+
   return `<div class="progress-line">${parts.join(' · ')}</div>`;
 }
 function renderDayMetaHtml(dayLog, isToday){
@@ -1621,29 +1637,46 @@ function renderDayTonnageHtml(dateStr, dayLog){
   return html;
 }
 function dayTonnage(dayLog){
-  let tonnage=0,sets=0;
-  Object.entries(dayLog).forEach(([id,e])=>{
-    if(id.startsWith('_')||!e||!e.done)return;
-    const ex = EX[logBaseId(id)];
-if(!ex) return;
+  let tonnage = 0;
+  let sets = 0;
 
-const weightMode = getWeightMode(logBaseId(id));
-const wMult = weightMode === 'one' ? 2 : 1;
-const bwEff = getEffectiveBodyWeight(ex);
-(e.sets||[]).forEach(s=>{
-  if(!s)return;
-  const w0=parseFloat(s.w)||0, r=parseFloat(s.r)||0;
-if(r >0){
-  sets++;
-  // Если упражнение с собственным весом — суммируем eff.вес тела и доп.вес
-  const w = (weightMode === 'bodyweight')
-  ? bwEff + Math.max(0, w0)
-  : Math.max(0, w0);
-  if(w > 0) tonnage += w * r * wMult;
-}
-});
+  Object.entries(dayLog || {}).forEach(([id, e]) => {
+    if(id.startsWith('_') || !e || !e.done) return;
+
+    const exId = logBaseId(id);
+    const ex = EX[exId];
+
+    // Защита от старых записей удалённых упражнений
+    if(!ex) return;
+
+    const weightMode = getWeightMode(exId);
+    const wMult = weightMode === 'one' ? 2 : 1;
+    const bwEff = 75 * (ex.bwFactor ?? 0.65);
+
+    (Array.isArray(e.sets) ? e.sets : []).forEach(s => {
+      if(!s) return;
+
+      const w0 = parseFloat(s.w) || 0;
+      const r = parseFloat(s.r) || 0;
+
+      if(r <= 0) return;
+
+      sets++;
+
+      const w = weightMode === 'bodyweight'
+        ? bwEff + Math.max(w0, 0)
+        : Math.max(w0, 0);
+
+      if(w > 0){
+        tonnage += w * r * wMult;
+      }
+    });
   });
-  return {tonnage:Math.round(tonnage),sets};
+
+  return {
+    tonnage: Math.round(tonnage),
+    sets
+  };
 }
 
 let currentDate=todayDate();
