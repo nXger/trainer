@@ -10,6 +10,20 @@
 
 const CHANGELOG = [
     {
+    version: '1.4.0',
+    date: '26.11.2026',
+    changes: [
+      {
+        ru: 'Добавлен рейтинг',
+        en: 'Added rating'
+      },
+      {
+        ru: 'Добавлен турнир',
+        en: 'Added a tournament'
+      }
+    ]
+  },
+    {
     version: '1.3.0',
     date: '24.11.2026',
     changes: [
