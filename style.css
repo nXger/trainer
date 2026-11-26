@@ -162,3 +162,54 @@
    .muscle-item .mi-pct{font-size:14px;font-weight:700;white-space:nowrap}
    .mi-bar{height:4px;background:#222;border-radius:2px;overflow:hidden;margin-top:5px}
    .mi-bar-fill{height:100%;transition:width .3s}
+/* Последняя отметка шкалы — отступ от правого края */
+#rating-modal .rating-tick-last {
+  transform: translateX(-9px) !important;
+}
+
+/* Последняя отметка рейтинговой шкалы */
+#rating-modal .rating-tick-last {
+  transform: none !important;
+}
+
+/* Прижимаем правый край текста к самой отметке */
+/* Подписи отметок шкалы */
+#rating-modal .rating-tick span,
+#rating-modal .rating-tick small {
+  position:absolute !important;
+  display:block !important;
+  width:max-content !important;
+  max-width:none !important;
+  white-space:nowrap !important;
+  left:50% !important;
+  right:auto !important;
+  transform:translateX(-50%) !important;
+}
+
+/* Значение тоннажа */
+#rating-modal .rating-tick span {
+  top:20px !important;
+}
+
+/* Количество очков */
+#rating-modal .rating-tick small {
+  top:35px !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+
+/* Последняя цель: выравниваем текст внутрь шкалы */
+#rating-modal .rating-tick-last span,
+#rating-modal .rating-tick-last small {
+  left:auto !important;
+  right:0 !important;
+  transform:none !important;
+  text-align:right !important;
+}
+
+/* Следующая цель отображается тусклее */
+#rating-modal .rating-tick-upcoming span,
+#rating-modal .rating-tick-upcoming small {
+  opacity:.5 !important;
+  color:#aaa !important;
+}
