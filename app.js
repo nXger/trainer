@@ -699,6 +699,378 @@ const ownPlanStore={
   set(v){localStorage.setItem('ownPlan',JSON.stringify(v))},
 };
 
+/* ---------- Rating styles ---------- */
+(function injectRatingStyles(){
+  if(document.getElementById('rating-styles')) return;
+
+  const s = document.createElement('style');
+  s.id = 'rating-styles';
+
+  s.textContent = `
+    .rating-open-row {
+      display:flex;
+      justify-content:flex-end;
+      margin:-4px 0 10px;
+    }
+
+    .rating-open-btn {
+      width:58px;
+      height:58px;
+      border-radius:50%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:2px;
+      padding:0;
+      background:#29251c;
+      border:1px solid #92783e;
+      color:#f0d17d;
+      cursor:pointer;
+      box-shadow:0 2px 10px rgba(0,0,0,.22);
+      transition:transform .18s, background .18s;
+    }
+
+    .rating-open-btn:active {
+      transform:scale(.94);
+    }
+
+    .rating-open-icon {
+      font-size:19px;
+      line-height:1;
+    }
+
+    .rating-open-label {
+      font-size:9px;
+      line-height:1;
+    }
+
+    .rating-modal-backdrop {
+      position:fixed;
+      inset:0;
+      z-index:10050;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      box-sizing:border-box;
+      background:rgba(0,0,0,.78);
+      animation:ratingFade .18s ease-out;
+    }
+
+    @keyframes ratingFade {
+      from {opacity:0}
+      to {opacity:1}
+    }
+
+    .rating-modal-panel {
+      box-sizing:border-box;
+      width:min(580px,100%);
+      max-height:90vh;
+      overflow:auto;
+      padding:19px;
+      border-radius:17px;
+      background:#191919;
+      border:1px solid #363636;
+      color:#eee;
+      box-shadow:0 12px 40px rgba(0,0,0,.45);
+    }
+
+    .rating-modal-head {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:17px;
+    }
+
+    .rating-modal-head h2 {
+      margin:0 0 4px;
+      font-size:21px;
+    }
+
+    .rating-modal-head span {
+      color:#888;
+      font-size:12px;
+    }
+
+    .rating-modal-close {
+      width:34px;
+      height:34px;
+      border-radius:50%;
+      border:1px solid #444;
+      background:#252525;
+      color:#ccc;
+      font-size:23px;
+      cursor:pointer;
+    }
+
+    .rating-total-line {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:13px 15px;
+  margin-bottom:10px;
+  border-radius:10px;
+  background:#29251c;
+  border:1px solid #796337;
+}
+
+.rating-total-line span {
+  color:#d6c18b;
+  font-size:13px;
+}
+
+.rating-total-line strong {
+  color:#f0d17d;
+  font-size:25px;
+  font-weight:800;
+}
+
+.rating-cards {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:16px;
+}
+
+    .rating-card {
+      min-width:0;
+      padding:12px 8px;
+      border-radius:10px;
+      background:#242424;
+      border:1px solid #333;
+      text-align:center;
+    }
+
+    .rating-card small {
+      display:block;
+      color:#999;
+      font-size:10px;
+      margin-bottom:7px;
+    }
+
+    .rating-card strong {
+      display:block;
+      color:#f0d17d;
+      font-size:20px;
+      overflow-wrap:anywhere;
+    }
+
+    .rating-next {
+      font-size:13px;
+      color:#aaa;
+      margin:15px 0 4px;
+    }
+
+    .rating-next strong {
+      color:#f0d17d;
+    }
+
+    .rating-scale-scroll {
+  width:100%;
+  overflow:hidden;
+  padding-bottom:5px;
+  box-sizing:border-box;
+}
+
+.rating-scale {
+  position:relative;
+  width:100%;
+  min-width:0;
+  height:88px;
+  margin-top:9px;
+  box-sizing:border-box;
+}
+
+.rating-track {
+  position:absolute;
+  top:17px;
+  left:12px;
+  right:12px;
+  height:7px;
+  border-radius:10px;
+  background:#373737;
+  overflow:hidden;
+}
+
+.rating-progress {
+  height:100%;
+  border-radius:10px;
+  background:#c6a454;
+  transition:width .3s ease;
+}
+
+.rating-ticks {
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:12px;
+  right:12px;
+}
+
+.rating-tick {
+  position:absolute;
+  top:8px;
+  width:0;
+  text-align:center;
+}
+
+.rating-tick i {
+  display:block;
+  width:2px;
+  height:14px;
+  margin:0 auto 6px;
+  background:#888;
+}
+
+.rating-tick span {
+  position:relative;
+  display:block;
+  white-space:nowrap;
+  color:#ddd;
+  font-size:9px;
+  transform:translateX(-50%);
+}
+
+.rating-tick small {
+  position:relative;
+  display:block;
+  white-space:nowrap;
+  color:#d9bd79;
+  font-size:9px;
+  font-weight:700;
+  margin-top:2px;
+  transform:translateX(-50%);
+}
+
+.rating-tick:first-child span,
+.rating-tick:first-child small {
+  transform:translateX(0);
+}
+
+.rating-tick:last-child span,
+.rating-tick:last-child small {
+  transform:translateX(-100%);
+}
+/* Скрытие подписей, которые накладываются друг на друга */
+.rating-tick-label-hidden span,
+.rating-tick-label-hidden small {
+  visibility: hidden !important;
+}
+
+/* Упражнения под основной шкалой */
+
+.rating-exercises {
+  margin-top:8px;
+  padding-top:14px;
+  border-top:1px solid #333;
+}
+
+.rating-exercises-title {
+  margin-bottom:14px;
+  color:#eee;
+  font-size:14px;
+  font-weight:700;
+}
+
+.rating-exercise {
+  margin-bottom:15px;
+}
+
+.rating-exercise-top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:7px;
+}
+
+.rating-exercise-top strong {
+  min-width:0;
+  color:#ddd;
+  font-size:12px;
+  overflow-wrap:anywhere;
+}
+
+.rating-exercise-top span {
+  flex:0 0 auto;
+  color:#c6a454;
+  font-size:11px;
+  white-space:nowrap;
+}
+
+.rating-exercise-track {
+  height:7px;
+  border-radius:10px;
+  background:#353535;
+  overflow:hidden;
+}
+
+.rating-exercise-track > div {
+  height:100%;
+  border-radius:10px;
+  background:#c6a454;
+  transition:width .25s ease;
+}
+
+.rating-exercise-bottom {
+  margin-top:4px;
+  color:#777;
+  font-size:10px;
+  text-align:right;
+}
+
+.rating-no-exercises {
+  color:#777;
+  font-size:12px;
+  padding:10px 0;
+}
+
+    
+
+    .rating-modal-note {
+      color:#888;
+      font-size:11px;
+      line-height:1.5;
+      margin:12px 0 16px;
+    }
+
+    .rating-modal-done {
+      width:100%;
+      padding:11px;
+      border-radius:9px;
+      border:1px solid #555;
+      background:#292929;
+      color:#eee;
+      cursor:pointer;
+    }
+
+    @media(max-width:420px) {
+      .rating-modal-panel {
+        padding:14px;
+      }
+
+      .rating-card {
+        padding:10px 5px;
+      }
+
+      .rating-card strong {
+        font-size:17px;
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      .rating-modal-backdrop,
+      .rating-progress {
+        animation:none !important;
+        transition:none !important;
+      }
+    }
+  `;
+
+  document.head.appendChild(s);
+})();
+
 /* ---------- FLIP-анимация перемещений ---------- */
 const __reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -1646,7 +2018,7 @@ function dayTonnage(dayLog){
 
     const weightMode = getWeightMode(exId);
     const wMult = weightMode === 'one' ? 2 : 1;
-    const bwEff = 75 * (ex.bwFactor ?? 0.65);
+    const bwEff = getEffectiveBodyWeight(ex);
 
     (Array.isArray(e.sets) ? e.sets : []).forEach(s => {
       if(!s) return;
@@ -1672,6 +2044,4842 @@ function dayTonnage(dayLog){
     tonnage: Math.round(tonnage),
     sets
   };
+}
+
+/* ---------- Rating system ---------- */
+
+// Старое отдельное хранилище рейтинга больше не используется
+try {
+  localStorage.removeItem('workoutRating');
+} catch(e){}
+
+// Очки за достигнутую отметку
+function ratingPointsAtMark(kg){
+  if(kg === 500 || kg === 1000) return 1;
+
+  if(kg >= 1500 && kg <= 2500) return 2;
+
+  if(kg >= 3000 && kg <= 4500) return 3;
+
+  // После 5500 кг каждые 10000 кг
+  // увеличивают награду на 1 очко
+  if(kg >= 5500 && (kg - 5500) % 1000 === 0){
+    return 5 + Math.floor((kg - 5500) / 10000);
+  }
+
+  return 0;
+}
+
+// Все достигнутые наградные отметки
+function getRatingMilestones(tonnage){
+  const maxMark = Math.floor(
+    Math.max(0, tonnage) / 500
+  ) * 500;
+
+  const result = [];
+
+  for(let kg = 500; kg <= maxMark; kg += 500){
+    const points = ratingPointsAtMark(kg);
+
+    if(points > 0){
+      result.push({kg, points});
+    }
+  }
+
+  return result;
+}
+
+// Объём одного упражнения за день.
+// Учитываем максимум 1000 кг.
+function getExerciseRatingVolume(exId, dayLog){
+  const ex = EX[exId];
+
+  if(!ex || ex.app) return 0;
+
+  const weightMode = getWeightMode(exId);
+  const wMult = weightMode === 'one' ? 2 : 1;
+  const bwEff = getEffectiveBodyWeight(ex);
+
+  let total = 0;
+
+  Object.entries(dayLog || {}).forEach(([id, e]) => {
+    if(
+      id.startsWith('_') ||
+      logBaseId(id) !== exId ||
+      !e ||
+      !e.done ||
+      e._skipped
+    ) return;
+
+    (Array.isArray(e.sets) ? e.sets : []).forEach(s => {
+      if(!s) return;
+
+      const w0 = parseFloat(s.w) || 0;
+      const reps = parseFloat(s.r) || 0;
+
+      if(reps <= 0) return;
+
+      const weight = weightMode === 'bodyweight'
+        ? bwEff + Math.max(w0, 0)
+        : Math.max(w0, 0);
+
+      if(weight > 0){
+        total += weight * reps * wMult;
+      }
+    });
+  });
+
+  return Math.min(1000, Math.round(total));
+}
+
+// Общий объём за день с лимитом на каждое упражнение
+function getDailyRatingTonnage(dayLog){
+  const exerciseIds = new Set();
+
+  Object.entries(dayLog || {}).forEach(([id, e]) => {
+    if(id.startsWith('_') || !e || !e.done || e._skipped) return;
+
+    const exId = logBaseId(id);
+
+    if(EX[exId] && !EX[exId].app){
+      exerciseIds.add(exId);
+    }
+  });
+
+  let total = 0;
+
+  exerciseIds.forEach(exId => {
+    total += getExerciseRatingVolume(exId, dayLog);
+  });
+
+  return total;
+}
+
+// Упражнения текущего дня и их индивидуальный прогресс
+function getRatingExerciseRows(plan, dayLog){
+  const exerciseIds = [];
+  const seen = new Set();
+
+  const addExercise = (logKey) => {
+    const exId = logBaseId(logKey);
+
+    if(!EX[exId] || EX[exId].app || seen.has(exId)){
+      return;
+    }
+
+    seen.add(exId);
+    exerciseIds.push(exId);
+  };
+
+  // Сначала упражнения из плана на выбранный день
+  (plan?.main || []).forEach(addExercise);
+
+  // Затем добавленные вручную упражнения и записи вне плана
+  Object.entries(dayLog || {}).forEach(([id, e]) => {
+    if(id.startsWith('_') || !e) return;
+
+    const hasSetData = Array.isArray(e.sets) &&
+      e.sets.some(s =>
+        s && (
+          Number.isFinite(parseFloat(s.w)) ||
+          Number.isFinite(parseFloat(s.r))
+        )
+      );
+
+    if(e.done || e.adHoc || hasSetData){
+      addExercise(id);
+    }
+  });
+
+  return exerciseIds.map(exId => {
+    const tonnage = getExerciseRatingVolume(exId, dayLog);
+
+    return {
+      exId,
+      name: getExerciseName(exId),
+      tonnage,
+      remaining: Math.max(0, 1000 - tonnage),
+      percent: Math.min(100, tonnage / 10)
+    };
+  });
+}
+
+// Пересчитываем рейтинг по ВСЕМ текущим записям тренировок
+function getRatingSummary(dateStr){
+  const logs = store.logs;
+  const tournamentData = getTournamentData();
+
+  let totalPoints = 0;
+  let todayPoints = 0;
+  let todayTonnage = 0;
+
+  Object.entries(logs).forEach(([date, dayLog]) => {
+    const tonnage = getDailyRatingTonnage(dayLog);
+    const points = getRatingMilestones(tonnage)
+      .reduce((sum, item) => sum + item.points, 0);
+
+    const tournamentForDate = tournamentData.tournaments.find(item =>
+      item && item.startDate && item.endDate &&
+      date >= item.startDate && date <= item.endDate
+    );
+
+    // Дневную тренировку показываем и во время турнира.
+    if(date === dateStr){
+      todayTonnage = tonnage;
+      todayPoints = points;
+
+      // Не засчитываем в турнир очки, набранные до его запуска.
+      if(tournamentForDate && date === tournamentForDate.startDate){
+        todayPoints = Math.max(
+          0,
+          points - (tournamentForDate.playerStartPointsBaseline || 0)
+        );
+      }
+    }
+
+    // Турнирные даты не увеличивают личный накопительный рейтинг.
+    if(tournamentForDate) return;
+
+    totalPoints += points;
+  });
+  // Дополнительные очки, выданные разработчиком.
+const bonusDays = tournamentReadJson(
+  RATING_BONUS_STORAGE_KEY,
+  {}
+);
+
+const bonusTotal = Object.values(bonusDays).reduce(
+  (sum, value) => {
+    const n = Number(value);
+    return sum + (
+      Number.isFinite(n) ? Math.max(0, n) : 0
+    );
+  },
+  0
+);
+
+totalPoints = getLifetimeRatingPoints(
+  tournamentData,
+  getCreditsData()
+);
+
+todayPoints += Math.max(
+  0,
+  Number(bonusDays[dateStr]) || 0
+);
+  return {
+    points: totalPoints,
+    todayPoints,
+    tonnage: todayTonnage
+  };
+}
+
+// Дата турнира может быть сдвинута кнопкой DEV-симуляции.
+// Системную дату и календарь тренировок не меняем.
+function getTournamentCurrentDate(tournament) {
+  const realDate = fmt(todayDate());
+
+  if (!tournament || tournament.status !== 'active') {
+    return realDate;
+  }
+
+  const simulatedDate = tournament.simulatedDate;
+
+  if (
+    typeof simulatedDate === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(simulatedDate) &&
+    simulatedDate > realDate
+  ) {
+    return simulatedDate;
+  }
+
+  return realDate;
+}
+
+// Следующая наградная отметка
+function getNextRatingMilestone(tonnage){
+  const fixed = [
+    500, 1000, 1500, 2000, 2500,
+    3000, 3500, 4000, 4500, 5500
+  ];
+
+  for(const kg of fixed){
+    if(kg > tonnage){
+      return {
+        kg,
+        points: ratingPointsAtMark(kg)
+      };
+    }
+  }
+
+  const kg = 5500 +
+    (Math.floor((tonnage - 5500) / 1000) + 1) * 1000;
+
+  return {
+    kg,
+    points: ratingPointsAtMark(kg)
+  };
+}
+
+// Текст с учётом языка приложения
+function ratingText(key){
+  return t('rating.' + key);
+}
+function tournamentText(key, params) {
+  return t('tournament.' + key, params);
+}
+
+function tournamentDateText(value, options) {
+  if (!value) return '—';
+
+  const date = new Date(
+    String(value).slice(0, 10) + 'T12:00:00'
+  );
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleDateString(
+    tournamentText('dateLocale'),
+    options
+  );
+}
+
+
+
+/* ---------- Локальная турнирная система ---------- */
+
+const TOURNAMENT_STORAGE_KEY = 'localTournamentV1';
+const CREDITS_STORAGE_KEY = 'creditsV1';
+const RATING_BONUS_STORAGE_KEY = 'ratingBonusPointsV1';
+
+
+const TOURNAMENT_CONFIG = {
+  botCount: 999,
+  durationDays: 10,
+  entryFee: 500,
+  classes: ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SS+'],
+
+  potentialWeights: [
+    { className: 'F', weight: 34 },
+    { className: 'E', weight: 23 },
+    { className: 'D', weight: 15 },
+    { className: 'C', weight: 10 },
+    { className: 'B', weight: 7 },
+    { className: 'A', weight: 5 },
+    { className: 'S', weight: 3 },
+    { className: 'SS', weight: 2 },
+    { className: 'SS+', weight: 1 }
+  ],
+
+  dailyPoints: {
+    F: [2, 8],
+    E: [4, 12],
+    D: [7, 17],
+    C: [12, 25],
+    B: [18, 38],
+    A: [27, 55],
+    S: [40, 80],
+    SS: [65, 130],
+    'SS+': [100, 200]
+  },
+
+  movement: {
+  F:     { promote: 60, demote: 0,  eliminate: 4 },
+  E:     { promote: 45, demote: 8,  eliminate: 0 },
+  D:     { promote: 35, demote: 12, eliminate: 0 },
+  C:     { promote: 25, demote: 16, eliminate: 0 },
+  B:     { promote: 18, demote: 20, eliminate: 0 },
+  A:     { promote: 12, demote: 25, eliminate: 0 },
+  S:     { promote: 8,  demote: 30, eliminate: 0 },
+  SS:    { promote: 5,  demote: 35, eliminate: 0 },
+  'SS+': { promote: 0,  demote: 40, eliminate: 0 }
+}
+};
+
+function tournamentReadJson(key, fallback) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || 'null');
+    return value && typeof value === 'object' ? value : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function tournamentWriteJson(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function getTournamentData() {
+  const fallback = {
+    version: 1,
+    player: {
+      currentClass: 'F',
+      bestClass: 'F',
+      eliminated: false,
+      lastResult: null
+    },
+    bots: [],
+    tournaments: [],
+    activeTournamentId: null,
+    nextTournamentId: 1
+  };
+
+  const data = tournamentReadJson(TOURNAMENT_STORAGE_KEY, fallback);
+
+  if (!data.player || typeof data.player !== 'object') {
+    data.player = { ...fallback.player };
+  }
+
+  if (!data.player.currentClass) data.player.currentClass = 'F';
+  if (!data.player.bestClass) data.player.bestClass = 'F';
+  if (typeof data.player.eliminated !== 'boolean') {
+    data.player.eliminated = false;
+  }
+
+  if (!Array.isArray(data.bots)) data.bots = [];
+  if (!Array.isArray(data.tournaments)) data.tournaments = [];
+  if (!Number.isFinite(data.nextTournamentId)) {
+    data.nextTournamentId = 1;
+  }
+
+  return data;
+}
+
+function getDailyRatingPoints(dateStr, logsMap) {
+  const logs = logsMap || store.logs;
+  const dayLog = logs[dateStr] || {};
+
+  return getRatingMilestones(getDailyRatingTonnage(dayLog))
+    .reduce((sum, item) => sum + item.points, 0);
+}
+
+function getDeveloperRatingBonus(dateStr) {
+  const bonuses = tournamentReadJson(
+    RATING_BONUS_STORAGE_KEY,
+    {}
+  );
+
+  const value = Number(bonuses[dateStr]) || 0;
+
+  return Math.max(0, value);
+}
+
+function isTournamentCalendarDate(dateStr, tournamentData) {
+  const data = tournamentData || getTournamentData();
+
+  return data.tournaments.some(item =>
+    item &&
+    item.startDate &&
+    item.endDate &&
+    dateStr >= item.startDate &&
+    dateStr <= item.endDate
+  );
+}
+
+function getCreditsData() {
+  const tournamentData = getTournamentData();
+
+  let data = tournamentReadJson(CREDITS_STORAGE_KEY, null);
+
+  if (data && Number.isFinite(data.balance)) {
+    let changed = false;
+
+    if (
+      !data.creditedDailyPoints ||
+      typeof data.creditedDailyPoints !== 'object'
+    ) {
+      data.creditedDailyPoints = {};
+      changed = true;
+    }
+
+    // Отдельный учёт реально заработанных кредитов.
+    if (
+      !data.creditedAsCredits ||
+      typeof data.creditedAsCredits !== 'object'
+    ) {
+      data.creditedAsCredits = {};
+
+      Object.entries(data.creditedDailyPoints).forEach(
+        ([date, value]) => {
+
+          const tournament = tournamentData.tournaments.find(item =>
+            item &&
+            date >= item.startDate &&
+            date <= item.endDate
+          );
+
+          let amount = Math.max(0, Number(value) || 0);
+
+          if (tournament) {
+            if (date === tournament.startDate) {
+              const cap = Number(
+                tournament.playerStartCreditedBaseline ??
+                tournament.playerStartPointsBaseline ??
+                0
+              );
+
+              amount = Math.min(
+                amount,
+                Math.max(0, cap)
+              );
+            } else {
+              amount = 0;
+            }
+          }
+
+          data.creditedAsCredits[date] = amount;
+        }
+      );
+
+      changed = true;
+    }
+
+    if (
+      !data.tournamentDebtPayments ||
+      typeof data.tournamentDebtPayments !== 'object'
+    ) {
+      data.tournamentDebtPayments = {};
+      changed = true;
+    }
+
+    if (!Number.isFinite(data.totalEarned)) {
+      data.totalEarned = Math.max(0, data.balance);
+      changed = true;
+    }
+
+    if (!Number.isFinite(data.totalSpent)) {
+      data.totalSpent = 0;
+      changed = true;
+    }
+
+    if (changed) {
+      tournamentWriteJson(CREDITS_STORAGE_KEY, data);
+    }
+
+    return data;
+  }
+
+  // Первоначальное создание хранилища.
+  const creditedDailyPoints = {};
+  const creditedAsCredits = {};
+
+  let initialBalance = 0;
+
+  const logs = store.logs;
+
+  Object.keys(logs).forEach(dateStr => {
+    const points = getDailyRatingPoints(dateStr, logs);
+
+    creditedDailyPoints[dateStr] = points;
+
+    const tournament = tournamentData.tournaments.find(item =>
+      item &&
+      dateStr >= item.startDate &&
+      dateStr <= item.endDate
+    );
+
+    let creditable = points;
+
+    if (tournament) {
+      if (dateStr === tournament.startDate) {
+        const cap = Number(
+          tournament.playerStartCreditedBaseline ??
+          tournament.playerStartPointsBaseline ??
+          0
+        );
+
+        creditable = Math.min(points, Math.max(0, cap));
+      } else {
+        creditable = 0;
+      }
+    }
+
+    creditedAsCredits[dateStr] = creditable;
+    initialBalance += creditable;
+  });
+
+  data = {
+    version: 1,
+    balance: initialBalance,
+    totalEarned: initialBalance,
+    totalSpent: 0,
+    creditedDailyPoints,
+    creditedAsCredits,
+    tournamentDebtPayments: {},
+    createdAt: new Date().toISOString()
+  };
+
+  tournamentWriteJson(CREDITS_STORAGE_KEY, data);
+
+  return data;
+}
+
+function syncCreditsFromLogs() {
+  const credits = getCreditsData();
+  const tournamentData = getTournamentData();
+  const logs = store.logs;
+
+  let changed = false;
+  let tournamentChanged = false;
+
+    // ==========================================
+  // 1. Пересчитываем заработанные кредиты
+  //    и турнирные очки.
+  // ==========================================
+
+  const dates = new Set([
+    ...Object.keys(logs),
+    ...Object.keys(credits.creditedDailyPoints),
+    ...Object.keys(credits.creditedAsCredits)
+  ]);
+
+  // Завершённый турнир учитываем только до даты
+  // фактического завершения игрока.
+  const findTournament = dateStr =>
+    tournamentData.tournaments.find(item => {
+
+      if (
+        !item ||
+        dateStr < item.startDate ||
+        dateStr > item.endDate
+      ) {
+        return false;
+      }
+
+      if (item.status === 'active') return true;
+
+      if (item.status === 'completed') {
+        const lastDate =
+          item.result?.date || item.endDate;
+
+        return dateStr <= lastDate;
+      }
+
+      return false;
+    }) || null;
+
+
+  dates.forEach(dateStr => {
+
+    const points = getDailyRatingPoints(dateStr, logs);
+
+    const tournament = findTournament(dateStr);
+
+    // Предыдущие очки до изменения истории.
+    let previousPoints =
+      Number(credits.creditedDailyPoints[dateStr]) || 0;
+
+    // Резервный способ восстановления старых данных,
+    // если прежние дневные очки ещё не были сохранены.
+    const hasPreviousPoints =
+      Object.prototype.hasOwnProperty.call(
+        credits.creditedDailyPoints,
+        dateStr
+      );
+
+    if (
+      !hasPreviousPoints &&
+      tournament?.days?.[dateStr]?.finalized
+    ) {
+
+      const snapshot =
+        tournament.days[dateStr].snapshot?.player;
+
+      if (snapshot) {
+
+        const debtPaid =
+          Number(credits.tournamentDebtPayments[dateStr]) || 0;
+
+        const baseline =
+          dateStr === tournament.startDate
+            ? (Number(tournament.playerStartPointsBaseline) || 0)
+            : 0;
+
+        previousPoints = Math.max(
+          0,
+          (Number(snapshot.dailyPoints) || 0) +
+            debtPaid +
+            baseline -
+            getDeveloperRatingBonus(dateStr)
+        );
+      }
+    }
+
+
+    // ------------------------------------------
+    // 1.1. Обычные кредиты.
+    // ------------------------------------------
+
+    let creditablePoints = points;
+
+    if (tournament) {
+
+      if (dateStr === tournament.startDate) {
+
+        const cap = Number(
+          tournament.playerStartCreditedBaseline ??
+          tournament.playerStartPointsBaseline ??
+          0
+        );
+
+        creditablePoints = Math.min(
+          points,
+          Math.max(0, cap)
+        );
+
+      } else {
+
+        creditablePoints = 0;
+
+      }
+    }
+
+    const alreadyCredited =
+      Number(credits.creditedAsCredits[dateStr]) || 0;
+
+    const creditDelta =
+      creditablePoints - alreadyCredited;
+
+    if (creditDelta !== 0) {
+
+      applySignedCreditDelta(credits, creditDelta);
+
+      changed = true;
+    }
+
+
+    // ------------------------------------------
+    // 1.2. Изменение турнирных очков.
+    // ------------------------------------------
+
+    const tournamentDelta = tournament
+
+      ? (
+          getTournamentEligiblePointsForDate(
+            tournament,
+            dateStr,
+            points
+          ) -
+          getTournamentEligiblePointsForDate(
+            tournament,
+            dateStr,
+            previousPoints
+          )
+        )
+
+      : 0;
+
+
+    if (tournament && tournamentDelta !== 0) {
+
+      // ========================================
+      // ТУРНИР УЖЕ ЗАВЕРШЁН.
+      // ========================================
+
+      if (tournament.status === 'completed') {
+
+        // Результат завершённого турнира остаётся
+        // архивным. Изменение истории отражается
+        // через кредиты.
+        applySignedCreditDelta(
+          credits,
+          tournamentDelta
+        );
+
+        changed = true;
+
+      }
+
+
+      // ========================================
+      // ТУРНИР ЕЩЁ ИДЁТ.
+      // ========================================
+
+      else if (tournament.days?.[dateStr]?.finalized) {
+
+        if (tournamentDelta < 0) {
+
+          // Отмена упражнения.
+          let loss = Math.abs(tournamentDelta);
+
+          // Сначала уменьшаем турнирные очки.
+          // Ниже нуля они уйти не могут.
+          const availableTournamentPoints =
+            getTournamentAccumulatedPlayerPoints(tournament);
+
+          const fromTournament = Math.min(
+            loss,
+            availableTournamentPoints
+          );
+
+          tournament.playerPointPenalty =
+            (Number(tournament.playerPointPenalty) || 0) +
+            fromTournament;
+
+          loss -= fromTournament;
+
+
+          // Только остаток списываем с кредитов.
+          // Баланс может стать отрицательным.
+          if (loss > 0) {
+
+            applySignedCreditDelta(
+              credits,
+              -loss
+            );
+
+            tournament.playerCreditPenalty =
+              (Number(tournament.playerCreditPenalty) || 0) +
+              loss;
+          }
+
+          tournamentChanged = true;
+          changed = true;
+
+        } else {
+
+          // ------------------------------------
+          // Очки восстановлены после повторного
+          // добавления упражнения.
+          // ------------------------------------
+
+          let gain = tournamentDelta;
+
+          // Сначала возвращаем ранее списанные кредиты.
+          const restoreCredits = Math.min(
+            gain,
+            Math.max(
+              0,
+              Number(tournament.playerCreditPenalty) || 0
+            )
+          );
+
+          if (restoreCredits > 0) {
+
+            applySignedCreditDelta(
+              credits,
+              restoreCredits
+            );
+
+            tournament.playerCreditPenalty -= restoreCredits;
+
+            gain -= restoreCredits;
+          }
+
+
+          // Затем восстанавливаем турнирные очки,
+          // ранее списанные при отмене.
+          const restoreTournament = Math.min(
+            gain,
+            Math.max(
+              0,
+              Number(tournament.playerPointPenalty) || 0
+            )
+          );
+
+          if (restoreTournament > 0) {
+
+            tournament.playerPointPenalty -= restoreTournament;
+
+            gain -= restoreTournament;
+          }
+
+
+          // Если кредиты в минусе, сначала
+          // погашаем задолженность.
+          if (gain > 0 && credits.balance < 0) {
+
+            const debtPayment = Math.min(
+              gain,
+              Math.abs(credits.balance)
+            );
+
+            applySignedCreditDelta(
+              credits,
+              debtPayment
+            );
+
+            credits.tournamentDebtPayments[dateStr] =
+              (Number(credits.tournamentDebtPayments[dateStr]) || 0) +
+              debtPayment;
+
+            gain -= debtPayment;
+          }
+
+
+          // Оставшиеся новые очки идут в турнир.
+          if (gain > 0) {
+
+            tournament.totals.player =
+              (Number(tournament.totals.player) || 0) +
+              gain;
+          }
+
+          tournamentChanged = true;
+          changed = true;
+        }
+      }
+    }
+
+
+    // Сохраняем новое состояние истории.
+    if (
+      Number(credits.creditedDailyPoints[dateStr]) !== points
+    ) {
+      credits.creditedDailyPoints[dateStr] = points;
+      changed = true;
+    }
+
+    if (
+      Number(credits.creditedAsCredits[dateStr]) !== creditablePoints
+    ) {
+      credits.creditedAsCredits[dateStr] = creditablePoints;
+      changed = true;
+    }
+
+  });
+
+  // ==========================================
+  // 2. Находим незавершённые игровые дни.
+  // ==========================================
+
+  const pendingDays = [];
+
+  const activeTournaments = tournamentData.tournaments.filter(
+    item => item && item.status === 'active'
+  );
+
+  activeTournaments.forEach(tournament => {
+    const currentTournamentDate =
+      getTournamentCurrentDate(tournament);
+
+    const duration =
+      tournament.durationDays || TOURNAMENT_CONFIG.durationDays;
+
+    for (let i = 0; i < duration; i++) {
+      const dateStr = tournamentAddDays(
+        tournament.startDate,
+        i
+      );
+
+      if (
+        dateStr > currentTournamentDate ||
+        dateStr > tournament.endDate
+      ) {
+        break;
+      }
+
+      const day = tournament.days?.[dateStr];
+
+      if (day?.finalized) continue;
+
+      pendingDays.push({
+        date: dateStr,
+        tournament
+      });
+    }
+  });
+
+  pendingDays.sort((a, b) =>
+    a.date.localeCompare(b.date)
+  );
+
+  // Погашение задолженности рассчитываем только
+// за первый незавершённый день каждого турнира.
+const eligibleDebtDays = [];
+const seenTournamentIds = new Set();
+
+pendingDays.forEach(item => {
+  const id = item.tournament.id;
+
+  if (seenTournamentIds.has(id)) return;
+
+  seenTournamentIds.add(id);
+  eligibleDebtDays.push(item);
+});
+
+  const pendingDates = new Set(
+    pendingDays.map(item => item.date)
+  );
+
+  // ==========================================
+  // 3. Отменяем предыдущие временные погашения.
+  // ==========================================
+
+  pendingDates.forEach(dateStr => {
+    const previousPayment =
+      Number(credits.tournamentDebtPayments[dateStr]) || 0;
+
+    if (previousPayment <= 0) return;
+
+    credits.balance -= previousPayment;
+
+    credits.totalEarned = Math.max(
+      0,
+      credits.totalEarned - previousPayment
+    );
+
+    delete credits.tournamentDebtPayments[dateStr];
+
+    changed = true;
+  });
+
+  // ==========================================
+  // 4. Сначала погашаем долг, затем начисляем
+  //    оставшиеся очки в турнир.
+  // ==========================================
+
+  eligibleDebtDays.forEach(({ date, tournament }) => {
+    const workoutPoints = getDailyRatingPoints(date, logs);
+    const bonusPoints = getDeveloperRatingBonus(date);
+
+    const baseline = date === tournament.startDate
+      ? (
+          Number(tournament.playerStartPointsBaseline) || 0
+        )
+      : 0;
+
+    const availablePoints = Math.max(
+      0,
+      workoutPoints + bonusPoints - baseline
+    );
+
+    let debtPayment = 0;
+
+    if (credits.balance < 0 && availablePoints > 0) {
+      debtPayment = Math.min(
+        availablePoints,
+        Math.abs(credits.balance)
+      );
+
+      credits.balance += debtPayment;
+      credits.totalEarned += debtPayment;
+    }
+
+    if (debtPayment > 0) {
+      credits.tournamentDebtPayments[date] = debtPayment;
+    } else {
+      delete credits.tournamentDebtPayments[date];
+    }
+
+    changed = true;
+  });
+
+    if (changed) {
+    tournamentWriteJson(
+      CREDITS_STORAGE_KEY,
+      credits
+    );
+  }
+
+  // Сохраняем изменения турнирного зачёта.
+  if (tournamentChanged) {
+    tournamentWriteJson(
+      TOURNAMENT_STORAGE_KEY,
+      tournamentData
+    );
+  }
+
+  return credits;
+}
+
+function tournamentAddDays(dateStr, amount) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + amount);
+
+  return fmt(date);
+}
+
+function buildBotPotentialDeck(count) {
+  const totalWeight = TOURNAMENT_CONFIG.potentialWeights
+    .reduce((sum, item) => sum + item.weight, 0);
+
+  const quotas = TOURNAMENT_CONFIG.potentialWeights.map(item => {
+    const exact = count * item.weight / totalWeight;
+
+    return {
+      className: item.className,
+      count: Math.floor(exact),
+      remainder: exact - Math.floor(exact)
+    };
+  });
+
+  let remaining =
+    count - quotas.reduce((sum, item) => sum + item.count, 0);
+
+  quotas.sort((a, b) => b.remainder - a.remainder);
+
+  for (let i = 0; i < remaining; i++) {
+    quotas[i].count++;
+  }
+
+  const deck = [];
+
+  quotas.forEach(item => {
+    for (let i = 0; i < item.count; i++) {
+      deck.push(item.className);
+    }
+  });
+
+  // Перемешиваем потенциалы.
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+
+  return deck;
+}
+
+function ensureBotPopulation(tournamentData) {
+  if (!Array.isArray(tournamentData.bots)) {
+    tournamentData.bots = [];
+  }
+
+  const targetCount = TOURNAMENT_CONFIG.botCount;
+  const missingCount = targetCount - tournamentData.bots.length;
+
+  // Если уже есть нужное количество, ничего не делаем.
+  if (missingCount <= 0) return;
+
+  // Создаём потенциалы только для недостающих ботов.
+  const potentialDeck = buildBotPotentialDeck(missingCount);
+
+  const usedIds = new Set(
+    tournamentData.bots.map(bot => bot.id)
+  );
+
+  let nextId = 1;
+
+  potentialDeck.forEach(potentialClass => {
+    let id;
+
+    do {
+      id = 'bot-' + String(nextId++).padStart(4, '0');
+    } while (usedIds.has(id));
+
+    usedIds.add(id);
+
+    tournamentData.bots.push({
+      id,
+      leagueClass: 'F',
+      potentialClass,
+      coefficient: Math.floor(Math.random() * 51),
+      active: true
+    });
+  });
+}
+
+function getBotDailyPoints(bot) {
+  const range =
+    TOURNAMENT_CONFIG.dailyPoints[bot.potentialClass] || [1, 2];
+
+  const min = range[0];
+  const max = range[1];
+
+  // Общий случайный выбор по диапазону.
+  const randomPoints =
+    min + Math.floor(Math.random() * (max - min + 1));
+
+  // Персональный минимальный порог от 0 до 50%.
+  const coefficient = Math.max(
+    0,
+    Math.min(50, Number(bot.coefficient) || 0)
+  );
+
+  const personalFloor =
+    min + (max - min) * coefficient / 100;
+
+  return Math.max(randomPoints, Math.ceil(personalFloor));
+}
+
+function getActiveTournament(tournamentData) {
+  const data = tournamentData || getTournamentData();
+
+  if (!data.activeTournamentId) return null;
+
+  return data.tournaments.find(item =>
+    item.id === data.activeTournamentId &&
+    item.status === 'active'
+  ) || null;
+}
+
+function startTournament() {
+  // Сначала проверяем, не закончился ли предыдущий турнир.
+  const before = getTournamentData();
+
+  if (getActiveTournament(before)) {
+    processTournamentProgress();
+
+    if (getActiveTournament(getTournamentData())) {
+      return {
+        ok: false,
+        reason: 'already-active'
+      };
+    }
+  }
+
+  const tournamentData = getTournamentData();
+  const credits = syncCreditsFromLogs();
+
+  if (credits.balance < TOURNAMENT_CONFIG.entryFee) {
+    return {
+      ok: false,
+      reason: 'not-enough-credits',
+      balance: credits.balance,
+      required: TOURNAMENT_CONFIG.entryFee
+    };
+  }
+
+  ensureBotPopulation(tournamentData);
+  // Каждый новый турнир начинается с чистого распределения.
+// Все боты возвращаются в F, включая ранее выбывших.
+tournamentData.bots.forEach(bot => {
+  bot.leagueClass = 'F';
+  bot.active = true;
+});
+
+    // Каждый новый турнир игрок начинает в F.
+  tournamentData.player.currentClass = 'F';
+  tournamentData.player.eliminated = false;
+
+  const startDate = fmt(todayDate());
+
+  const endDate = tournamentAddDays(
+    startDate,
+    TOURNAMENT_CONFIG.durationDays - 1
+  );
+
+  const roster = [{
+    id: 'player',
+    type: 'player',
+    name: 'player',
+    leagueClass: tournamentData.player.currentClass || 'F'
+  }];
+
+  tournamentData.bots
+    .filter(bot => bot.active)
+    .forEach(bot => {
+      roster.push({
+        id: bot.id,
+        type: 'bot',
+        name: bot.id,
+        leagueClass: bot.leagueClass || 'F',
+        potentialClass: bot.potentialClass,
+        coefficient: bot.coefficient
+      });
+    });
+
+    const startDayWorkoutPoints =
+  getDailyRatingPoints(startDate);
+
+const startDayBonusPoints =
+  getDeveloperRatingBonus(startDate);
+
+const startDayCreditedPoints =
+  Number(credits.creditedAsCredits?.[startDate]) || 0;
+
+  const tournament = {
+    id: 'tournament-' + tournamentData.nextTournamentId++,
+    status: 'active',
+    startedAt: new Date().toISOString(),
+    startDate,
+    endDate,
+    durationDays: TOURNAMENT_CONFIG.durationDays,
+    entryFee: TOURNAMENT_CONFIG.entryFee,
+    playerStartClass: tournamentData.player.currentClass || 'F',
+
+
+
+    // Не засчитываем очки, набранные до запуска турнира в этот день.
+    playerStartPointsBaseline:
+  startDayWorkoutPoints + startDayBonusPoints,
+
+playerStartCreditedBaseline:
+  startDayCreditedPoints,
+
+    roster,
+    totals: Object.fromEntries(
+      roster.map(item => [item.id, 0])
+    ),
+    days: {},
+    result: null
+  };
+
+  tournamentData.tournaments.push(tournament);
+  tournamentData.activeTournamentId = tournament.id;
+
+  credits.balance -= TOURNAMENT_CONFIG.entryFee;
+  credits.totalSpent += TOURNAMENT_CONFIG.entryFee;
+
+  tournamentWriteJson(CREDITS_STORAGE_KEY, credits);
+  tournamentWriteJson(TOURNAMENT_STORAGE_KEY, tournamentData);
+
+  return {
+    ok: true,
+    tournament
+  };
+}
+
+function ensureTournamentBotScores(tournament, dateStr) {
+  if (!tournament.days[dateStr]) {
+    tournament.days[dateStr] = {
+      botPoints: {},
+      finalized: false,
+      snapshot: null
+    };
+  }
+
+  const day = tournament.days[dateStr];
+
+  (tournament.roster || []).forEach(participant => {
+    if (
+      participant.type !== 'bot' ||
+      participant.active === false
+    ) return;
+
+    // Уже начисленные очки повторно не генерируем.
+    if (Number.isFinite(day.botPoints[participant.id])) return;
+
+    day.botPoints[participant.id] =
+  participant.source === 'daily-replenishment' &&
+  participant.joinedDate === dateStr
+    ? 0
+    : getBotDailyPoints(participant);
+  });
+
+  return day;
+}
+
+function getTournamentPlayerDailyPoints(tournament, dateStr) {
+  const workoutPoints = getDailyRatingPoints(dateStr);
+  const bonusPoints = getDeveloperRatingBonus(dateStr);
+
+  const baseline = dateStr === tournament.startDate
+    ? (tournament.playerStartPointsBaseline || 0)
+    : 0;
+
+  const debtPayments = getCreditsData().tournamentDebtPayments || {};
+
+  const debtPaid = Number(debtPayments[dateStr]) || 0;
+
+  return Math.max(
+    0,
+    workoutPoints + bonusPoints - baseline - debtPaid
+  );
+}
+
+// Сколько очков тренировки относится непосредственно к турниру.
+// Очки, полученные до запуска турнира в первый день,
+// исключаются из турнирного зачёта.
+function getTournamentEligiblePointsForDate(
+  tournament,
+  dateStr,
+  workoutPoints
+) {
+  const baseline = dateStr === tournament.startDate
+    ? (Number(tournament.playerStartPointsBaseline) || 0)
+    : 0;
+
+  return Math.max(
+    0,
+    (Number(workoutPoints) || 0) +
+      getDeveloperRatingBonus(dateStr) -
+      baseline
+  );
+}
+
+
+// Общее количество доступных турнирных очков игрока.
+// Учитываем и незавершённый текущий день.
+function getTournamentAccumulatedPlayerPoints(tournament) {
+  const dateStr = getTournamentCurrentDate(tournament);
+  const day = tournament.days?.[dateStr];
+
+  const liveDailyPoints =
+    dateStr >= tournament.startDate &&
+    dateStr <= tournament.endDate &&
+    !day?.finalized
+      ? getTournamentPlayerDailyPoints(tournament, dateStr)
+      : 0;
+
+  const savedPoints =
+    Number(tournament.totals?.player) || 0;
+
+  const penalty = Math.max(
+    0,
+    Number(tournament.playerPointPenalty) || 0
+  );
+
+  return Math.max(
+    0,
+    savedPoints + liveDailyPoints - penalty
+  );
+}
+
+
+// Изменение кредитов.
+// Баланс может быть отрицательным.
+// totalEarned не уходит ниже нуля.
+function applySignedCreditDelta(credits, delta) {
+  if (!Number.isFinite(delta) || delta === 0) return;
+
+  credits.balance =
+    (Number(credits.balance) || 0) + delta;
+
+  credits.totalEarned = Math.max(
+    0,
+    (Number(credits.totalEarned) || 0) + delta
+  );
+}
+
+// Турнирные очки за всё время.
+function getLifetimeTournamentPoints(tournamentData) {
+
+  let total = 0;
+
+  (tournamentData.tournaments || []).forEach(tournament => {
+
+    // Завершённые турниры.
+    if (
+      tournament.status === 'completed' &&
+      tournament.result
+    ) {
+
+      total += Math.max(
+        0,
+        Number(tournament.result.points) || 0
+      );
+
+      return;
+    }
+
+    // Текущий турнир.
+    if (tournament.status === 'active') {
+
+      const dateStr = getTournamentCurrentDate(tournament);
+
+      const day = tournament.days?.[dateStr];
+
+      const liveDailyPoints =
+        dateStr >= tournament.startDate &&
+        dateStr <= tournament.endDate &&
+        !day?.finalized
+          ? getTournamentPlayerDailyPoints(tournament, dateStr)
+          : 0;
+
+      const savedPoints =
+        Number(tournament.totals?.player) || 0;
+
+      const penalty =
+        Number(tournament.playerPointPenalty) || 0;
+
+      total += Math.max(
+        0,
+        savedPoints + liveDailyPoints - penalty
+      );
+    }
+
+  });
+
+  return total;
+}
+
+
+// Общий показатель очков за всё время.
+function getLifetimeRatingPoints(tournamentData, creditsData) {
+
+  const data = tournamentData || getTournamentData();
+
+  const credits = creditsData || getCreditsData();
+
+  // Все заработанные кредиты, включая уже потраченные.
+  let total =
+    (Number(credits.balance) || 0) +
+    (Number(credits.totalSpent) || 0);
+
+
+  // Бонусные очки за пределами турниров.
+  const bonusDays = tournamentReadJson(
+    RATING_BONUS_STORAGE_KEY,
+    {}
+  );
+
+  Object.entries(bonusDays).forEach(([dateStr, value]) => {
+
+    const amount = Number(value);
+
+    if (!Number.isFinite(amount)) return;
+
+    const belongsToTournament = (data.tournaments || []).some(item => {
+
+      if (
+        !item ||
+        dateStr < item.startDate ||
+        dateStr > item.endDate
+      ) {
+        return false;
+      }
+
+      if (item.status === 'active') return true;
+
+      if (item.status === 'completed') {
+        return dateStr <= (item.result?.date || item.endDate);
+      }
+
+      return false;
+    });
+
+    if (!belongsToTournament) {
+      total += Math.max(0, amount);
+    }
+  });
+
+
+  // Добавляем очки всех завершённых и текущего турнира.
+  total += getLifetimeTournamentPoints(data);
+
+  return Math.round(total);
+}
+
+// Ежедневно пополняет каждый класс до 100 активных участников.
+// Повторный вызов в течение одного дня не создаёт дубликаты.
+function ensureDailyClassMinimum(tournament, dateStr) {
+  if (!tournament || !Array.isArray(tournament.roster)) {
+    return null;
+  }
+
+  if (tournament.days?.[dateStr]?.finalized) {
+    return null;
+  }
+
+  if (
+    !tournament.dailyClassReplenishment ||
+    typeof tournament.dailyClassReplenishment !== 'object'
+  ) {
+    tournament.dailyClassReplenishment = {};
+  }
+
+  const existing =
+    tournament.dailyClassReplenishment[dateStr];
+
+  if (existing?.completed) return existing;
+
+  const MINIMUM = 100;
+
+  const activeRoster = () =>
+    tournament.roster.filter(
+      p => p && p.active !== false
+    );
+
+  const missingByClass = {};
+  let totalMissing = 0;
+
+  // Определяем нехватку участников в каждом классе.
+  TOURNAMENT_CONFIG.classes.forEach(className => {
+    const count = activeRoster().filter(
+      p => p.leagueClass === className
+    ).length;
+
+    const missing = Math.max(0, MINIMUM - count);
+
+    missingByClass[className] = missing;
+    totalMissing += missing;
+  });
+
+  // Создаём недостающих ботов с учётом рейтинга их класса.
+const usedIds = new Set(
+  tournament.roster.map(p => String(p.id))
+);
+
+tournament.totals = tournament.totals || {};
+
+const currentDay = tournament.days?.[dateStr];
+
+let sequence = Math.max(
+  1,
+  Number(tournament.nextDailyFillBotSequence) || 1
+);
+
+const additions = {};
+
+TOURNAMENT_CONFIG.classes.forEach(className => {
+  const missing = missingByClass[className];
+
+  additions[className] = missing;
+
+  if (missing <= 0) return;
+
+  // Берём существующих активных участников класса.
+  const classMembers = activeRoster().filter(
+    p => p.leagueClass === className
+  );
+
+  // Рассчитываем их текущие очки.
+  const classScores = classMembers.map(participant => {
+    let points =
+      Number(tournament.totals[participant.id]) || 0;
+
+    // Учитываем уже начисленные очки текущего дня.
+    if (participant.type === 'bot') {
+      points += Number(
+        currentDay?.botPoints?.[participant.id]
+      ) || 0;
+
+    } else if (participant.type === 'player') {
+      points += Number(
+        getTournamentPlayerDailyPoints(tournament, dateStr)
+      ) || 0;
+    }
+
+    return Math.max(0, points);
+  });
+
+  // Границы стартовых очков новых ботов.
+  const minPoints = classScores.length
+  ? Math.ceil(Math.min(...classScores))
+  : 0;
+
+let maxPoints = classScores.length
+  ? Math.floor(Math.max(...classScores)) + 100
+  : 100;
+
+// В классе игрока новые боты не должны появляться выше него.
+const playerIndex = classMembers.findIndex(
+  participant => participant.id === 'player'
+);
+
+if (playerIndex !== -1) {
+  const playerPoints = classScores[playerIndex];
+
+  maxPoints = Math.min(maxPoints, Math.floor(playerPoints));
+}
+
+  for (let i = 0; i < missing; i++) {
+    let id;
+
+    do {
+      id =
+        `bot-fill-${tournament.id}-` +
+        String(sequence++).padStart(6, '0');
+    } while (usedIds.has(id));
+
+    usedIds.add(id);
+
+    // Случайные стартовые очки внутри диапазона класса.
+    const startingPoints =
+      minPoints +
+      Math.floor(
+        Math.random() * (maxPoints - minPoints + 1)
+      );
+
+    const bot = {
+      id,
+      type: 'bot',
+      name: id,
+
+      // Текущий класс.
+      leagueClass: className,
+
+      // Потенциал всегда совпадает с классом появления.
+      potentialClass: className,
+
+      coefficient: Math.floor(Math.random() * 51),
+
+      active: true,
+      source: 'daily-replenishment',
+      joinedDate: dateStr
+    };
+
+    tournament.roster.push(bot);
+
+    // Сразу присваиваем стартовые накопленные очки.
+    tournament.totals[id] = startingPoints;
+  }
+});
+
+
+  // Фиксируем результат пополнения.
+  const countsAfter = {};
+  const currentActive = activeRoster();
+
+  TOURNAMENT_CONFIG.classes.forEach(className => {
+    countsAfter[className] = currentActive.filter(
+      p => p.leagueClass === className
+    ).length;
+  });
+
+  const record = {
+    completed: true,
+    date: dateStr,
+    minimumPerClass: MINIMUM,
+    additions,
+    countsAfter
+  };
+
+  tournament.dailyClassReplenishment[dateStr] = record;
+
+  return record;
+}
+
+function calculateTournamentStandings(tournament, dateStr) {
+
+  // Сначала пополняем все классы.
+  ensureDailyClassMinimum(tournament, dateStr);
+
+  // Затем выдаём очки всем активным ботам.
+  const day = ensureTournamentBotScores(tournament, dateStr);
+
+  // Выбывших больше не включаем в таблицу.
+  const activeParticipants = (tournament.roster || [])
+    .filter(participant =>
+      participant && participant.active !== false
+    );
+
+  const rows = activeParticipants.map(participant => {
+    const dailyPoints = participant.type === 'player'
+      ? getTournamentPlayerDailyPoints(tournament, dateStr)
+      : (day.botPoints[participant.id] || 0);
+
+        const rawTotalPoints =
+      (Number(tournament.totals[participant.id]) || 0) +
+      dailyPoints;
+
+    const totalPoints = participant.type === 'player'
+
+      ? Math.max(
+          0,
+          rawTotalPoints -
+            (Number(tournament.playerPointPenalty) || 0)
+        )
+
+      : rawTotalPoints;
+
+    return {
+      id: participant.id,
+type: participant.type,
+leagueClass: participant.leagueClass,
+
+// Потенциал бота не зависит от его текущего класса.
+potentialClass: participant.type === 'bot'
+  ? (participant.potentialClass || 'F')
+  : null,
+
+dailyPoints,
+      totalPoints,
+      rank: 0,
+      movement: null,
+      newClass: participant.leagueClass
+    };
+  });
+
+  const groups = {};
+
+  rows.forEach(row => {
+    if (!groups[row.leagueClass]) {
+      groups[row.leagueClass] = [];
+    }
+
+    groups[row.leagueClass].push(row);
+  });
+
+  // Места определяются отдельно внутри каждого класса.
+  Object.values(groups).forEach(group => {
+    group.sort((a, b) =>
+  b.totalPoints - a.totalPoints ||
+  (
+    a.type === 'player' ? -1 :
+    b.type === 'player' ? 1 :
+    a.id.localeCompare(b.id)
+  )
+);
+
+    group.forEach((row, index) => {
+      row.rank = index + 1;
+    });
+  });
+
+  return rows;
+}
+
+// Рассчитывает предполагаемые переходы,
+// не меняя сохранённые данные турнира.
+function previewTournamentTransitions(rows) {
+  const groups = {};
+
+  rows.forEach(row => {
+    if (!groups[row.leagueClass]) {
+      groups[row.leagueClass] = [];
+    }
+
+    groups[row.leagueClass].push(row);
+  });
+
+  Object.entries(groups).forEach(([className, group]) => {
+    group.sort((a, b) => a.rank - b.rank);
+
+    const rule = TOURNAMENT_CONFIG.movement[className] || {
+      promote: 0,
+      demote: 0,
+      eliminate: 0
+    };
+
+    const count = group.length;
+
+    const classIndex =
+      TOURNAMENT_CONFIG.classes.indexOf(className);
+
+    const percentCount = (total, percent, minimumOne) => {
+      if (total <= 0 || percent <= 0) return 0;
+
+      const rounded = Math.round(total * percent / 100);
+
+      return Math.min(
+        total,
+        minimumOne ? Math.max(1, rounded) : rounded
+      );
+    };
+
+    // Сначала резервируем места для понижения и выбывания.
+// Они имеют приоритет над повышением.
+
+// Выбывание возможно исключительно в F.
+// Минимум один участник при любом размере класса.
+const eliminateCount =
+  classIndex === 0 &&
+  count > 0 &&
+  rule.eliminate > 0
+    ? Math.max(
+        1,
+        percentCount(count, rule.eliminate, false)
+      )
+    : 0;
+
+// В классах выше F минимум один участник понижается.
+const demoteCount =
+  classIndex > 0 &&
+  count > 0 &&
+  rule.demote > 0
+    ? Math.max(
+        1,
+        percentCount(count, rule.demote, false)
+      )
+    : 0;
+
+// Сколько мест необходимо зарезервировать.
+const reservedCount = eliminateCount + demoteCount;
+
+// Базовое количество повышаемых участников по проценту.
+const promoteBaseCount =
+  classIndex < TOURNAMENT_CONFIG.classes.length - 1 &&
+  rule.promote > 0
+    ? percentCount(count, rule.promote, true)
+    : 0;
+
+// Дополнительно повышаем ещё 10 человек.
+// Но не занимаем места, зарезервированные под понижение/вылет.
+const promoteCount =
+  classIndex < TOURNAMENT_CONFIG.classes.length - 1
+    ? Math.min(
+        Math.max(0, count - reservedCount),
+        promoteBaseCount + 10
+      )
+    : 0;
+
+group.forEach((row, index) => {
+  let newClass = className;
+  let movement = 'stay';
+
+  // Верхняя группа переходит в следующий класс.
+  if (index < promoteCount) {
+    newClass = TOURNAMENT_CONFIG.classes[classIndex + 1];
+    movement = 'promoted';
+
+  // В F нижняя группа выбывает.
+  } else if (
+    classIndex === 0 &&
+    eliminateCount > 0 &&
+    index >= count - eliminateCount
+  ) {
+    movement = 'eliminated';
+
+  // В E и выше нижняя группа переходит на класс ниже.
+  } else if (
+    classIndex > 0 &&
+    demoteCount > 0 &&
+    index >= count - demoteCount
+  ) {
+    newClass = TOURNAMENT_CONFIG.classes[classIndex - 1];
+    movement = 'demoted';
+  }
+
+  row.movement = movement;
+  row.newClass = newClass;
+});
+  });
+
+  return rows;
+}
+
+
+// Фактически применяет переходы и сохраняет их.
+function applyTournamentTransitions(
+  tournament,
+  tournamentData,
+  rows,
+  dateStr
+) {
+  // Используем тот же расчёт, что и при предварительном отображении.
+  previewTournamentTransitions(rows);
+
+  rows.forEach(row => {
+    const participant = tournament.roster.find(
+      item => item.id === row.id
+    );
+
+    if (participant) {
+      participant.active = row.movement !== 'eliminated';
+
+      if (participant.active) {
+        participant.leagueClass = row.newClass;
+      }
+    }
+
+    if (row.type === 'player') {
+      tournamentData.player.lastResult = {
+        tournamentId: tournament.id,
+        date: dateStr || null,
+        place: row.rank,
+        class: row.leagueClass,
+        movement: row.movement,
+        newClass: row.newClass,
+        points: row.totalPoints
+      };
+
+      if (row.movement === 'eliminated') {
+        tournamentData.player.eliminated = true;
+
+      } else {
+        tournamentData.player.currentClass = row.newClass;
+
+        const oldBest = TOURNAMENT_CONFIG.classes.indexOf(
+          tournamentData.player.bestClass || 'F'
+        );
+
+        const newBest = TOURNAMENT_CONFIG.classes.indexOf(
+          row.newClass
+        );
+
+        tournamentData.player.bestClass =
+          TOURNAMENT_CONFIG.classes[
+            Math.max(oldBest, newBest)
+          ];
+      }
+
+    } else {
+      const bot = tournamentData.bots.find(
+        item => item.id === row.id
+      );
+
+      if (!bot) return;
+
+      bot.active = row.movement !== 'eliminated';
+
+      if (bot.active) {
+        // Меняем только текущий класс.
+        // Потенциал бота остаётся неизменным.
+        bot.leagueClass = row.newClass;
+      }
+    }
+  });
+
+  return rows.find(row => row.id === 'player') || null;
+}
+
+function finalizeTournamentDay(tournament, tournamentData, dateStr) {
+  const day = ensureTournamentBotScores(tournament, dateStr);
+
+  if (day.finalized) return;
+
+  // 1. Фиксируем очки всех участников.
+  const rows = calculateTournamentStandings(
+    tournament,
+    dateStr
+  );
+
+    // Списанные очки уже учтены в сохранённой сумме.
+  // Сбрасываем временный штраф, чтобы не вычесть его повторно.
+  if (rows.some(row => row.id === 'player')) {
+    tournament.playerPointPenalty = 0;
+  }
+
+  const dayNumber = Math.round(
+    (new Date(dateStr + 'T12:00:00') -
+     new Date(tournament.startDate + 'T12:00:00')) / 86400000
+  ) + 1;
+
+  const playerRow = rows.find(row => row.id === 'player');
+
+  const playerClassSize = playerRow
+    ? rows.filter(row =>
+        row.leagueClass === playerRow.leagueClass
+      ).length
+    : 0;
+
+  // 2. Рассчитываем переходы игрока и всех ботов.
+  applyTournamentTransitions(
+    tournament,
+    tournamentData,
+    rows,
+    dateStr
+  );
+
+  // 3. Сохраняем результат дня для календаря.
+  day.finalized = true;
+
+  day.snapshot = {
+    date: dateStr,
+    dayNumber,
+
+    player: playerRow ? {
+      dailyPoints: playerRow.dailyPoints,
+      totalPoints: playerRow.totalPoints,
+      leagueClass: playerRow.leagueClass,
+      rank: playerRow.rank,
+      classSize: playerClassSize,
+      movement: playerRow.movement,
+      newClass: playerRow.newClass
+    } : null,
+
+    activeParticipantsAfter: tournament.roster.filter(
+      item => item.active !== false
+    ).length,
+
+    classCountsAfter: TOURNAMENT_CONFIG.classes.reduce(
+      (result, className) => {
+        result[className] = tournament.roster.filter(
+          item =>
+            item.active !== false &&
+            item.leagueClass === className
+        ).length;
+
+        return result;
+      },
+      {}
+    )
+  };
+
+  const playerEliminated =
+    playerRow && playerRow.movement === 'eliminated';
+
+  const isLastDay = dateStr === tournament.endDate;
+
+  // Если турнир продолжается, готовим составы к следующему дню.
+if (!playerEliminated && !isLastDay) {
+
+  const nextDate = tournamentAddDays(dateStr, 1);
+
+  if (nextDate <= tournament.endDate) {
+
+    const nextDayFill = ensureDailyClassMinimum(
+      tournament,
+      nextDate
+    );
+
+    if (nextDayFill) {
+      day.snapshot.nextDayClassCounts =
+        nextDayFill.countsAfter;
+
+      day.snapshot.nextDayAdditions =
+        nextDayFill.additions;
+    }
+  }
+}
+
+  // 4. Завершаем турнир при вылете игрока или окончании 10-го дня.
+  if (playerEliminated || isLastDay) {
+   tournament.result = {
+  date: dateStr,
+
+  // Место определяется в исходном классе.
+  place: playerRow ? playerRow.rank : null,
+
+  // Сохраняем оба класса.
+  sourceClass: playerRow
+    ? playerRow.leagueClass
+    : tournament.playerStartClass,
+
+  // Итоговый класс — после распределения.
+  class: playerRow
+    ? playerRow.newClass
+    : tournament.playerStartClass,
+
+  points: playerRow ? playerRow.totalPoints : 0,
+
+  movement: playerRow
+    ? playerRow.movement
+    : 'unknown',
+
+  newClass: playerRow
+    ? playerRow.newClass
+    : tournament.playerStartClass,
+
+  completedAt: new Date().toISOString()
+};
+
+    tournament.status = 'completed';
+    tournament.completedAt = new Date().toISOString();
+
+    tournamentData.activeTournamentId = null;
+  }
+
+  tournamentWriteJson(
+    TOURNAMENT_STORAGE_KEY,
+    tournamentData
+  );
+}
+
+function processTournamentProgress() {
+
+  let tournamentData = getTournamentData();
+
+  let tournament = getActiveTournament(tournamentData);
+
+  if (!tournament) return null;
+
+  const todayStr = getTournamentCurrentDate(tournament);
+
+  let dateStr = tournament.startDate;
+
+
+  // Последовательно закрываем прошедшие дни.
+  for (let i = 0; i < tournament.durationDays; i++) {
+
+    if (
+      dateStr >= todayStr ||
+      dateStr > tournament.endDate
+    ) {
+      break;
+    }
+
+    let existingDay = tournament.days?.[dateStr];
+
+    if (!existingDay?.finalized) {
+
+      // Сначала пересчитываем начисления.
+      syncCreditsFromLogs();
+
+      // Важно: загружаем свежие данные,
+      // чтобы не перезаписать пересчитанные очки.
+      tournamentData = getTournamentData();
+
+      tournament = getActiveTournament(tournamentData);
+
+      if (!tournament) return null;
+
+      existingDay = tournament.days?.[dateStr];
+
+      if (!existingDay?.finalized) {
+
+        finalizeTournamentDay(
+          tournament,
+          tournamentData,
+          dateStr
+        );
+      }
+    }
+
+    if (tournament.status !== 'active') {
+      return tournament;
+    }
+
+    dateStr = tournamentAddDays(dateStr, 1);
+  }
+
+
+  // Пересчитываем текущий игровой день.
+  if (
+    tournament.status === 'active' &&
+    todayStr >= tournament.startDate &&
+    todayStr <= tournament.endDate
+  ) {
+
+    syncCreditsFromLogs();
+
+    // Повторно загружаем актуальные данные.
+    tournamentData = getTournamentData();
+
+    tournament = getActiveTournament(tournamentData);
+
+    if (
+      tournament &&
+      tournament.status === 'active'
+    ) {
+
+      ensureTournamentBotScores(
+        tournament,
+        todayStr
+      );
+
+      tournamentWriteJson(
+        TOURNAMENT_STORAGE_KEY,
+        tournamentData
+      );
+    }
+  }
+
+  return tournament;
+}
+
+function getTournamentLiveStandings() {
+  const tournament = processTournamentProgress();
+
+  if (!tournament || tournament.status !== 'active') {
+    return null;
+  }
+
+  const todayStr = getTournamentCurrentDate(tournament);
+
+  if (
+    todayStr < tournament.startDate ||
+    todayStr > tournament.endDate
+  ) {
+    return null;
+  }
+
+  const rows = calculateTournamentStandings(tournament, todayStr);
+
+// Предварительно рассчитываем переходы участников.
+previewTournamentTransitions(rows);
+
+const playerRow = rows.find(row => row.id === 'player');
+
+  if (!playerRow) return null;
+
+  return {
+  tournament,
+  player: playerRow,
+
+  // Все активные участники всех классов.
+  allStandings: rows,
+
+  // Отдельно оставляем рейтинг класса игрока.
+  classStandings: rows
+    .filter(row => row.leagueClass === playerRow.leagueClass)
+    .sort((a, b) => a.rank - b.rank)
+};
+}
+
+function getTournamentMovementColor(movement) {
+  if (movement === 'promoted') return '#6ab06a';
+
+  if (
+    movement === 'demoted' ||
+    movement === 'eliminated'
+  ) {
+    return '#e87575';
+  }
+
+  return '#d9bd79';
+}
+
+// Рассчитывает статус игрока и расстояние до границы перехода.
+function getTournamentPlayerStatusInfo(live) {
+  if (!live || !live.player || !live.classStandings?.length) {
+    return null;
+  }
+
+  const player = live.player;
+
+  const rows = [...live.classStandings]
+    .sort((a, b) => a.rank - b.rank);
+
+  const playerPoints = Number(player.totalPoints) || 0;
+  const movement = player.movement || 'stay';
+
+  let label = tournamentText('staysInClass', {
+  className: player.leagueClass
+});
+
+let detail = '';
+let color = '#d9bd79';
+
+// Повышение.
+if (movement === 'promoted') {
+  label = tournamentText('promoting');
+  color = '#6ab06a';
+
+    const promotedRows = rows.filter(
+      row => row.movement === 'promoted'
+    );
+
+    const promotionBoundary =
+      promotedRows[promotedRows.length - 1];
+
+    if (promotionBoundary) {
+      const margin = Math.max(
+        0,
+        playerPoints -
+          (Number(promotionBoundary.totalPoints) || 0)
+      );
+
+      detail = tournamentText('aboveDemotionBoundary', {
+  points: margin.toLocaleString()
+});
+    } else {
+      detail = tournamentText('inPromotionZone');
+    }
+
+  // Выбывание или понижение.
+  } else if (
+    movement === 'eliminated' ||
+    movement === 'demoted'
+  ) {
+    const isEliminated = movement === 'eliminated';
+
+    label = isEliminated
+  ? tournamentText('eliminating')
+  : tournamentText('demotingToClass', {
+      className: player.newClass
+    });
+
+    color = getTournamentMovementColor(movement);
+
+    const safeRows = rows.filter(
+      row => row.movement !== movement
+    );
+
+    const lastSafeRow = safeRows[safeRows.length - 1];
+
+    const needed = lastSafeRow
+      ? Math.max(
+          1,
+          (Number(lastSafeRow.totalPoints) || 0) -
+            playerPoints + 1
+        )
+      : 0;
+
+    detail = isEliminated
+  ? tournamentText('pointsToAvoidElimination', {
+      points: needed.toLocaleString()
+    })
+  : tournamentText('pointsToAvoidDemotion', {
+      points: needed.toLocaleString()
+    });
+
+  // Игрок пока остаётся в своём классе.
+  } else {
+    const promotedRows = rows.filter(
+      row => row.movement === 'promoted'
+    );
+
+    const promotionBoundary =
+      promotedRows[promotedRows.length - 1];
+
+    if (promotionBoundary) {
+      const needed = Math.max(
+        1,
+        (Number(promotionBoundary.totalPoints) || 0) -
+          playerPoints + 1
+      );
+
+      detail = tournamentText('pointsToPromotion', {
+  points: needed.toLocaleString()
+});
+
+    } else {
+      const demotedRows = rows.filter(
+        row => row.movement === 'demoted'
+      );
+
+      const safeRows = rows.filter(
+        row => row.movement !== 'demoted'
+      );
+
+      const lastSafeRow = safeRows[safeRows.length - 1];
+
+      if (demotedRows.length && lastSafeRow) {
+        const margin = Math.max(
+          0,
+          playerPoints -
+            (Number(lastSafeRow.totalPoints) || 0)
+        );
+
+        detail = tournamentText('aboveDemotionBoundary', {
+  points: margin.toLocaleString()
+});
+      } else {
+        detail = tournamentText('noDemotionZoneToday');
+      }
+    }
+  }
+
+  return {
+    label,
+    detail,
+    color,
+    className: player.leagueClass,
+    rank: player.rank,
+    count: rows.length,
+    player
+  };
+}
+
+function maybeShowTournamentDailyPopup() {
+  if (document.hidden) return;
+
+  // Не перекрываем обучение и первоначальный ввод веса.
+  if (
+    document.getElementById('bw-prompt-modal') ||
+    document.getElementById('tutorial-modal') ||
+    (typeof tutorialState !== 'undefined' && tutorialState.active)
+  ) {
+    return;
+  }
+
+  const tournamentData = getTournamentData();
+  const tournament = getActiveTournament(tournamentData);
+
+  if (!tournament || tournament.status !== 'active') {
+  maybeShowTournamentFinalPopup(tournamentData);
+  return;
+}
+
+  if (document.getElementById('tournament-daily-popup')) {
+    return;
+  }
+
+  const live = getTournamentLiveStandings();
+  const info = getTournamentPlayerStatusInfo(live);
+
+  if (!live || !info) return;
+
+  const tournamentDate =
+    getTournamentCurrentDate(tournament);
+
+  // Один показ на каждый игровой день.
+  // DEV-симуляция тоже учитывается.
+  const storageKey =
+    `tournamentDailyPopupV1:${tournament.id}:${tournamentDate}`;
+
+  try {
+    if (localStorage.getItem(storageKey) === '1') {
+      return;
+    }
+  } catch (e) {}
+
+  const dayNumber = Math.max(
+    1,
+    Math.floor(
+      (
+        new Date(tournamentDate + 'T12:00:00') -
+        new Date(tournament.startDate + 'T12:00:00')
+      ) / 86400000
+    ) + 1
+  );
+
+  const duration = Number(tournament.durationDays) || 10;
+
+  try {
+    localStorage.setItem(storageKey, '1');
+  } catch (e) {}
+
+  document.body.insertAdjacentHTML('beforeend', `
+    <div
+      id="tournament-daily-popup"
+      onclick="closeTournamentDailyPopup()"
+      style="
+        position:fixed;
+        inset:0;
+        z-index:10250;
+        background:rgba(0,0,0,.82);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:16px;
+        box-sizing:border-box;
+      "
+    >
+      <div
+        onclick="event.stopPropagation()"
+        style="
+          width:100%;
+          max-width:390px;
+          padding:19px;
+          border:1px solid #665637;
+          border-radius:15px;
+          background:#191919;
+          color:#eee;
+          box-shadow:0 15px 45px rgba(0,0,0,.5);
+        "
+      >
+        <div style="
+          font-size:11px;
+          color:#d9bd79;
+          text-align:center;
+          letter-spacing:.08em;
+        ">
+          ${tournamentText('dailyHeader', { day: dayNumber, duration })}
+        </div>
+
+        <h3 style="
+          text-align:center;
+          margin:8px 0 15px;
+        ">
+          ${tournamentText('todayResult')}
+        </h3>
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          gap:12px;
+          padding:11px;
+          border-radius:10px;
+          background:#24211b;
+        ">
+          <div>
+            <div style="font-size:11px;color:#999">
+              ${tournamentText('classPlace', { className: info.className, rank: info.rank, count: info.count })}
+            </div>
+
+            <strong style="
+              display:block;
+              color:${info.color};
+              font-size:14px;
+              margin-top:5px;
+            ">
+              ${escapeHtml(info.label)}
+            </strong>
+
+            <div style="
+              color:#c5b88f;
+              font-size:11px;
+              margin-top:4px;
+            ">
+              ${escapeHtml(info.detail)}
+            </div>
+          </div>
+
+          <div style="text-align:right">
+            <strong style="font-size:22px">
+              ${Number(live.player.totalPoints || 0).toLocaleString()}
+            </strong>
+
+            <div style="font-size:10px;color:#999">
+              ${tournamentText('totalPoints')}
+            </div>
+
+            <div style="
+              font-size:11px;
+              color:#d9bd79;
+              margin-top:5px;
+            ">
+              +${Number(live.player.dailyPoints || 0).toLocaleString()}
+              ${tournamentText('today')}
+            </div>
+          </div>
+        </div>
+
+        <div style="
+          font-size:11px;
+          color:#777;
+          text-align:center;
+          margin:12px 0;
+        ">
+          ${tournamentDateText(tournamentDate)}
+        </div>
+
+        <button
+          class="mini-btn"
+          onclick="closeTournamentDailyPopup(true)"
+          style="
+            width:100%;
+            padding:11px;
+            background:#29251c;
+            border-color:#796337;
+            color:#f0d17d;
+          "
+        >
+          ${tournamentText('openTournament')}
+        </button>
+
+        <button
+          class="mini-btn"
+          onclick="closeTournamentDailyPopup()"
+          style="width:100%;margin-top:7px"
+        >
+          ${tournamentText('continue')}
+        </button>
+      </div>
+    </div>
+  `);
+}
+
+function maybeShowTournamentFinalPopup(tournamentData) {
+  const completed = (tournamentData.tournaments || [])
+    .filter(item =>
+      item.status === 'completed' && item.result
+    )
+    .sort((a, b) =>
+      String(b.completedAt || b.startedAt)
+        .localeCompare(String(a.completedAt || a.startedAt))
+    );
+
+  const tournament = completed[0];
+
+  if (!tournament) return;
+
+  const key = `tournamentFinalPopupV1:${tournament.id}`;
+
+  try {
+    if (localStorage.getItem(key) === '1') return;
+  } catch (e) {}
+
+  const result = tournament.result;
+
+  const movementText =
+  result.movement === 'eliminated'
+    ? tournamentText('finalEliminated')
+    : result.movement === 'promoted'
+      ? tournamentText('finalPromoted', {
+          className: result.newClass
+        })
+      : result.movement === 'demoted'
+        ? tournamentText('finalDemoted', {
+            className: result.newClass
+          })
+        : tournamentText('finalStayed');
+
+  const color = getTournamentMovementColor(result.movement);
+
+  const date = result.date || tournament.endDate || '';
+
+  try {
+    localStorage.setItem(key, '1');
+  } catch (e) {}
+
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="tournament-final-popup"
+      onclick="closeTournamentFinalPopup()"
+      style="
+        position:fixed;
+        inset:0;
+        z-index:10260;
+        background:rgba(0,0,0,.84);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:16px;
+        box-sizing:border-box;
+      "
+    >
+      <div onclick="event.stopPropagation()" style="
+        width:100%;
+        max-width:370px;
+        padding:20px;
+        background:#191919;
+        border:1px solid #665637;
+        border-radius:15px;
+        color:#eee;
+      ">
+        <div style="
+          text-align:center;
+          font-size:30px
+        ">
+          🏁
+        </div>
+
+        <h3 style="text-align:center;margin:8px 0">
+          ${tournamentText('tournamentCompleted')}
+        </h3>
+
+        <div style="
+          text-align:center;
+          font-size:14px;
+          font-weight:700;
+          color:${color};
+          margin-bottom:14px
+        ">
+          ${movementText}
+        </div>
+
+        <div style="
+          background:#24211b;
+          padding:12px;
+          border-radius:10px;
+        ">
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            margin-bottom:9px;
+            font-size:12px
+          ">
+            <span style="color:#999">${tournamentText('classLabel')}</span>
+            <strong>${result.class}</strong>
+          </div>
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            margin-bottom:9px;
+            font-size:12px
+          ">
+            <span style="color:#999">${tournamentText('placeLabel')}</span>
+            <strong>${result.place || '—'}</strong>
+          </div>
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            margin-bottom:9px;
+            font-size:12px
+          ">
+            <span style="color:#999">${tournamentText('pointsEarnedLabel')}</span>
+            <strong>${Number(result.points || 0).toLocaleString()}</strong>
+          </div>
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            font-size:12px
+          ">
+            <span style="color:#999">${tournamentText('dateLabel')}</span>
+            <strong>${tournamentDateText(date)}</strong>
+          </div>
+        </div>
+
+        <button class="mini-btn"
+          onclick="closeTournamentFinalPopup(true)"
+          style="
+            width:100%;
+            margin-top:13px;
+            background:#29251c;
+            border-color:#796337;
+            color:#f0d17d
+          "
+        >
+          ${tournamentText('viewResult')}
+        </button>
+
+        <button class="mini-btn"
+          onclick="closeTournamentFinalPopup()"
+          style="width:100%;margin-top:7px"
+        >
+          ${tournamentText('continue')}
+        </button>
+      </div>
+    </div>
+  `);
+}
+
+
+function closeTournamentFinalPopup(openResult = false) {
+  const modal = document.getElementById('tournament-final-popup');
+
+  if (modal) modal.remove();
+
+  if (openResult) {
+    ratingActiveTab = 'tournament';
+    openRatingModal();
+  }
+}
+
+function closeTournamentDailyPopup(openTournament = false) {
+  const modal = document.getElementById('tournament-daily-popup');
+
+  if (modal) modal.remove();
+
+  if (openTournament) {
+    const live = getTournamentLiveStandings();
+
+    if (live?.player) {
+      tournamentClassTab = live.player.leagueClass;
+    }
+
+    ratingActiveTab = 'tournament';
+    openRatingModal();
+  }
+}
+
+
+// Проверяем вход обратно в приложение.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    setTimeout(maybeShowTournamentDailyPopup, 250);
+  }
+});
+
+
+// Краткая информация для экрана тренировки.
+function renderTrainingTournamentStatusHtml() {
+  const live = getTournamentLiveStandings();
+
+  // Турнир ещё идёт.
+  if (live) {
+    const info = getTournamentPlayerStatusInfo(live);
+
+    if (!info) return '';
+
+    return `
+      <div style="
+        margin:-5px 0 12px;
+        padding:8px 10px;
+        border:1px solid #3b3426;
+        border-radius:9px;
+        background:#211e18;
+        line-height:1.4;
+      ">
+        <div style="
+          font-size:12px;
+          color:#e0c779;
+          font-weight:700
+        ">
+          🏆 ${tournamentText('classPlace', {
+  className: info.className,
+  rank: info.rank,
+  count: info.count
+})}
+        </div>
+
+        <div style="
+          font-size:11px;
+          color:${info.color};
+          margin-top:3px
+        ">
+          ${info.label} · ${info.detail}
+        </div>
+      </div>
+    `;
+  }
+
+  // Турнир уже завершён или игрок выбыл.
+  const data = getTournamentData();
+  const last = data.player.lastResult;
+
+  if (!last) return '';
+
+  const movementText =
+  last.movement === 'eliminated'
+    ? tournamentText('movementEliminated')
+    : last.movement === 'promoted'
+      ? tournamentText('movementPromotedToClass', {
+          className: last.newClass
+        })
+      : last.movement === 'demoted'
+        ? tournamentText('movementDemotedToClass', {
+            className: last.newClass
+          })
+        : tournamentText('tournamentCompleted');
+
+  const color = getTournamentMovementColor(last.movement);
+
+  return `
+    <div style="
+      margin:-5px 0 12px;
+      padding:9px 10px;
+      border:1px solid ${color}55;
+      border-radius:9px;
+      background:#211e18;
+      line-height:1.45;
+    ">
+      <div style="
+        font-size:12px;
+        font-weight:700;
+        color:${color}
+      ">
+        🏁 ${movementText}
+      </div>
+
+      <div style="
+        font-size:11px;
+        color:#ddd;
+        margin-top:4px
+      ">
+        ${tournamentText('lastResultSummary', {
+  className: last.class,
+  place: last.place,
+  points: Number(last.points || 0).toLocaleString()
+})}
+      </div>
+
+      <div style="
+        font-size:10px;
+        color:#999;
+        margin-top:3px
+      ">
+        ${tournamentText('resultDate', {
+  date: tournamentDateText(last.date)
+})}
+      </div>
+    </div>
+  `;
+}
+
+
+
+
+// Прокручивает таблицу к строке игрока.
+function scrollTournamentPlayerIntoView() {
+  requestAnimationFrame(() => {
+    const row = document.getElementById('tournament-player-row');
+
+    const list = row?.closest('.tournament-standings-scroll');
+
+    if (!row || !list) return;
+
+    const listRect = list.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+
+    const targetTop =
+      list.scrollTop +
+      rowRect.top -
+      listRect.top -
+      list.clientHeight / 2 +
+      rowRect.height / 2;
+
+    list.scrollTo({
+      top: Math.max(0, targetTop),
+      behavior: 'smooth'
+    });
+  });
+}
+
+// DEV: завершает текущий игровой день и переносит турнир
+// на следующий день, не изменяя реальную дату.
+function simulateNextTournamentDay() {
+      if (!DEV_TOOLS_ENABLED) return;
+  processTournamentProgress();
+
+  const tournamentData = getTournamentData();
+  const tournament = getActiveTournament(tournamentData);
+
+  if (!tournament) {
+    alert(tournamentText('noActiveTournament'));
+    openRatingModal();
+    return;
+  }
+
+  const dateStr = getTournamentCurrentDate(tournament);
+
+  if (
+    dateStr < tournament.startDate ||
+    dateStr > tournament.endDate
+  ) {
+    alert(tournamentText('alreadyCompleted'));
+    openRatingModal();
+    return;
+  }
+
+  const dayNumber = Math.round(
+    (new Date(dateStr + 'T12:00:00') -
+     new Date(tournament.startDate + 'T12:00:00')) / 86400000
+  ) + 1;
+
+  if (!confirm(
+    tournamentText('confirmFinishDay', {
+  day: dayNumber
+})
+  )) return;
+
+  const day = tournament.days && tournament.days[dateStr];
+
+  if (day && day.finalized) {
+    alert(tournamentText('dayAlreadyCompleted'));
+    return;
+  }
+
+  // Полностью рассчитываем текущий день.
+  finalizeTournamentDay(
+    tournament,
+    tournamentData,
+    dateStr
+  );
+
+  // Если турнир не закончился, двигаем только его дату.
+  if (tournament.status === 'active') {
+    tournament.simulatedDate =
+      tournamentAddDays(dateStr, 1);
+
+    tournamentWriteJson(
+      TOURNAMENT_STORAGE_KEY,
+      tournamentData
+    );
+  }
+
+  openRatingModal();
+}
+
+function getTournamentAchievementRecord(tournament) {
+  const result = tournament?.result;
+
+  if (!result) return null;
+
+  const finalizedDates = Object.keys(
+    tournament.days || {}
+  )
+    .filter(date => tournament.days[date]?.finalized)
+    .sort();
+
+  const completionDate =
+    result.date ||
+    finalizedDates[finalizedDates.length - 1] ||
+    String(
+      tournament.completedAt ||
+      result.completedAt ||
+      tournament.endDate ||
+      tournament.startDate ||
+      ''
+    ).slice(0, 10);
+
+  const finalPlayerSnapshot =
+    tournament.days?.[completionDate]?.snapshot?.player || null;
+
+  const placeNumber = Number(result.place);
+
+  const place =
+    result.place !== null &&
+    result.place !== undefined &&
+    Number.isFinite(placeNumber) &&
+    placeNumber > 0
+      ? placeNumber
+      : null;
+
+  return {
+    tournamentId: tournament.id,
+
+    // Класс, в котором игрок занял указанное место.
+tournamentClass:
+  result.sourceClass ||
+  result.class ||
+  tournament.playerStartClass ||
+  'F',
+
+// Класс после завершения распределения.
+reachedClass:
+  result.class ||
+  result.newClass ||
+  tournament.playerStartClass ||
+  'F',
+
+    date: completionDate,
+    startDate: tournament.startDate || '',
+    place,
+    points: Number(result.points) || 0,
+    movement: result.movement || 'unknown',
+
+    classSize:
+      Number(result.classSize || finalPlayerSnapshot?.classSize) || null,
+
+    completedAt: String(
+      tournament.completedAt ||
+      result.completedAt ||
+      completionDate
+    )
+  };
+}
+
+
+function getTournamentAchievementReward(place) {
+  if (place === 1) {
+    return {
+      icon: '🏆',
+      title: tournamentText('winnerTitle'),
+      short: tournamentText('firstPlace')
+    };
+  }
+
+  if (place !== null && place <= 3) {
+    return {
+      icon: '🥇',
+      title: tournamentText('podiumTitle'),
+      short: tournamentText('placeShort', { place })
+    };
+  }
+
+  if (place !== null && place <= 10) {
+    return {
+      icon: '⭐',
+      title: tournamentText('top10Title'),
+      short: tournamentText('placeShort', { place })
+    };
+  }
+
+  return {
+    icon: '🎖️',
+    title: tournamentText('participantTitle'),
+    short: place
+      ? tournamentText('placeShort', { place })
+      : tournamentText('participation')
+  };
+}
+
+function openTournamentAchievementDetails(tournamentId) {
+  const tournament = (getTournamentData().tournaments || [])
+    .find(item => String(item.id) === String(tournamentId));
+
+  if (!tournament || !tournament.result) return;
+
+  const item = getTournamentAchievementRecord(tournament);
+
+  if (!item) return;
+
+  const reward = getTournamentAchievementReward(item.place);
+
+  const movementMap = {
+  promoted: tournamentText('movementPromoted'),
+  demoted: tournamentText('movementDemoted'),
+  eliminated: tournamentText('movementEliminated'),
+  stay: tournamentText('movementStay')
+};
+
+const movementText =
+  movementMap[item.movement] || tournamentText('completed');
+
+  const movementColor =
+    getTournamentMovementColor(item.movement);
+
+  const dateLabel = item.date
+    ? new Date(item.date + 'T12:00:00')
+        .toLocaleDateString(tournamentText('dateLocale'))
+    : '—';
+
+  const classPlace = item.classSize
+    ? `${item.place || '—'} / ${item.classSize}`
+    : (item.place || '—');
+
+  const old = document.getElementById(
+    'tournament-achievement-detail'
+  );
+
+  if (old) old.remove();
+
+  document.body.insertAdjacentHTML('beforeend', `
+    <div
+      id="tournament-achievement-detail"
+      onclick="closeTournamentAchievementDetails(event)"
+      style="
+        position:fixed;
+        inset:0;
+        z-index:10240;
+        background:rgba(0,0,0,.82);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:16px;
+        box-sizing:border-box;
+      "
+    >
+      <div
+        onclick="event.stopPropagation()"
+        style="
+          width:100%;
+          max-width:390px;
+          max-height:85vh;
+          overflow-y:auto;
+          padding:19px;
+          border:1px solid #665637;
+          border-radius:15px;
+          background:#191919;
+          color:#eee;
+          box-shadow:0 15px 45px rgba(0,0,0,.5);
+        "
+      >
+        <div style="text-align:center;font-size:36px">
+          ${reward.icon}
+        </div>
+
+        <h3 style="
+          text-align:center;
+          margin:7px 0 4px;
+        ">
+          ${reward.title}
+        </h3>
+
+        <div style="
+          text-align:center;
+          color:#d9bd79;
+          font-size:13px;
+        ">
+          ${tournamentText('classAndReward', { className: item.tournamentClass, reward: reward.short })}
+        </div>
+
+        <div style="margin-top:16px;border-top:1px solid #333">
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:10px 0;
+            border-bottom:1px solid #2e2e2e;
+          ">
+            <span style="color:#999">${tournamentText('resultDateLabel')}</span>
+            <strong>${dateLabel}</strong>
+          </div>
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:10px 0;
+            border-bottom:1px solid #2e2e2e;
+          ">
+            <span style="color:#999">${tournamentText('placeInClass')}</span>
+            <strong>${classPlace}</strong>
+          </div>
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:10px 0;
+            border-bottom:1px solid #2e2e2e;
+          ">
+            <span style="color:#999">${tournamentText('classAfterResult')}</span>
+            <strong>${escapeHtml(item.reachedClass)}</strong>
+          </div>
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:10px 0;
+            border-bottom:1px solid #2e2e2e;
+          ">
+            <span style="color:#999">${tournamentText('resultLabel')}</span>
+            <strong style="color:${movementColor}">
+              ${movementText}
+            </strong>
+          </div>
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:10px 0;
+            border-bottom:1px solid #2e2e2e;
+          ">
+            <span style="color:#999">${tournamentText('pointsEarnedLabel')}</span>
+            <strong>${item.points.toLocaleString()}</strong>
+          </div>
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            padding:10px 0;
+          ">
+            <span style="color:#999">${tournamentText('tournamentStarted')}</span>
+            <strong>${item.startDate || '—'}</strong>
+          </div>
+
+        </div>
+
+        <button
+          class="mini-btn"
+          onclick="closeTournamentAchievementDetails()"
+          style="width:100%;margin-top:13px"
+        >
+          ${t('common.close')}
+        </button>
+      </div>
+    </div>
+  `);
+}
+
+
+function closeTournamentAchievementDetails(event) {
+  const modal = document.getElementById(
+    'tournament-achievement-detail'
+  );
+
+  if (!modal) return;
+
+  if (event && event.target !== modal) return;
+
+  modal.remove();
+}
+
+function renderTournamentAchievementsHtml(tournamentData) {
+  const results = (tournamentData.tournaments || [])
+    .filter(item =>
+      item.status === 'completed' && item.result
+    )
+    .map(getTournamentAchievementRecord)
+    .filter(Boolean)
+    .sort((a, b) => {
+      // Главный приоритет — класс.
+      const aClass = TOURNAMENT_CONFIG.classes.indexOf(
+        a.tournamentClass
+      );
+
+      const bClass = TOURNAMENT_CONFIG.classes.indexOf(
+        b.tournamentClass
+      );
+
+      if (aClass !== bClass) {
+        return bClass - aClass;
+      }
+
+      // Внутри класса лучшее место располагается выше.
+      const aPlace = a.place ?? Number.POSITIVE_INFINITY;
+      const bPlace = b.place ?? Number.POSITIVE_INFINITY;
+
+      if (aPlace !== bPlace) {
+        return aPlace - bPlace;
+      }
+
+      return String(b.completedAt).localeCompare(
+        String(a.completedAt)
+      );
+    });
+
+  const highestClass = results.length
+    ? results[0].tournamentClass
+    : '—';
+
+  const bestResult = results
+    .filter(item => item.place !== null)
+    .sort((a, b) =>
+      a.place - b.place ||
+      TOURNAMENT_CONFIG.classes.indexOf(b.tournamentClass) -
+      TOURNAMENT_CONFIG.classes.indexOf(a.tournamentClass)
+    )[0] || null;
+
+  const awardsHtml = results.length
+    ? results.map((item, index) => {
+        const reward = getTournamentAchievementReward(item.place);
+
+        const dateLabel = item.date
+          ? new Date(item.date + 'T12:00:00')
+              .toLocaleDateString(tournamentText('dateLocale'))
+          : tournamentText('unknownDate');
+
+        const id = String(item.tournamentId || '')
+          .replace(/'/g, "\\'");
+
+        return `
+          <button
+            type="button"
+            onclick="openTournamentAchievementDetails('${id}')"
+            style="
+              width:100%;
+              min-width:0;
+              padding:13px;
+              border:1px solid #665637;
+              border-radius:11px;
+              background:linear-gradient(145deg,#302a1d,#202020);
+              color:#eee;
+              text-align:left;
+              cursor:pointer;
+              display:flex;
+              align-items:center;
+              gap:11px;
+              font-family:inherit;
+            "
+          >
+            <span style="
+              font-size:28px;
+              flex:0 0 34px;
+              text-align:center;
+            ">
+              ${reward.icon}
+            </span>
+
+            <span style="min-width:0;flex:1">
+              <strong style="
+                display:block;
+                font-size:13px;
+              ">
+                ${reward.title}
+              </strong>
+
+              <span style="
+                display:block;
+                color:#d9bd79;
+                font-size:11px;
+                margin-top:3px;
+              ">
+                ${tournamentText('classAndReward', { className: item.tournamentClass, reward: reward.short })}
+              </span>
+
+              <span style="
+                display:block;
+                color:#999;
+                font-size:10px;
+                margin-top:3px;
+              ">
+                ${tournamentText('dateAndPoints', {
+  date: dateLabel,
+  points: item.points.toLocaleString()
+})}
+              </span>
+            </span>
+
+            <span style="
+              color:#a89569;
+              font-size:18px;
+            ">›</span>
+          </button>
+        `;
+      }).join('')
+    : `
+      <div style="
+        padding:14px;
+        color:#888;
+        font-size:12px;
+      ">
+        ${tournamentText('noCompletedTournaments')}
+        ${tournamentText('rewardAfterCompletion')}
+      </div>
+    `;
+
+  return `
+    <div class="ex" style="
+      padding:14px;
+      margin-bottom:12px;
+    ">
+      <div style="
+        font-size:15px;
+        font-weight:700;
+        margin-bottom:7px;
+      ">
+        ${tournamentText('awardBoard')}
+      </div>
+
+      <div style="
+        font-size:11px;
+        color:#999;
+        line-height:1.45;
+        margin-bottom:13px;
+      ">
+        ${tournamentText('awardOrder')}
+      </div>
+
+      <div class="tournament-awards-board" style="
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+        gap:8px;
+      ">
+        ${awardsHtml}
+      </div>
+
+      <div style="
+        display:flex;
+        flex-wrap:wrap;
+        gap:12px;
+        margin-top:14px;
+        padding-top:10px;
+        border-top:1px solid #333;
+        font-size:11px;
+        color:#999;
+      ">
+        <span>
+          	${tournamentText('completedCount')}:
+          <strong style="color:#ddd">${results.length}</strong>
+        </span>
+
+        <span>
+          ${tournamentText('bestPlace')}:
+          <strong style="color:#ddd">
+            ${bestResult
+              ? `${bestResult.place} · ${escapeHtml(bestResult.tournamentClass)}`
+              : '—'
+            }
+          </strong>
+        </span>
+
+        <span>
+          ${tournamentText('highestClass')}
+          <strong style="color:#d9bd79">
+            ${escapeHtml(highestClass)}
+          </strong>
+        </span>
+      </div>
+    </div>
+  `;
+}
+
+
+function renderTournamentCalendarHtml(tournamentData, live) {
+  const active = getActiveTournament(tournamentData);
+
+  const completed = tournamentData.tournaments
+    .filter(item => item.status === 'completed')
+    .sort((a, b) =>
+      String(b.completedAt || b.startedAt)
+        .localeCompare(String(a.completedAt || a.startedAt))
+    );
+
+  const tournament = active || completed[0];
+
+  if (!tournament) {
+    return `
+      <div class="ex" style="padding:14px;color:#888;font-size:13px">
+        ${tournamentText('calendarAfterFirstTournament')}
+      </div>
+    `;
+  }
+
+  const todayStr = active
+  ? getTournamentCurrentDate(active)
+  : fmt(todayDate());
+  const duration = tournament.durationDays || 10;
+  const cells = [];
+
+  for (let i = 0; i < duration; i++) {
+    const dateStr = tournamentAddDays(tournament.startDate, i);
+    const day = tournament.days && tournament.days[dateStr];
+
+    let player = day?.snapshot?.player || null;
+
+    // Живые данные для сегодняшнего дня.
+    if (
+      active &&
+      dateStr === todayStr &&
+      live &&
+      live.player
+    ) {
+      player = {
+        dailyPoints: live.player.dailyPoints,
+        totalPoints: live.player.totalPoints,
+        leagueClass: live.player.leagueClass,
+        rank: live.player.rank,
+        classSize: live.classStandings.length,
+        movement: live.player.movement,
+newClass: live.player.newClass
+      };
+    }
+
+    const isFuture = active && dateStr > todayStr;
+    const dateLabel = tournamentDateText(dateStr, {
+  day: '2-digit',
+  month: '2-digit'
+});
+
+    const movementText = player?.movement === 'promoted'
+  ? `${tournamentText('movementPromoted')}`
+  : player?.movement === 'demoted'
+    ? `${tournamentText('movementDemoted')}`
+    : player?.movement === 'eliminated'
+      ? `${tournamentText('movementEliminated')}`
+      : '';
+
+const movementColor = getTournamentMovementColor(
+  player?.movement
+);
+
+    cells.push(`
+      <div style="
+        min-width:0;
+        padding:9px 4px;
+        border-radius:9px;
+        background:${
+          dateStr === todayStr && active
+            ? '#293326'
+            : 'var(--card2,#242424)'
+        };
+        border:1px solid ${
+          dateStr === todayStr && active
+            ? '#6a9c5d'
+            : 'var(--border,#444)'
+        };
+        text-align:center;
+        opacity:${isFuture ? .4 : 1}
+      ">
+        <div style="font-size:10px;color:#999">
+          ${tournamentText('calendarDay', { day: i + 1 })}
+        </div>
+
+        <div style="font-size:10px;color:#777;margin-top:3px">
+          ${dateLabel}
+        </div>
+
+        ${
+          player
+            ? `
+              <strong style="display:block;font-size:18px;margin-top:7px">
+                ${player.rank}
+              </strong>
+
+              <div style="font-size:10px;color:#999">${tournamentText('calendarPlace')}</div>
+
+              <div style="font-size:12px;color:#d9bd79;margin-top:5px">
+                ${player.leagueClass}
+              </div>
+
+              <div style="font-size:11px;color:#aaa;margin-top:5px">
+                +${player.dailyPoints || 0}
+              </div>
+
+              <div style="font-size:9px;color:#888;margin-top:3px">
+                ${tournamentText('totalPointsSuffix', { points: Number(player.totalPoints || 0).toLocaleString() })}
+              </div>
+
+              ${
+                movementText
+                  ? `<div style="font-size:9px;color:${movementColor};margin-top:5px">${movementText}</div>`
+                  : ''
+              }
+            `
+            : `
+              <div style="font-size:20px;color:#555;margin-top:15px">
+                —
+              </div>
+            `
+        }
+      </div>
+    `);
+  }
+
+  return `
+    <div class="ex" style="padding:14px">
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:8px;
+        margin-bottom:13px
+      ">
+        <strong style="font-size:14px">${tournamentText('calendarTitle')}</strong>
+        <span style="font-size:11px;color:#999">
+          ${active ? tournamentText('current') : tournamentText('completed')}
+        </span>
+      </div>
+
+      <div style="
+        display:grid;
+        grid-template-columns:repeat(5,minmax(0,1fr));
+        gap:6px
+      ">
+        ${cells.join('')}
+      </div>
+
+      <div style="font-size:10px;color:#888;margin-top:10px;line-height:1.5">
+  ${tournamentText('calendarLegend')}
+</div>
+    </div>
+  `;
+}
+
+let tournamentClassTab = null;
+
+function switchTournamentClassTab(className) {
+  tournamentClassTab = className;
+  openRatingModal();
+}
+
+function renderTournamentStandingsHtml(
+  allRows,
+  playerClass
+) {
+  const availableClasses = TOURNAMENT_CONFIG.classes.filter(
+    className =>
+      allRows.some(row => row.leagueClass === className)
+  );
+
+  if (!availableClasses.length) {
+    return `
+      <div style="padding:15px;color:#888">
+        ${tournamentText('noParticipants')}
+      </div>
+    `;
+  }
+
+  if (!availableClasses.includes(tournamentClassTab)) {
+    tournamentClassTab =
+      availableClasses.includes(playerClass)
+        ? playerClass
+        : availableClasses[0];
+  }
+
+  const activeClass = tournamentClassTab;
+
+  const tabsHtml = availableClasses.map(className => {
+    const count = allRows.filter(
+      row => row.leagueClass === className
+    ).length;
+
+    const active = className === activeClass;
+    const isPlayerClass = className === playerClass;
+
+    return `
+      <button
+        onclick="switchTournamentClassTab('${className}')"
+        style="
+          flex:0 0 auto;
+          min-width:65px;
+          padding:9px 12px;
+          border-radius:8px;
+          border:1px solid ${
+  active ? '#92783e' :
+  isPlayerClass ? '#b79b55' :
+  '#383838'
+};
+
+background:${
+  active ? '#38301f' :
+  isPlayerClass ? '#29251c' :
+  '#242424'
+};
+
+color:${active || isPlayerClass ? '#f0d17d' : '#999'};
+          font-size:12px;
+          font-weight:${active ? '700' : '500'};
+          cursor:pointer;
+        "
+      >
+        ${className}${isPlayerClass ? ' ★' : ''}
+        <span style="
+          opacity:.65;
+          font-size:10px;
+          margin-left:3px
+        ">${count}</span>
+      </button>
+    `;
+  }).join('');
+
+  const classRows = allRows
+    .filter(row => row.leagueClass === activeClass)
+    .sort((a, b) => a.rank - b.rank);
+
+  const standingsHtml = classRows.map(row => {
+    const isPlayer = row.id === 'player';
+
+    const isRed =
+      row.movement === 'demoted' ||
+      row.movement === 'eliminated';
+
+    const color =
+      row.movement === 'promoted' ? '#6ab06a' :
+      isRed ? '#e87575' :
+      isPlayer ? '#e8c46d' : '#ddd';
+
+    const movementText =
+  row.movement === 'promoted'
+    ? tournamentText('rowPromoted')
+    : row.movement === 'eliminated'
+      ? tournamentText('rowEliminated')
+      : row.movement === 'demoted'
+        ? tournamentText('rowDemotedTo', { className: row.newClass })
+        : '';
+
+    return `
+      <div
+        ${isPlayer ? 'id="tournament-player-row"' : ''}
+        style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          gap:8px;
+          padding:8px 7px;
+          border-bottom:1px solid var(--border,#333);
+          border-radius:${isPlayer ? '6px' : '0'};
+          background:${isPlayer ? '#3a321f' : 'transparent'};
+          color:${color};
+          font-size:12px;
+        "
+      >
+        <span style="min-width:0;flex:1">
+          <strong>${row.rank}.</strong>
+
+          ${isPlayer
+  ? tournamentText('you')
+  : tournamentText('participant', { id: row.id.slice(-4) })
+}
+
+          ${movementText ? `
+            <span style="
+              display:block;
+              font-size:10px;
+              margin-top:3px;
+              color:${getTournamentMovementColor(row.movement)};
+            ">
+              ${movementText}
+            </span>
+          ` : ''}
+        </span>
+
+        <span style="text-align:right;white-space:nowrap">
+          <strong>${row.totalPoints.toLocaleString()}</strong>
+
+          <small style="
+            display:block;
+            color:#888;
+            font-size:9px;
+          ">
+            ${tournamentText('dailyPointsShort', { points: row.dailyPoints || 0 })}
+          </small>
+        </span>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="tournament-standings">
+
+      <!-- Панель классов не входит в прокручиваемый список -->
+      <div class="tournament-class-tabs" style="
+        background:#191919;
+        padding:7px 0 9px;
+        border-bottom:1px solid #333;
+      ">
+        <div style="
+          display:flex;
+          gap:6px;
+          overflow-x:auto;
+          padding-bottom:3px;
+          -webkit-overflow-scrolling:touch;
+          scrollbar-width:thin;
+        ">
+          ${tabsHtml}
+        </div>
+      </div>
+
+      <!-- Прокручиваются только участники -->
+      <div class="tournament-standings-scroll" style="
+        max-height:460px;
+        overflow-y:auto;
+        overscroll-behavior:contain;
+        border-top:1px solid var(--border,#333);
+      ">
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          padding:8px 6px;
+          background:#202020;
+          color:#d9bd79;
+          border-bottom:1px solid #444;
+          font-size:11px;
+          font-weight:700;
+        ">
+          <span>${tournamentText('classWithName', { className: activeClass })}</span>
+          <span>${tournamentText('participantCount', { count: classRows.length })}</span>
+        </div>
+
+        <div>
+          ${standingsHtml}
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
+
+function renderTournamentPanelHtml() {
+  processTournamentProgress();
+
+  const tournamentData = getTournamentData();
+  const credits = syncCreditsFromLogs();
+  const active = getActiveTournament(tournamentData);
+
+  const playerClass = active
+  ? (tournamentData.player.currentClass || 'F')
+  : 'F';
+  const balance = credits.balance || 0;
+
+  // Турнир ещё не запущен
+  if (!active) {
+    const last = tournamentData.player.lastResult;
+    const canStart = balance >= TOURNAMENT_CONFIG.entryFee;
+
+      const lastMovementText = last
+  ? (
+      last.movement === 'eliminated'
+        ? tournamentText('movementEliminated')
+        : last.movement === 'promoted'
+          ? tournamentText('movementPromotedToClass', {
+              className: last.newClass
+            })
+          : last.movement === 'demoted'
+            ? tournamentText('movementDemotedToClass', {
+                className: last.newClass
+              })
+            : tournamentText('movementStay')
+    )
+  : '';
+
+  const lastMovementColor = last
+    ? getTournamentMovementColor(last.movement)
+    : '#999';
+
+    return `
+      <div class="ex" style="margin-bottom:14px;padding:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong>	${tournamentText('panelTitle')}</strong>
+          <strong style="font-size:20px">${playerClass}</strong>
+        </div>
+
+        <div style="font-size:13px;color:var(--muted,#999);margin-top:8px">
+          ${tournamentText('yourClass')}
+        </div>
+
+        <div style="margin-top:12px;font-size:14px">
+          ${tournamentText('balanceCredits', { balance: balance.toLocaleString() })}
+        </div>
+
+        ${last ? `
+  <div style="
+    margin-top:12px;
+    padding:12px;
+    border-radius:10px;
+    background:#211e18;
+    border:1px solid ${lastMovementColor}66;
+  ">
+    <div style="
+      font-size:11px;
+      color:#999;
+      margin-bottom:5px
+    ">
+      	${tournamentText('lastTournamentResult')}
+    </div>
+
+    <strong style="
+      display:block;
+      font-size:14px;
+      color:${lastMovementColor}
+    ">
+      ${lastMovementText}
+    </strong>
+
+    <div style="
+      font-size:12px;
+      color:#ddd;
+      margin-top:7px
+    ">
+      ${tournamentText('classLabel')}: ${last.class}
+      ${last.newClass && last.newClass !== last.class
+        ? ` → ${last.newClass}`
+        : ''}
+    </div>
+
+    <div style="
+      font-size:12px;
+      color:#ddd;
+      margin-top:4px
+    ">
+      ${tournamentText('placeLabel')}: ${last.place}
+    </div>
+
+    <div style="
+      font-size:12px;
+      color:#ddd;
+      margin-top:4px
+    ">
+      ${tournamentText('pointsEarnedLabel')}: ${Number(last.points || 0).toLocaleString()}
+    </div>
+
+    <div style="
+      font-size:10px;
+      color:#888;
+      margin-top:6px
+    ">
+      ${tournamentText('dateLabel')}: ${last.date || '—'}
+    </div>
+  </div>
+` : ''}
+
+        <button
+          class="mini-btn"
+          style="width:100%;margin-top:12px;opacity:${canStart ? 1 : .45}"
+          ${canStart ? 'onclick="startTournamentFromModal()"' : 'disabled'}
+        >
+          ${tournamentText('startTournament', { fee: TOURNAMENT_CONFIG.entryFee.toLocaleString() })}
+        </button>
+
+                ${!canStart ? `
+          <div style="font-size:12px;color:#d98e65;margin-top:7px">
+            ${tournamentText('missingCredits', {
+  amount: (TOURNAMENT_CONFIG.entryFee - balance).toLocaleString()
+})}
+          </div>
+        ` : ''}
+        ${DEV_TOOLS_ENABLED ? `
+  <button
+    class="mini-btn"
+    onclick="openDeveloperGrantModal()"
+    style="
+      width:100%;
+      margin-top:9px;
+      background:#29251c;
+      border-color:#796337;
+      color:#f0d17d;
+    ">
+    ${tournamentText('developerGrantButton')}
+  </button>
+` : ''}
+      </div>
+    `;
+  }
+
+  // Активный турнир
+const live = getTournamentLiveStandings();
+
+if (!live) return '';
+
+const todayStr = getTournamentCurrentDate(active);
+
+const dayNumber = Math.floor(
+  (new Date(todayStr + 'T12:00:00') -
+   new Date(active.startDate + 'T12:00:00')) / 86400000
+) + 1;
+
+const rows = live.classStandings;
+const player = live.player;
+const statusInfo = getTournamentPlayerStatusInfo(live);
+
+// Полная турнирная таблица.
+const standingsHtml = renderTournamentStandingsHtml(
+  live.allStandings,
+  player.leagueClass
+);
+
+return `
+  <div class="ex" style="margin-bottom:14px;padding:14px">
+
+    <div style="
+      display:flex;
+      justify-content:space-between;
+      align-items:center
+    ">
+      <strong>${tournamentText('activeTitle', {
+  className: player.leagueClass
+})}</strong>
+
+          <div style="
+      margin:9px 0 12px;
+      padding:9px 11px;
+      border:1px solid #3b3426;
+      border-radius:9px;
+      background:#211e18;
+    ">
+      <div style="
+        font-size:13px;
+        font-weight:700;
+        color:${statusInfo.color}
+      ">
+        ${statusInfo.label}
+      </div>
+
+      <div style="
+        font-size:11px;
+        color:#c5b88f;
+        margin-top:3px
+      ">
+        ${statusInfo.detail}
+      </div>
+    </div>
+
+      <span style="font-size:12px;color:#999">
+        ${tournamentText('dayProgress', { day: dayNumber, duration: active.durationDays || 10 })}
+      </span>
+    </div>
+
+    <div style="display:flex;gap:8px;margin:12px 0">
+
+      <div style="
+        flex:1;
+        background:var(--card2,#222);
+        padding:10px;
+        border-radius:9px
+      ">
+        <div style="font-size:11px;color:#999">
+          ${tournamentText('placeInClass')}
+        </div>
+
+        <strong style="font-size:21px">
+          ${player.rank}
+        </strong>
+
+        <span style="font-size:11px;color:#999">
+          / ${rows.length}
+        </span>
+      </div>
+
+      <div style="
+        flex:1;
+        background:var(--card2,#222);
+        padding:10px;
+        border-radius:9px
+      ">
+        <div style="font-size:11px;color:#999">
+          ${tournamentText('tournamentPoints')}
+        </div>
+
+        <strong style="font-size:21px">
+          ${player.totalPoints.toLocaleString()}
+        </strong>
+
+        <div style="font-size:10px;color:#999;margin-top:3px">
+          ${tournamentText('dailyPointsShort', {
+  points: player.dailyPoints || 0
+})}
+        </div>
+      </div>
+
+    </div>
+
+    <div style="font-size:13px;font-weight:600;margin:12px 0 5px">
+      ${tournamentText('allParticipants')}
+    </div>
+
+    <div style="
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px 12px;
+      font-size:10px;
+      margin:7px 0 9px
+    ">
+      <span style="color:#6ab06a">
+        ${tournamentText('legendPromoted')}
+      </span>
+
+      <span style="color:#e87575">
+        ${tournamentText('legendEliminated')}
+      </span>
+
+      <span style="color:#e87575">
+  ${tournamentText('legendDemoted')}
+</span>
+    </div>
+
+        <div style="border-top:1px solid var(--border,#333)">
+  ${standingsHtml}
+</div>
+
+    ${DEV_TOOLS_ENABLED ? `
+  <button
+    class="mini-btn"
+    onclick="simulateNextTournamentDay()"
+    style="
+      width:100%;
+      margin-top:12px;
+      border-color:#796337;
+      background:#29251c;
+      color:#f0d17d
+    "
+  >
+    ${tournamentText('simulateNextDay')}
+  </button>
+
+  <button
+    class="mini-btn"
+    onclick="openDeveloperGrantModal()"
+    style="
+      width:100%;
+      margin-top:9px;
+      background:#29251c;
+      border-color:#796337;
+      color:#f0d17d;
+    ">
+    ${tournamentText('developerGrantButton')}
+  </button>
+
+  <div style="
+    font-size:10px;
+    color:#888;
+    margin-top:6px;
+    line-height:1.45
+  ">
+    ${tournamentText('simulationExplanation')}
+  </div>
+` : ''}
+
+  </div>
+`;
+}
+
+// DEV-инструменты. false — отключены, true — включены.
+const DEV_TOOLS_ENABLED = false;
+
+let ratingActiveTab = 'tournament';
+
+function switchRatingTab(tab) {
+  const allowed = ['tournament', 'achievements', 'rating'];
+
+  if (!allowed.includes(tab)) return;
+
+  // При входе во вкладку турнира выбираем класс игрока.
+  if (tab === 'tournament') {
+    const live = getTournamentLiveStandings();
+
+    if (live?.player) {
+      tournamentClassTab = live.player.leagueClass;
+    }
+  }
+
+  ratingActiveTab = tab;
+  openRatingModal();
+}
+
+function renderRatingTabsHtml() {
+  const tabs = [
+  {
+    id: 'rating',
+    label: tournamentText('tabMyRating')
+  },
+  {
+    id: 'tournament',
+    label: tournamentText('tabTournament')
+  },
+  {
+    id: 'achievements',
+    label: tournamentText('tabAchievements')
+  }
+];
+
+  return `
+        <div class="rating-tabs" style="
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:5px;
+      margin-bottom:14px;
+      padding-bottom:12px;
+      border-bottom:1px solid #333
+    ">
+      ${tabs.map(tab => {
+        const active = ratingActiveTab === tab.id;
+
+        return `
+                    <button
+            class="rating-main-tab"
+            data-rating-tab="${tab.id}"
+            onclick="switchRatingTab('${tab.id}')"
+            style="
+              min-width:0;
+              padding:9px 3px;
+              border-radius:8px;
+              border:1px solid ${active ? '#92783e' : '#383838'};
+              background:${active ? '#38301f' : '#242424'};
+              color:${active ? '#f0d17d' : '#999'};
+              font-size:11px;
+              font-weight:${active ? '700' : '500'};
+              cursor:pointer
+            "
+          >${tab.label}</button>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderTournamentTabHtml() {
+  // Сначала обрабатываем пропущенные дни.
+  processTournamentProgress();
+
+  const tournamentData = getTournamentData();
+  const live = getTournamentLiveStandings();
+
+  return `
+    ${renderTournamentPanelHtml()}
+    ${renderTournamentCalendarHtml(tournamentData, live)}
+  `;
+}
+
+
+function startTournamentFromModal() {
+  const result = startTournament();
+
+  if (!result.ok) {
+    if (result.reason === 'not-enough-credits') {
+      alert(tournamentText('missingCredits', {
+  amount: TOURNAMENT_CONFIG.entryFee.toLocaleString()
+}));
+    } else {
+      alert(tournamentText('startFailed'));
+    }
+    return;
+  }
+
+    tournamentClassTab = 'F';
+  ratingActiveTab = 'tournament';
+
+  openRatingModal();
+}
+
+// Открытие окна выдачи ресурсов разработчиком.
+function openDeveloperGrantModal() {
+      if (!DEV_TOOLS_ENABLED) return;
+  const old = document.getElementById('developer-grant-modal');
+  if (old) old.remove();
+
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="developer-grant-modal"
+      onclick="closeDeveloperGrantModal(event)"
+      style="
+        position:fixed;
+        inset:0;
+        z-index:10100;
+        background:rgba(0,0,0,.8);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:16px;
+      ">
+
+      <div onclick="event.stopPropagation()"
+        style="
+          width:100%;
+          max-width:380px;
+          padding:18px;
+          border-radius:14px;
+          background:#1b1b1b;
+          border:1px solid #796337;
+          color:#eee;
+        ">
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          margin-bottom:16px;
+        ">
+          <strong style="font-size:17px">
+            ${tournamentText('devGrantTitle')}
+          </strong>
+
+          <button onclick="closeDeveloperGrantModal()"
+            style="
+              border:0;
+              background:transparent;
+              color:#999;
+              font-size:23px;
+              cursor:pointer;
+            ">×</button>
+        </div>
+
+        <label style="
+          display:block;
+          font-size:12px;
+          color:#999;
+          margin-bottom:7px;
+        ">
+          ${tournamentText('resourceType')}
+        </label>
+
+        <select id="dev-grant-type"
+          style="
+            box-sizing:border-box;
+            width:100%;
+            padding:11px;
+            margin-bottom:14px;
+            background:#292929;
+            border:1px solid #444;
+            border-radius:8px;
+            color:#eee;
+            font-size:14px;
+          ">
+
+          <option value="credits">${tournamentText('creditsResource')}</option>
+          <option value="ratingPoints">${tournamentText('ratingPointsResource')}</option>
+
+        </select>
+
+        <label style="
+          display:block;
+          font-size:12px;
+          color:#999;
+          margin-bottom:7px;
+        ">
+          ${tournamentText('amount')}
+        </label>
+
+        <input
+          id="dev-grant-amount"
+          type="number"
+          min="1"
+          max="1000000000"
+          step="1"
+          placeholder="${tournamentText('amountPlaceholder')}"
+          style="
+            box-sizing:border-box;
+            width:100%;
+            padding:11px;
+            background:#292929;
+            border:1px solid #444;
+            border-radius:8px;
+            color:#eee;
+            font-size:16px;
+          "
+        >
+
+        <button onclick="grantDeveloperResource()"
+          style="
+            width:100%;
+            margin-top:16px;
+            padding:12px;
+            border-radius:9px;
+            background:#47391e;
+            border:1px solid #92783e;
+            color:#f0d17d;
+            font-weight:700;
+            font-size:14px;
+            cursor:pointer;
+          ">
+          ${tournamentText('grantResource')}
+        </button>
+
+        <div style="
+          font-size:10px;
+          color:#777;
+          margin-top:9px;
+          text-align:center;
+        ">
+          ${tournamentText('savedImmediately')}
+        </div>
+
+      </div>
+    </div>
+  `);
+
+  const input = document.getElementById('dev-grant-amount');
+  if (input) input.focus();
+}
+
+
+function closeDeveloperGrantModal(event) {
+  const modal = document.getElementById('developer-grant-modal');
+
+  if (!modal) return;
+
+  if (event && event.target !== modal) return;
+
+  modal.remove();
+}
+
+
+function grantDeveloperResource() {
+      if (!DEV_TOOLS_ENABLED) return;
+  const type = document.getElementById('dev-grant-type')?.value;
+  const input = document.getElementById('dev-grant-amount');
+
+  if (!input) return;
+
+  const amount = Number(input.value);
+
+  if (
+    !Number.isSafeInteger(amount) ||
+    amount <= 0 ||
+    amount > 1000000000
+  ) {
+    alert(tournamentText('invalidAmount'));
+    return;
+  }
+
+  if (type === 'credits') {
+    const credits = getCreditsData();
+
+    credits.balance =
+      (Number(credits.balance) || 0) + amount;
+
+    credits.totalEarned =
+      (Number(credits.totalEarned) || 0) + amount;
+
+    tournamentWriteJson(
+      CREDITS_STORAGE_KEY,
+      credits
+    );
+
+    alert(tournamentText('creditsGranted', {
+  amount: amount.toLocaleString()
+}));
+
+  } else if (type === 'ratingPoints') {
+    const bonuses = tournamentReadJson(
+      RATING_BONUS_STORAGE_KEY,
+      {}
+    );
+
+    const activeTournament = getActiveTournament();
+
+const dateStr = activeTournament
+  ? getTournamentCurrentDate(activeTournament)
+  : fmt(todayDate());
+
+    bonuses[dateStr] =
+      (Number(bonuses[dateStr]) || 0) + amount;
+
+    tournamentWriteJson(
+      RATING_BONUS_STORAGE_KEY,
+      bonuses
+    );
+    syncCreditsFromLogs();
+
+    alert(tournamentText('ratingPointsGranted', {
+  amount: amount.toLocaleString()
+}));
+
+  } else {
+    return;
+  }
+
+  closeDeveloperGrantModal();
+
+  // После выдачи очков сразу открываем личный рейтинг.
+  if (type === 'ratingPoints') {
+  ratingActiveTab = getActiveTournament()
+    ? 'tournament'
+    : 'rating';
+}
+
+  openRatingModal();
+}
+
+// Открываем окно рейтинга
+// Автоматически скрываем подписи, если между ними мало места
+function fitRatingTickLabels(){
+  const root = document.querySelector('#rating-modal .rating-ticks');
+  if(!root) return;
+
+  const ticks = Array.from(root.querySelectorAll('.rating-tick'));
+
+  // Сначала возвращаем все подписи
+  ticks.forEach(tick => {
+    tick.classList.remove('rating-tick-label-hidden');
+  });
+
+  if(ticks.length <= 2) return;
+
+  // Минимальное свободное расстояние между подписями
+  const MIN_GAP = 14;
+
+  // Получаем фактическую ширину каждой подписи
+  const boxes = ticks.map(tick => {
+    const labels = [
+      tick.querySelector('span'),
+      tick.querySelector('small')
+    ].filter(Boolean);
+
+    const rects = labels.map(el => el.getBoundingClientRect());
+
+    return {
+      left: Math.min(...rects.map(r => r.left)),
+      right: Math.max(...rects.map(r => r.right))
+    };
+  });
+
+  // Первая отметка всегда видима
+  let lastVisibleRight = boxes[0].right;
+
+  // Последняя отметка тоже всегда видима
+  const lastIndex = ticks.length - 1;
+  const lastLeft = boxes[lastIndex].left;
+
+  // Проверяем все промежуточные отметки
+  for(let i = 1; i < lastIndex; i++){
+
+    const box = boxes[i];
+
+    const gapFromPrevious = box.left - lastVisibleRight;
+    const gapToNext = lastLeft - box.right;
+
+    // Оставляем подпись только при достаточном расстоянии
+    if(
+      gapFromPrevious >= MIN_GAP &&
+      gapToNext >= MIN_GAP
+    ){
+      lastVisibleRight = box.right;
+    } else {
+      ticks[i].classList.add('rating-tick-label-hidden');
+    }
+  }
+}
+
+// Пересчитываем при изменении размера окна
+window.addEventListener('resize', fitRatingTickLabels);
+function openRatingModal(){
+  const existingModal = document.getElementById('rating-modal');
+
+  // При первом открытии сразу выбираем класс игрока.
+  if (!existingModal && ratingActiveTab === 'tournament') {
+    const live = getTournamentLiveStandings();
+
+    if (live?.player) {
+      tournamentClassTab = live.player.leagueClass;
+    }
+  }
+
+  const dateStr = fmt(currentDate);
+  const dayLog = store.logs[dateStr] || {};
+  const plan = getPlan(currentDate);
+
+  const credits = syncCreditsFromLogs();
+const summary = getRatingSummary(dateStr);
+
+const tournamentData = getTournamentData();
+
+const tournamentForDate = tournamentData.tournaments.find(
+  item =>
+    dateStr >= item.startDate &&
+    dateStr <= item.endDate
+);
+
+const isTournamentDay = !!tournamentForDate;
+
+const tournamentDay = tournamentForDate?.days?.[dateStr];
+
+const displayedTodayPoints = tournamentForDate
+  ? (
+      tournamentDay?.finalized
+        ? Number(tournamentDay.snapshot?.player?.dailyPoints) || 0
+        : getTournamentPlayerDailyPoints(
+            tournamentForDate,
+            dateStr
+          )
+    )
+  : summary.todayPoints;
+
+const tonnage = summary.tonnage;
+
+  const next = getNextRatingMilestone(tonnage);
+  const scaleEnd = next.kg;
+
+  const progress = Math.min(
+    100,
+    tonnage / scaleEnd * 100
+  );
+
+  const ratingMarks = [
+    ...getRatingMilestones(tonnage),
+    {
+      kg: next.kg,
+      points: next.points,
+      upcoming: true
+    }
+  ];
+
+  const ticksHtml = ratingMarks.map(item => {
+    const upcomingClass = item.upcoming
+      ? ' rating-tick-last rating-tick-upcoming'
+      : '';
+
+    return `
+      <div class="rating-tick${upcomingClass}"
+           style="left:${item.kg / scaleEnd * 100}%">
+        <i></i>
+        <span>${item.kg.toLocaleString()}</span>
+        <small>+${item.points}</small>
+      </div>
+    `;
+  }).join('');
+
+  const exerciseRows = getRatingExerciseRows(plan, dayLog);
+
+  const exerciseRowsHtml = exerciseRows.length
+    ? exerciseRows.map(item => `
+        <div class="rating-exercise">
+          <div class="rating-exercise-top">
+            <strong>${escapeHtml(item.name)}</strong>
+
+            <span>
+              ${
+                item.remaining > 0
+                  ? `${ratingText('remaining')}: ${item.remaining} ${ratingText('kg')}`
+                  : ratingText('limitReached')
+              }
+            </span>
+          </div>
+
+          <div class="rating-exercise-track">
+            <div style="width:${item.percent}%"></div>
+          </div>
+
+          <div class="rating-exercise-bottom">
+            ${item.tonnage.toLocaleString()} / 1000 ${ratingText('kg')}
+          </div>
+        </div>
+      `).join('')
+    : `<div class="rating-no-exercises">${ratingText('noExercises')}</div>`;
+
+  // Содержимое вкладки личного рейтинга.
+  const personalRatingHtml = `
+    <div class="rating-total-line">
+      <span>${ratingText('total')}</span>
+      <strong>${summary.points}</strong>
+    </div>
+
+    <div class="rating-cards">
+
+  <div class="rating-card">
+    <small>${ratingText('volume')}</small>
+
+    <strong>
+      ${tonnage.toLocaleString()} ${ratingText('kg')}
+    </strong>
+  </div>
+
+  <div class="rating-card">
+    <small>
+      ${isTournamentDay
+  ? ratingText('tournamentDayPoints')
+  : ratingText('dayPoints')}
+    </small>
+
+    <strong>
+      +${displayedTodayPoints}
+    </strong>
+  </div>
+
+  <div class="rating-card">
+    <small>${t('rating.creditBalance')}</small>
+
+    <strong>
+      ${Number(credits.balance || 0).toLocaleString()}
+    </strong>
+  </div>
+
+</div>
+
+${isTournamentDay ? `
+  <div style="
+    font-size:11px;
+    color:#999;
+    line-height:1.45;
+    margin:-5px 0 10px
+  ">
+    ${t('rating.tournamentExplanation')}
+  </div>
+` : ''}
+
+    <div class="rating-next">
+      ${ratingText('next')}:
+      <strong>+${next.points}</strong>
+      ${ratingText('at')}
+      <strong>${next.kg.toLocaleString()} ${ratingText('kg')}</strong>
+    </div>
+
+    <div class="rating-scale-scroll">
+      <div class="rating-scale">
+        <div class="rating-track">
+          <div class="rating-progress"
+               style="width:${progress}%"></div>
+        </div>
+
+        <div class="rating-ticks">
+          ${ticksHtml}
+        </div>
+      </div>
+    </div>
+
+    <div class="rating-exercises">
+      <div class="rating-exercises-title">
+        ${ratingText('exercises')}
+      </div>
+
+      ${exerciseRowsHtml}
+    </div>
+
+    <p class="rating-modal-note">
+      ${ratingText('note')}
+    </p>
+  `;
+
+  // Выбираем только содержимое активной вкладки.
+  let tabContent = '';
+
+  if (ratingActiveTab === 'tournament') {
+    tabContent = renderTournamentTabHtml();
+
+  } else if (ratingActiveTab === 'achievements') {
+    tabContent = renderTournamentAchievementsHtml(
+      getTournamentData()
+    );
+
+  } else {
+    tabContent = personalRatingHtml;
+  }
+
+  const modal = `
+    <div id="rating-modal"
+         class="rating-modal-backdrop"
+         onclick="closeRatingModal(event)">
+
+      <div class="rating-modal-panel"
+           onclick="event.stopPropagation()">
+
+        <div class="rating-modal-head">
+          <div>
+            <h2>${ratingText('title')}</h2>
+            <span>${tournamentDateText(dateStr)}</span>
+          </div>
+
+          <button class="rating-modal-close"
+                  onclick="closeRatingModal()">×</button>
+        </div>
+
+        ${renderRatingTabsHtml()}
+
+        <div id="rating-tab-content">
+          ${tabContent}
+        </div>
+
+        <button class="rating-modal-done"
+                onclick="closeRatingModal()">
+          ${ratingText('close')}
+        </button>
+
+      </div>
+    </div>
+  `;
+
+    const old = document.getElementById('rating-modal');
+
+  // Если окно уже открыто, меняем только содержимое.
+  // Само окно и фон остаются в DOM — мигания не будет.
+  if (old) {
+    const content = old.querySelector('#rating-tab-content');
+
+    if (content) {
+      content.innerHTML = tabContent;
+    }
+
+    // Обновляем подсветку основных вкладок.
+    const tabs = old.querySelector('.rating-tabs');
+
+    if (tabs) {
+      tabs.outerHTML = renderRatingTabsHtml();
+    }
+
+    // При смене вкладки возвращаем верхнюю часть окна.
+    const panel = old.querySelector('.rating-modal-panel');
+
+    if (panel) {
+      panel.scrollTop = 0;
+    }
+
+    if (ratingActiveTab === 'rating') {
+      requestAnimationFrame(() => fitRatingTickLabels());
+
+    } else if (ratingActiveTab === 'tournament') {
+      scrollTournamentPlayerIntoView();
+    }
+
+    return;
+  }
+
+  // Окна ещё нет — создаём его обычным способом.
+  document.body.insertAdjacentHTML('beforeend', modal);
+
+  if (ratingActiveTab === 'rating') {
+    requestAnimationFrame(() => fitRatingTickLabels());
+
+  } else if (ratingActiveTab === 'tournament') {
+    scrollTournamentPlayerIntoView();
+  }
+}
+
+function closeRatingModal(event){
+  const modal = document.getElementById('rating-modal');
+  if(!modal) return;
+
+  if(event && event.target !== modal) return;
+
+  modal.remove();
 }
 
 let currentDate=todayDate();
@@ -3055,6 +8263,7 @@ function removeAdHocExercise(logKey){
     if (!Object.keys(logs[dateStr]).length) delete logs[dateStr];
     store.logs = logs;
   }
+  syncCreditsFromLogs();
   render();
 }
 
@@ -3080,6 +8289,17 @@ function renderToday(){
   <span>${dayShort(dow)}, ${fmt(currentDate)}</span>
   <button onclick="shiftDay(1)">→</button>
 </div>`;
+  html += `
+    <div class="rating-open-row">
+      <button class="rating-open-btn"
+              onclick="openRatingModal()"
+              title="${ratingText('title')}">
+        <span class="rating-open-icon">🏆</span>
+        <span class="rating-open-label">${ratingText('title')}</span>
+      </button>
+    </div>
+  `;
+    html += renderTrainingTournamentStatusHtml();
   if(plan.info.length)html+=`<div class="info">${plan.info.join(' · ')}</div>`;
   const dayMetaHtml=renderDayMetaHtml(dayLog,isToday);
   html+=`<div id="day-meta" class="meta-row" style="display:${dayMetaHtml?'flex':'none'}">${dayMetaHtml}</div>`;
@@ -3318,13 +8538,13 @@ function renderDayCard(dateStr){
             const val=ex.app?'✓':formatSets(dayLog[id]);
             const badges=getExerciseBadges(id,dayLog[id],dateStr);
             body+=`<div class="ex">
-             <div class="hist-row">
-             <strong style="color:#9f9;cursor:pointer" onclick="openExerciseStats('${id}')">✓ ${escapeHtml(getExerciseName(logBaseId(id)))}</strong>
-             <span class="ex-last" style="margin-left:auto">${val}</span>
-             <button class="del-btn" title="${t('hist.deleteRecord')}" onclick="deleteHistoryEntry('${id}','${dateStr}')">✕</button>
-             </div>
-            ${badges?`<div class="pr-row" style="margin-top:4px;margin-bottom:0">${badges}</div>`:''}
-             </div>`;
+ <div class="hist-row">
+   <div style="display:flex;flex-direction:column;align-items:flex-start;min-width:0;flex:1;gap:3px">
+     <strong style="color:#9f9;cursor:pointer" onclick="openExerciseStats('${id}')">✓ ${escapeHtml(getExerciseName(logBaseId(id)))}</strong>
+     <span class="ex-last">${val}</span>
+   </div>
+         <button class="del-btn" title="${t('hist.deleteRecord')}" onclick="deleteHistoryEntry('${id}','${dateStr}')">✕</button>
+ </div></div>`;
         });
     }
     const cancelled = status.cancelled || [];
@@ -3359,13 +8579,13 @@ function renderDayCard(dateStr){
             const val=ex.app?'✓':formatSets(dayLog[id]);
             const badges=getExerciseBadges(id,dayLog[id],dateStr);
             body+=`<div class="ex">
-             <div class="hist-row">
-             <strong>+ ${escapeHtml(getExerciseName(logBaseId(id)))}</strong>
-             <span class="ex-last" style="margin-left:auto">${val}</span>
-             <button class="del-btn" title="${t('hist.deleteRecord')}" onclick="deleteHistoryEntry('${id}','${dateStr}')">✕</button>
-             </div>
-            ${badges?`<div class="pr-row" style="margin-top:4px;margin-bottom:0">${badges}</div>`:''}
-             </div>`;
+ <div class="hist-row">
+   <div style="display:flex;flex-direction:column;align-items:flex-start;min-width:0;flex:1;gap:3px">
+     <strong>+ ${escapeHtml(getExerciseName(logBaseId(id)))}</strong>
+     <span class="ex-last">${val}</span>
+   </div>
+      <button class="del-btn" title="${t('hist.deleteRecord')}" onclick="deleteHistoryEntry('${id}','${dateStr}')">✕</button>
+ </div></div>`;
         });
     }
     return `<div class="day-card">${header}${body}</div>`;
@@ -3694,6 +8914,7 @@ function deleteCustom(id){
         });
         ownPlanStore.set(own2);
     }
+    syncCreditsFromLogs();
     render();
 }
 
@@ -3708,6 +8929,7 @@ function deleteHistoryEntry(exId, date){
     if(!rest.length&&!logs[date]._skip&&!logs[date]._note)delete logs[date];
     store.logs=logs;
   }
+  syncCreditsFromLogs();
   render();
 }
 function showSkipUI(){
@@ -3753,6 +8975,7 @@ function skipExerciseToday(logKey){
     logs[d][logKey]._skipped = { reason: reason.trim() || t('train.noReason') };
     if (logs[d][logKey].done) delete logs[d][logKey].done;
     store.logs = logs;
+    syncCreditsFromLogs();
     render();
 }
 
@@ -3975,12 +9198,14 @@ function renderStats(){
   } else {
     exStats.forEach(s => {
       html += `<div class="ex ex-link" onclick="openExerciseStats('${s.id}')">
-        <div class="hist-row">
-          <strong>${escapeHtml(getExerciseName(s.id))}</strong>
-          <span class="ex-last" style="margin-left:auto">${t('stats.sessions', {n: s.sessions, sets: s.totalSets})}</span>
-          <span style="color:#666">›</span>
-        </div>
-      </div>`;
+  <div class="hist-row">
+    <div style="display:flex;flex-direction:column;align-items:flex-start;min-width:0;flex:1;gap:3px">
+      <strong>${escapeHtml(getExerciseName(s.id))}</strong>
+      <span class="ex-last">${t('stats.sessions', {n: s.sessions, sets: s.totalSets})}</span>
+    </div>
+    <span style="color:#666">›</span>
+  </div>
+</div>`;
     });
   }
   html+=renderInstallSection();
@@ -4079,14 +9304,16 @@ function exportData(){
   let exerciseMarkers = {};
   try{ exerciseMarkers = JSON.parse(localStorage.getItem('exerciseMarkers')||'{}'); }catch(e){}
   const data={
-    version:1,
-    exportedAt:new Date().toISOString(),
-    logs:store.logs,
-    customEx:customStore.list,
-    ownPlan:ownPlanStore.get(),
-    planConfigured:localStorage.getItem('planConfigured')==='1',
-    exerciseMarkers:exerciseMarkers,
-  };
+  version:1,
+  exportedAt:new Date().toISOString(),
+  logs:store.logs,
+  customEx:customStore.list,
+  ownPlan:ownPlanStore.get(),
+  planConfigured:localStorage.getItem('planConfigured')==='1',
+  exerciseMarkers:exerciseMarkers,
+  tournamentData:localStorage.getItem('localTournamentV1'),
+  creditsData:localStorage.getItem('creditsV1')
+};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -4129,6 +9356,13 @@ function handleImportFile(ev){
             if(data.exerciseMarkers && typeof data.exerciseMarkers === 'object'){
                 localStorage.setItem('exerciseMarkers', JSON.stringify(data.exerciseMarkers));
             }
+            if(typeof data.tournamentData === 'string' && data.tournamentData){
+    localStorage.setItem('localTournamentV1', data.tournamentData);
+}
+
+if(typeof data.creditsData === 'string' && data.creditsData){
+    localStorage.setItem('creditsV1', data.creditsData);
+}
             alert(t('settings.importSuccess'));
             render();
         } catch(err){
@@ -4147,6 +9381,8 @@ function resetAll(){
     localStorage.removeItem('planConfigured');
     localStorage.removeItem('exerciseMarkers');
     localStorage.removeItem('defaultMarkersSeeded_v1');
+    localStorage.removeItem('localTournamentV1');
+localStorage.removeItem('creditsV1');
     localStorage.removeItem('bodyWeight'); // <-- ДОБАВЛЕНО: удаляем вес
     location.reload();
 }
@@ -5273,6 +10509,11 @@ document.body.classList.remove('tutorial-active');
   loadOnbPlanFromStore();
   syncCustomEx();
   render();
+  if (!needsMasterSetup && !localStorage.getItem('bodyWeight')) {
+  setTimeout(showBodyWeightPrompt, 300);
+} else if (!needsMasterSetup) {
+  setTimeout(maybeShowTournamentDailyPopup, 400);
+}
 
   if (!needsMasterSetup && !localStorage.getItem('bodyWeight')) {
     setTimeout(showBodyWeightPrompt, 300);
@@ -5430,6 +10671,7 @@ function saveOnboardBodyWeight(){
     const modal = document.getElementById('bw-prompt-modal');
     if(modal) modal.remove();
     render();
+    setTimeout(maybeShowTournamentDailyPopup, 350);
   } else {
     alert(t('settings.weightInvalid'));
   }
@@ -7799,7 +13041,12 @@ function toggleDone(logKey, checked){
         const nonMeta = Object.keys(logs[d]).filter(k => !k.startsWith('_'));
         if(!nonMeta.length && !logs[d]._skip && !logs[d]._note && !logs[d]._skippedBlocks) delete logs[d];
     }
-    store.logs = logs; render();
+    store.logs = logs;
+
+// Немедленно пересчитываем кредиты после отмены или выполнения.
+syncCreditsFromLogs();
+
+render();
 }
 function onSetInput(logKey, idx, field, el){
   let v = el.value;
@@ -7836,6 +13083,7 @@ function changeSets(logKey, delta){
     }
     log._customSets = next;
     store.logs = logs;
+    syncCreditsFromLogs();
     render();
 }
 function setSet(logKey, idx, field, value){
@@ -7845,6 +13093,7 @@ function setSet(logKey, idx, field, value){
     arr[idx] = arr[idx] || {};
     arr[idx][field] = value;
     store.logs = logs;
+    syncCreditsFromLogs();
     updateExerciseUI(logKey);
     updateDayMeta();
 }
@@ -8023,5 +13272,12 @@ if (restoredAfterLangChange && tutorialState.active) {
     showBodyWeightPrompt();
   }
 
-  render();
+    render();
+
+  if (
+    !tutorialState.active &&
+    !document.getElementById('bw-prompt-modal')
+  ) {
+    setTimeout(maybeShowTournamentDailyPopup, 350);
+  }
 }
